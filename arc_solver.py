@@ -9,6 +9,7 @@ import os
 import sys
 from typing import Dict, List, Any, Optional, Tuple
 from openai import OpenAI
+from anthropic import Anthropic
 
 # Embedded prompts from prompts.txt
 PROMPTS = [
@@ -33,13 +34,23 @@ PROMPTS = [
 
 
 class ARCSolver:
-    def __init__(self, api_key: Optional[str] = None):
-        """Initialize the ARC solver with OpenAI API credentials"""
-        self.api_key = api_key or os.getenv("OPENAI_API_KEY")
-        if not self.api_key:
-            raise ValueError("OpenAI API key must be provided or set in OPENAI_API_KEY environment variable")
+    def __init__(self, api_key: Optional[str] = None, provider: str = "openai"):
+        """Initialize the ARC solver with API credentials for OpenAI or Anthropic"""
+        self.provider = provider.lower()
         
-        self.client = OpenAI(api_key=self.api_key)
+        if self.provider == "openai":
+            self.api_key = api_key or os.getenv("OPENAI_API_KEY")
+            if not self.api_key:
+                raise ValueError("OpenAI API key must be provided or set in OPENAI_API_KEY environment variable")
+            self.client = OpenAI(api_key=self.api_key)
+        elif self.provider in ["anthropic", "claude"]:
+            self.api_key = api_key or os.getenv("ANTHROPIC_API_KEY")
+            if not self.api_key:
+                raise ValueError("Anthropic API key must be provided or set in ANTHROPIC_API_KEY environment variable")
+            self.client = Anthropic(api_key=self.api_key)
+        else:
+            raise ValueError(f"Unknown provider: {provider}. Use 'openai' or 'anthropic'")
+        
         self.conversation_history = []
     
     def load_task(self, file_path: str) -> Dict[str, Any]:
@@ -70,14 +81,14 @@ class ARCSolver:
         
         return '\n'.join(formatted)
     
-    def call_gpt(self, message: str, temperature: float = 0.7) -> str:
-        """Make a call to GPT-5 and return the response"""
+    def call_gpt(self, message: str) -> str:
+        """Make a call to GPT/Claude and return the response"""
         # Add message to conversation history
         self.conversation_history.append({"role": "user", "content": message})
         
         # Debug: Print the message being sent
         print("\n" + "="*80)
-        print("SENDING TO CHATGPT:")
+        print(f"SENDING TO {self.provider.upper()}:")
         print("-"*80)
         print(message[:1000])  # Show first 1000 chars
         if len(message) > 1000:
@@ -85,16 +96,29 @@ class ARCSolver:
         print("-"*80)
         
         try:
-            response = self.client.chat.completions.create(
-                model="gpt-5-2025-08-07",  # Will be updated to gpt-5 when available
-                messages=self.conversation_history
-            )
+            if self.provider == "openai":
+                response = self.client.chat.completions.create(
+                    model="gpt-5-2025-08-07",
+                    messages=self.conversation_history
+                )
+                
+                assistant_message = response.choices[0].message.content
             
-            assistant_message = response.choices[0].message.content
+            else:  # anthropic/claude
+                # Claude API uses the same role names (user/assistant)
+                response = self.client.messages.create(
+                    model="claude-sonnet-4-20250514",
+                    max_tokens=8000,
+                    messages=self.conversation_history
+                )
+                
+                assistant_message = response.content[0].text
+            
+            # Add assistant response to conversation history
             self.conversation_history.append({"role": "assistant", "content": assistant_message})
             
             # Debug: Print the response received
-            print("\nRECEIVED FROM CHATGPT:")
+            print(f"\nRECEIVED FROM {self.provider.upper()}:")
             print("-"*80)
             print(assistant_message[:1500])  # Show first 1500 chars
             if len(assistant_message) > 1500:
@@ -105,7 +129,7 @@ class ARCSolver:
             return assistant_message
         
         except Exception as e:
-            print(f"Error calling OpenAI API: {e}")
+            print(f"Error calling {self.provider} API: {e}")
             raise
     
     def check_pattern_status(self, response: str) -> Optional[str]:
@@ -119,7 +143,7 @@ class ARCSolver:
     def validate_pattern(self, task: Dict[str, Any], pattern_description: str) -> bool:
         """
         Validate the found pattern against the test outputs
-        This would require GPT to apply the pattern and compare results
+        Returns True if valid, False if invalid or can't parse
         """
         test_output = task['test'][0]['output']
         
@@ -138,10 +162,12 @@ class ARCSolver:
         response = self.call_gpt(validation_prompt)
         
         # Parse the generated output and compare with expected
-        # This is simplified - in practice, you'd need robust parsing
         try:
-            # Extract grid from response (this would need proper implementation)
+            # Extract grid from response
             generated_output = self.parse_grid_from_response(response)
+            
+            if not generated_output:
+                return False  # Couldn't parse output
             
             # Debug print if mismatch
             if generated_output != test_output:
@@ -198,13 +224,15 @@ class ARCSolver:
         response = self.call_gpt(first_prompt)
         num_prompts_sent += 1
         print("\n>>> Phase 1 Complete: Generated 20 initial patterns")
+        correction_message = ""
         
         # Continue through remaining prompts
         for i, prompt in enumerate(PROMPTS[1:], start=2):
             print("\n" + "="*80)
             print(f"=== Phase {i} ===")
             print("="*80)
-            response = self.call_gpt(prompt)
+            response = self.call_gpt(correction_message + prompt)
+            correction_message = ""
             num_prompts_sent += 1
             
             # Check for pattern status
@@ -215,13 +243,33 @@ class ARCSolver:
                 
                 # Validate against test data
                 print("\n>>> Validating pattern against test output...")
-                if self.validate_pattern(task, response):
+                validation_result = self.validate_pattern(task, response)
+                
+                if validation_result == True:
                     print("✅ Pattern successfully validated against test data!")
                     return True, response, num_prompts_sent
                 else:
-                    print("⚠️ Pattern validation failed against test data")
-                    print("⚠️ ChatGPT believes it found the pattern - manual verification required")
-                    return True, response, num_prompts_sent  # Return success since ChatGPT thinks it found it
+                    print("⚠️ Pattern validation failed")
+                    
+                    # If we are past the 5th step, it rarely recovers so just fail the test.
+                    if i > 5:
+                        return False, None, num_prompts_sent
+                    
+                    # Get the actual vs expected for feedback
+                    test_output = task['test'][0]['output']
+                    generated_output = self.parse_grid_from_response(response)
+                    
+                    # Send correction message
+                    correction_message = f"""You did not actually find the pattern. Look at the difference:
+                    Expected output:
+                    {self.format_grid(test_output)}
+
+                    Your generated output:
+                    {self.format_grid(generated_output) if generated_output else "Could not parse your output"}
+                    
+                    """
+
+                    print("\n>>> Updated correction message, continuing to next phase...")
             
             elif status == "FAILED":
                 print("\n❌ Pattern failed, continuing to next phase...")
@@ -237,10 +285,18 @@ class ARCSolver:
 def main():
     """Main entry point"""
     if len(sys.argv) < 2:
-        print("Usage: python arc_solver.py <task_json_file>")
+        print("Usage: python arc_solver.py <task_json_file> [--provider openai|anthropic]")
         sys.exit(1)
     
     task_file = sys.argv[1]
+    provider = "openai"  # default
+    
+    # Parse provider argument
+    if len(sys.argv) > 2:
+        for i in range(2, len(sys.argv)):
+            if sys.argv[i] == "--provider" and i + 1 < len(sys.argv):
+                provider = sys.argv[i + 1]
+                break
     
     if not os.path.exists(task_file):
         print(f"Error: Task file '{task_file}' not found")
@@ -248,7 +304,8 @@ def main():
     
     # Create solver and attempt to solve
     try:
-        solver = ARCSolver()
+        print(f"Using {provider.upper()} API")
+        solver = ARCSolver(provider=provider)
         success, pattern, num_prompts = solver.solve(task_file)
         
         if success:
