@@ -1,0 +1,18 @@
+Hey Chat. We have a fun little puzzle here. It's going to be hard to solve. I want you to think of 20 ways to solve this puzzle. Each way should be a pattern you can think of. Think outside the box. We are brainstorming and brute forcing, so anything goes, it doesn't need to make sense. Dig deep, think of every crazy solution you can. Create a short description of the pattern/solution and then rank it by likeliness to succeed. Here's the inputs and outputs of the pattern: 
+
+Let's take the top 5 most likely solutions. Think of permutations and combinations of these. Let's create a new list of 20 possible patterns that include the most likely and any reasonable permutations. Feel free to also reference the other patterns if you think they'd make a good solution. When you are done, rank them by most likely. 
+
+Nice! Let's try it! Take the top one and apply it to the input patterns. See if you get the same result as the output. If you get the correct output by applying the pattern, end the message with **PATTERN FOUND**. If testing the pattern does not result in success, that is OK, but end the message with **PATTERN FAILED**. Use these phrases exactly to signal success or failure, otherwise do not include that phrase in your response. 
+
+OK let's try the second top pattern. Remember, if you get the correct output by applying the pattern, end the message with **PATTERN FOUND**. If testing the pattern does not result in success, that is OK, but end the message with **PATTERN FAILED**. Use these phrases exactly to signal success or failure, otherwise do not include that phrase in your response. 
+
+OK let's try the third top pattern. Remember, if you get the correct output by applying the pattern, end the message with **PATTERN FOUND**. If testing the pattern does not result in success, that is OK, but end the message with **PATTERN FAILED**. Use these phrases exactly to signal success or failure, otherwise do not include that phrase in your response. 
+
+OK let's stop here and use what you learned to generate 3 NEW most likely patterns. Cross reference existing patterns and apply what you learned. 
+
+Let's try number 1 with the input data. Remember, if you get the correct output by applying the pattern, end the message with **PATTERN FOUND**. If testing the pattern does not result in success, that is OK, but end the message with **PATTERN FAILED**. Use these phrases exactly to signal success or failure, otherwise do not include that phrase in your response. 
+
+Let's try number 2 with the input data. Remember, if you get the correct output by applying the pattern, end the message with **PATTERN FOUND**. If testing the pattern does not result in success, that is OK, but end the message with **PATTERN FAILED**. Use these phrases exactly to signal success or failure, otherwise do not include that phrase in your response. 
+
+Let's try number 3 with the input data. Remember, if you get the correct output by applying the pattern, end the message with **PATTERN FOUND**. If testing the pattern does not result in success, that is OK, but end the message with **PATTERN FAILED**. Use these phrases exactly to signal success or failure, otherwise do not include that phrase in your response. 
+
