@@ -1,8 +1,8 @@
-I built a Python solver with Claude 🤖 in about an hour to test an idea I had—could structured brute-force exploration using ChatGPT-5 as the pattern recognition engine actually tackle ARC-AGI-2 puzzles? The implementation starts with an aggressive brainstorming phase where I prompt GPT to generate twenty different pattern hypotheses, each scored by likelihood from zero to ten. Rather than committing to a single approach, I embrace the combinatorial nature of the problem by generating permutations and combinations of the top five most promising patterns, creating another twenty refined hypotheses. This exhaustive exploration ensures I don't miss potential solutions by being too narrow in initial thinking. The solver then systematically tests these patterns through explicit verification phases where GPT must apply each candidate pattern to training examples and signal success with "PATTERN FOUND" or failure with "PATTERN FAILED."
+I built a Python solver with Claude 🤖 in about an hour to test an idea I had—could structured brute-force exploration using ChatGPT-5 and Claude 4 (Sonnet) as the pattern recognition engine actually tackle ARC-AGI-2 puzzles? The implementation starts with an aggressive brainstorming phase where I prompt GPT to generate twenty different pattern hypotheses, each scored by likelihood from zero to ten. Rather than committing to a single approach, I embrace the combinatorial nature of the problem by generating permutations and combinations of the top five most promising patterns, creating another twenty refined hypotheses. This exhaustive exploration ensures I don't miss potential solutions by being too narrow in initial thinking. The solver then systematically tests these patterns through explicit verification phases where GPT must apply each candidate pattern to training examples and signal success with "PATTERN FOUND" or failure with "PATTERN FAILED."
 
 After testing the top patterns from initial rounds, the system generates three new patterns based on insights gained from failures, then tests those as well. This iterative refinement process combines brute-force exploration with adaptive learning, working across multiple levels of abstraction from low-level pixel patterns to high-level transformation rules. When a pattern is marked as found, I perform final validation where GPT applies the discovered pattern to generate output for the test input, which I then compare against actual test output. This two-stage verification ensures patterns that work on training data actually generalize to the test case. Maintaining conversational context throughout ensures GPT can build on previous attempts and learn from what didn't work. The approach essentially implements a poor man's version of what François Chollet describes as guided search through the vast space of possible pattern transformations, using deep learning's pattern recognition to suggest promising candidates while systematic search assembles these building blocks into concrete solutions.
 
-I achieved a 72% score on 60 random samples from ARC-AGI-2 open source problems. This is likely illegitimate, and there's good reason for skepticism. The core issue is data contamination: I tested on 60 problems from the "open source dataset," which ChatGPT-5 almost certainly encountered during training. The model likely learned ARC patterns, transformation rules, and problem structures, even if not exact solutions. The solutions may be encoded deep in ChatGPT-5's weights but require extensive prompting to extract. ChatGPT fails most problems on first attempts, suggesting solutions aren't readily accessible, but my method's ~42 pattern exploration acts as a sophisticated retrieval algorithm, systematically activating different neural pathways until the right combination surfaces the buried knowledge. The fact that extensive exploration is needed suggests the model is doing sophisticated pattern matching on familiar data rather than demonstrating genuine fluid intelligence or novel reasoning. Testing on guaranteed unseen data is needed for legitimate validation. Each problem cost roughly $0.30 in tokens to solve. Even if the 72% score reflects sophisticated extraction of training data rather than genuine breakthrough reasoning, the methodology itself demonstrates that systematic exploration can dramatically improve AI performance and we may be underestimating latent AI capabilities due to poor retrieval methods.
+I achieved a 72% score on 60 random samples from ARC-AGI-2 open source problems. This is likely illegitimate, and there's good reason for skepticism. The core issue is data contamination: I tested on 60 problems from the "open source dataset," which both models almost certainly encountered during training. The model likely learned ARC patterns, transformation rules, and problem structures, even if not exact solutions. The solutions may be encoded deep in the model's weights but require extensive prompting to extract. Both models fail most problems on first attempts, suggesting solutions aren't readily accessible, but my method's ~42 pattern exploration acts as a sophisticated retrieval algorithm, systematically activating different neural pathways until the right combination surfaces the buried knowledge. The fact that extensive exploration is needed suggests the model is doing sophisticated pattern matching on familiar data rather than demonstrating genuine fluid intelligence or novel reasoning. Testing on guaranteed unseen data is needed for legitimate validation. Each problem cost roughly $0.30 in tokens to solve. Even if the 72% score reflects sophisticated extraction of training data rather than genuine breakthrough reasoning, the methodology itself demonstrates that systematic exploration can dramatically improve AI performance and we may be underestimating latent AI capabilities due to poor retrieval methods.
 
 
 ### Setup and running
@@ -11,9 +11,12 @@ I achieved a 72% score on 60 random samples from ARC-AGI-2 open source problems.
 2. `export OPENAI_API_KEY=...`
 3. `python3 arc_solver.py ARC-AGI-2/data/training/00576224.json`
 4. Or `python3 run_batch.py 10` (runs 10 random problems)
+4. Use help menu to see other options (what dataset to run, run in parallel, etc.)
 
 
-### Results 
+### ChatGPT 5 results 
+
+From the `training` dataset...
 
 ```
 ================================================================================
@@ -86,4 +89,42 @@ e734a0e8             ✅ PASS     848.22
 0c9aba6e             ✅ PASS     625.34    
 4938f0c2             ✅ PASS     570.39    
 623ea044             ✅ PASS     684.85    
+```
+
+From the `evaluation` dataset...
+
+```
+================================================================================
+BATCH RESULTS SUMMARY
+================================================================================
+Total tasks: 20
+Successful: 5 (25.0%)
+Failed: 15 (75.0%)
+Total time: 16887.27s
+Total prompts sent: 157
+
+Detailed Results:
+Task                 Result     Time (s)   Prompts   
+--------------------------------------------------
+7b5033c1             ✅ PASS     575.98     4         
+58f5dbd5             ❌ FAIL     696.93     9         
+2b83f449             ❌ FAIL     706.35     9         
+2c181942             ❌ FAIL     708.96     9         
+269e22fb             ❌ FAIL     717.62     9         
+e376de54             ✅ PASS     718.13     3         
+45a5af55             ✅ PASS     925.70     5         
+2ba387bc             ✅ PASS     987.91     7         
+62593bfd             ❌ FAIL     1123.94    9         
+8698868d             ✅ PASS     434.38     3         
+edb79dae             ❌ FAIL     656.52     9         
+a251c730             ❌ FAIL     460.09     9         
+36a08778             ❌ FAIL     782.96     9         
+e8686506             ❌ FAIL     787.67     9         
+38007db0             ❌ FAIL     1559.25    9         
+7c66cb00             ❌ FAIL     877.64     9         
+f931b4a8             ❌ FAIL     664.22     9         
+136b0064             ❌ FAIL     969.33     9         
+b10624e5             ❌ FAIL     1046.43    9         
+88e364bc             ❌ FAIL     1487.27    9         
+
 ```

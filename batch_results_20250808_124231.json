@@ -1,0 +1,142 @@
+[
+  {
+    "task": "7b5033c1",
+    "success": true,
+    "time": 575.9773330688477,
+    "prompts": 4,
+    "pattern": "Applying Pattern 2: Per-color first appearance (row-major) + border-mode fallback + emit total per-c"
+  },
+  {
+    "task": "58f5dbd5",
+    "success": false,
+    "time": 696.9326021671295,
+    "prompts": 9,
+    "pattern": null
+  },
+  {
+    "task": "2b83f449",
+    "success": false,
+    "time": 706.3522129058838,
+    "prompts": 9,
+    "pattern": null
+  },
+  {
+    "task": "2c181942",
+    "success": false,
+    "time": 708.9571809768677,
+    "prompts": 9,
+    "pattern": null
+  },
+  {
+    "task": "269e22fb",
+    "success": false,
+    "time": 717.6156549453735,
+    "prompts": 9,
+    "pattern": null
+  },
+  {
+    "task": "e376de54",
+    "success": true,
+    "time": 718.1277048587799,
+    "prompts": 3,
+    "pattern": "Applying pattern: Global densest-band ruler\n- Rule: Identify the single cleanest, densest straight b"
+  },
+  {
+    "task": "45a5af55",
+    "success": true,
+    "time": 925.6953539848328,
+    "prompts": 5,
+    "pattern": "Applying Pattern: Two-axis profile, min-depth merge (TPM)\n\nRule:\n- Let N = number of input rows; set"
+  },
+  {
+    "task": "2ba387bc",
+    "success": true,
+    "time": 987.9061920642853,
+    "prompts": 7,
+    "pattern": "Applying Pattern 1: Type-separated vertical zipper (rings-left, solids-right)\n- Classify each 4x4 co"
+  },
+  {
+    "task": "62593bfd",
+    "success": false,
+    "time": 1123.9433288574219,
+    "prompts": 9,
+    "pattern": null
+  },
+  {
+    "task": "8698868d",
+    "success": true,
+    "time": 434.38431572914124,
+    "prompts": 3,
+    "pattern": "Applying \u201cQuadrant compositor + relative-delta motifs\u201d\n\nSummary of the rule used:\n- Find large, unif"
+  },
+  {
+    "task": "edb79dae",
+    "success": false,
+    "time": 656.5157282352448,
+    "prompts": 9,
+    "pattern": null
+  },
+  {
+    "task": "a251c730",
+    "success": false,
+    "time": 460.0884790420532,
+    "prompts": 9,
+    "pattern": null
+  },
+  {
+    "task": "36a08778",
+    "success": false,
+    "time": 782.9573650360107,
+    "prompts": 9,
+    "pattern": null
+  },
+  {
+    "task": "e8686506",
+    "success": false,
+    "time": 787.6700737476349,
+    "prompts": 9,
+    "pattern": null
+  },
+  {
+    "task": "38007db0",
+    "success": false,
+    "time": 1559.250576019287,
+    "prompts": 9,
+    "pattern": null
+  },
+  {
+    "task": "7c66cb00",
+    "success": false,
+    "time": 877.6351790428162,
+    "prompts": 9,
+    "pattern": null
+  },
+  {
+    "task": "f931b4a8",
+    "success": false,
+    "time": 664.2215278148651,
+    "prompts": 9,
+    "pattern": null
+  },
+  {
+    "task": "136b0064",
+    "success": false,
+    "time": 969.3283560276031,
+    "prompts": 9,
+    "pattern": null
+  },
+  {
+    "task": "b10624e5",
+    "success": false,
+    "time": 1046.4322218894958,
+    "prompts": 9,
+    "pattern": null
+  },
+  {
+    "task": "88e364bc",
+    "success": false,
+    "time": 1487.2744691371918,
+    "prompts": 9,
+    "pattern": null
+  }
+]
