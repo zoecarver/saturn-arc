@@ -56,23 +56,24 @@ def run_batch_tests(num_tasks: int = 10, dataset: str = "training"):
         try:
             # Create a fresh solver for each task
             solver = ARCSolver()
-            success, pattern = solver.solve(str(task_file))
+            success, pattern, num_prompts = solver.solve(str(task_file))
             elapsed = time.time() - start_time
             
             result = {
                 "task": task_name,
                 "success": success,
                 "time": elapsed,
+                "prompts": num_prompts,
                 "pattern": pattern[:100] if pattern else None  # Store first 100 chars
             }
             results.append(result)
             
             if success:
                 successful += 1
-                print(f"\n✅ Task {task_name} SOLVED in {elapsed:.2f}s")
+                print(f"\n✅ Task {task_name} SOLVED in {elapsed:.2f}s with {num_prompts} prompts")
             else:
                 failed += 1
-                print(f"\n❌ Task {task_name} FAILED after {elapsed:.2f}s")
+                print(f"\n❌ Task {task_name} FAILED after {elapsed:.2f}s with {num_prompts} prompts")
                 
         except Exception as e:
             elapsed = time.time() - start_time
@@ -85,6 +86,10 @@ def run_batch_tests(num_tasks: int = 10, dataset: str = "training"):
             })
             failed += 1
     
+    # Calculate statistics
+    total_time = sum(r['time'] for r in results)
+    total_prompts = sum(r.get('prompts', 0) for r in results)
+    
     # Print summary
     print(f"\n{'='*80}")
     print(f"BATCH RESULTS SUMMARY")
@@ -92,15 +97,18 @@ def run_batch_tests(num_tasks: int = 10, dataset: str = "training"):
     print(f"Total tasks: {len(task_files)}")
     print(f"Successful: {successful} ({successful/len(task_files)*100:.1f}%)")
     print(f"Failed: {failed} ({failed/len(task_files)*100:.1f}%)")
+    print(f"Total time: {total_time:.2f}s")
+    print(f"Total prompts sent: {total_prompts}")
     print(f"\nDetailed Results:")
-    print(f"{'Task':<20} {'Result':<10} {'Time (s)':<10}")
-    print(f"{'-'*40}")
+    print(f"{'Task':<20} {'Result':<10} {'Time (s)':<10} {'Prompts':<10}")
+    print(f"{'-'*50}")
     
     for result in results:
         status = "✅ PASS" if result["success"] else "❌ FAIL"
         if "error" in result:
             status = "⚠️ ERROR"
-        print(f"{result['task']:<20} {status:<10} {result['time']:<10.2f}")
+        prompts = result.get('prompts', 0)
+        print(f"{result['task']:<20} {status:<10} {result['time']:<10.2f} {prompts:<10}")
     
     # Save results to JSON
     output_file = f"batch_results_{time.strftime('%Y%m%d_%H%M%S')}.json"

@@ -173,10 +173,10 @@ class ARCSolver:
         
         return grid
     
-    def solve(self, task_file: str) -> Tuple[bool, Optional[str]]:
+    def solve(self, task_file: str) -> Tuple[bool, Optional[str], int]:
         """
         Main solving loop - iterate through prompts until pattern is found or all prompts exhausted
-        Returns (success, pattern_description)
+        Returns (success, pattern_description, num_prompts_sent)
         """
         # Load the task
         task = self.load_task(task_file)
@@ -185,6 +185,7 @@ class ARCSolver:
         
         # Reset conversation history
         self.conversation_history = []
+        num_prompts_sent = 0
         
         # Format task data
         task_data = self.format_task_for_prompt(task)
@@ -195,6 +196,7 @@ class ARCSolver:
         print("="*80)
         first_prompt = PROMPTS[0] + "\n\n" + task_data
         response = self.call_gpt(first_prompt)
+        num_prompts_sent += 1
         print("\n>>> Phase 1 Complete: Generated 20 initial patterns")
         
         # Continue through remaining prompts
@@ -203,6 +205,7 @@ class ARCSolver:
             print(f"=== Phase {i} ===")
             print("="*80)
             response = self.call_gpt(prompt)
+            num_prompts_sent += 1
             
             # Check for pattern status
             status = self.check_pattern_status(response)
@@ -214,11 +217,11 @@ class ARCSolver:
                 print("\n>>> Validating pattern against test output...")
                 if self.validate_pattern(task, response):
                     print("✅ Pattern successfully validated against test data!")
-                    return True, response
+                    return True, response, num_prompts_sent
                 else:
                     print("⚠️ Pattern validation failed against test data")
                     print("⚠️ ChatGPT believes it found the pattern - manual verification required")
-                    return True, response  # Return success since ChatGPT thinks it found it
+                    return True, response, num_prompts_sent  # Return success since ChatGPT thinks it found it
             
             elif status == "FAILED":
                 print("\n❌ Pattern failed, continuing to next phase...")
@@ -228,7 +231,7 @@ class ARCSolver:
         print("\n" + "="*80)
         print("❌ All prompts exhausted without finding valid pattern")
         print("="*80)
-        return False, None
+        return False, None, num_prompts_sent
 
 
 def main():
@@ -246,13 +249,15 @@ def main():
     # Create solver and attempt to solve
     try:
         solver = ARCSolver()
-        success, pattern = solver.solve(task_file)
+        success, pattern, num_prompts = solver.solve(task_file)
         
         if success:
             print(f"\n🎉 Successfully solved the task!")
             print(f"Pattern: {pattern[:200]}...")  # Show first 200 chars
+            print(f"Prompts sent: {num_prompts}")
         else:
             print(f"\n😞 Failed to solve the task")
+            print(f"Prompts sent: {num_prompts}")
         
         sys.exit(0 if success else 1)
     
