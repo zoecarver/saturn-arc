@@ -13,7 +13,7 @@ import io
 from contextlib import redirect_stdout
 from pathlib import Path
 from concurrent.futures import ThreadPoolExecutor, as_completed
-from arc_solver import ARCSolver
+# from arc_solver import ARCSolver
 from arc_visual_solver import ARCVisualSolver
 
 def solve_single_task(task_file, task_number, total_tasks, use_visual=False):
@@ -52,22 +52,23 @@ def solve_single_task(task_file, task_number, total_tasks, use_visual=False):
             else:
                 print(f"\n❌ Task {task_name} FAILED after {result['time']:.2f}s with {num_phases} phases")
         else:
+            print("Non-visual solver removed; pass -v")
             # Use original text solver
-            solver = ARCSolver()
-            success, pattern, num_prompts = solver.solve(str(task_file))
-            result = {
-                "task": task_name,
-                "success": success,
-                "time": time.time() - start_time,
-                "prompts": num_prompts,
-                "solver": "text",
-                "pattern": pattern[:100] if pattern else None
-            }
+            # solver = ARCSolver()
+            # success, pattern, num_prompts = solver.solve(str(task_file))
+            # result = {
+            #     "task": task_name,
+            #     "success": success,
+            #     "time": time.time() - start_time,
+            #     "prompts": num_prompts,
+            #     "solver": "text",
+            #     "pattern": pattern[:100] if pattern else None
+            # }
             
-            if success:
-                print(f"\n✅ Task {task_name} SOLVED in {result['time']:.2f}s with {num_prompts} prompts")
-            else:
-                print(f"\n❌ Task {task_name} FAILED after {result['time']:.2f}s with {num_prompts} prompts")
+            # if success:
+            #     print(f"\n✅ Task {task_name} SOLVED in {result['time']:.2f}s with {num_prompts} prompts")
+            # else:
+            #     print(f"\n❌ Task {task_name} FAILED after {result['time']:.2f}s with {num_prompts} prompts")
         
         return result
             

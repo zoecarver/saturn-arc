@@ -1,0 +1,92 @@
+[
+  {
+    "task": "69889d6e",
+    "success": false,
+    "time": 1.9073486328125e-06,
+    "prompts": 0,
+    "phases": 0,
+    "solver": "text",
+    "error": "cannot access local variable 'result' where it is not associated with a value"
+  },
+  {
+    "task": "d06dbe63",
+    "success": false,
+    "time": 7.152557373046875e-07,
+    "prompts": 0,
+    "phases": 0,
+    "solver": "text",
+    "error": "cannot access local variable 'result' where it is not associated with a value"
+  },
+  {
+    "task": "1f876c06",
+    "success": false,
+    "time": 1.1920928955078125e-06,
+    "prompts": 0,
+    "phases": 0,
+    "solver": "text",
+    "error": "cannot access local variable 'result' where it is not associated with a value"
+  },
+  {
+    "task": "19bb5feb",
+    "success": false,
+    "time": 2.1457672119140625e-06,
+    "prompts": 0,
+    "phases": 0,
+    "solver": "text",
+    "error": "cannot access local variable 'result' where it is not associated with a value"
+  },
+  {
+    "task": "d5d6de2d",
+    "success": false,
+    "time": 9.5367431640625e-07,
+    "prompts": 0,
+    "phases": 0,
+    "solver": "text",
+    "error": "cannot access local variable 'result' where it is not associated with a value"
+  },
+  {
+    "task": "b7f8a4d8",
+    "success": false,
+    "time": 1.1920928955078125e-06,
+    "prompts": 0,
+    "phases": 0,
+    "solver": "text",
+    "error": "cannot access local variable 'result' where it is not associated with a value"
+  },
+  {
+    "task": "0c9aba6e",
+    "success": false,
+    "time": 9.5367431640625e-07,
+    "prompts": 0,
+    "phases": 0,
+    "solver": "text",
+    "error": "cannot access local variable 'result' where it is not associated with a value"
+  },
+  {
+    "task": "d43fd935",
+    "success": false,
+    "time": 1.1920928955078125e-06,
+    "prompts": 0,
+    "phases": 0,
+    "solver": "text",
+    "error": "cannot access local variable 'result' where it is not associated with a value"
+  },
+  {
+    "task": "95990924",
+    "success": false,
+    "time": 1.1920928955078125e-06,
+    "prompts": 0,
+    "phases": 0,
+    "solver": "text",
+    "error": "cannot access local variable 'result' where it is not associated with a value"
+  },
+  {
+    "task": "a6953f00",
+    "success": false,
+    "time": 7.152557373046875e-07,
+    "prompts": 0,
+    "phases": 0,
+    "solver": "text",
+    "error": "cannot access local variable 'result' where it is not associated with a value"
+  }
+]
