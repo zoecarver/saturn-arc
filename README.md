@@ -46,15 +46,15 @@ fc7cae8d             ❌ FAIL     1189.15    5
 
 ```
 
-Example: comparison to naive GPT-5 prompting without visuals
+Example: when comparing failed problems to GPT-5 prompting without visuals it becomes clear that the visual solver got much further than a naive implementation would have
 
 | GPT-5 (Naive) | Visual Solver | Correct |
 |:-------------:|:-------------:|:-------:|
 | ![GPT-5 Naive](batch10-aug10th-organized/dfadab01/naive.png) | ![Visual Solver](batch10-aug10th-organized/dfadab01/dfadab01_dfadab01_prediction_066.png) | ![Correct](batch10-aug10th-organized/dfadab01/dfadab01_test_output_058.png) |
 
-Example: iterating with tools to improve strategy 
+Example: iterating with tools to improve strategy and comparing results to output 
 
 | Input | Output | Tool iteration 1 | Tool iteration 2 | Tool iteration 3 | Tool iteration 4 |
 |:-----:|:------:|:---------------:|:---------------:|:---------------:|:---------------:|
-| ![Input](batch10-aug10th-organized/fc7cae8d/fc7cae8d_train1_input_060.png) | ![Output](batch10-aug10th-organized/fc7cae8d/fc7cae8d_train1_output_061.png) | ![Tool 1](batch10-aug10th-organized/fc7cae8d/fc7cae8d_tool_069.png) | ![Tool 2](batch10-aug10th-organized/fc7cae8d/fc7cae8d_tool_070.png) | ![Tool 3](batch10-aug10th-organized/fc7cae8d/fc7cae8d_tool_071.png) | ![Tool 4](batch10-aug10th-organized/fc7cae8d/fc7cae8d_tool_081.png) |
+| ![Input](batch10-aug10th-organized/fc7cae8d/fc7cae8d_train1_input_060.png) | ![Output](batch10-aug10th-organized/fc7cae8d/fc7cae8d_train1_output_061.png) | ![Tool 1](batch10-aug10th-organized/fc7cae8d/fc7cae8d_tool_069.png) | ![Tool 2](batch10-aug10th-organized/fc7cae8d/fc7cae8d_tool_071.png) | ![Tool 3](batch10-aug10th-organized/fc7cae8d/fc7cae8d_tool_081.png) | ![Tool 4](batch10-aug10th-organized/fc7cae8d/fc7cae8d_tool_070.png) |
 
