@@ -14,117 +14,75 @@ I achieved a 72% score on 60 random samples from ARC-AGI-2 open source problems.
 4. Use help menu to see other options (what dataset to run, run in parallel, etc.)
 
 
-### ChatGPT 5 results 
+### Results 
 
 From the `training` dataset...
 
 ```
 ================================================================================
-BATCH RESULTS SUMMARY
-================================================================================
-Total tasks: 60
-Successful: 43 (71.7%)
-Failed: 17 (28.3%)
-
-Detailed Results:
-Task                 Result     Time (s)  
-----------------------------------------
-782b5218             ❌ FAIL     971.97    
-3befdf3e             ❌ FAIL     1028.88   
-6b9890af             ⚠️ ERROR    338.54    
-8a6d367c             ✅ PASS     532.59    
-6855a6e4             ❌ FAIL     1486.63   
-a57f2f04             ✅ PASS     1384.07   
-ce4f8723             ✅ PASS     298.88    
-3c9b0459             ✅ PASS     313.14    
-84ba50d3             ❌ FAIL     1468.58   
-f76d97a5             ✅ PASS     489.36    
-5623160b             ✅ PASS     1122.98   
-e2092e0c             ✅ PASS     917.31    
-b60334d2             ✅ PASS     375.91    
-8e1813be             ❌ FAIL     756.23    
-b0f4d537             ❌ FAIL     1265.08   
-4347f46a             ✅ PASS     435.09    
-77fdfe62             ✅ PASS     512.10    
-484b58aa             ❌ FAIL     706.11    
-a68b268e             ✅ PASS     489.17    
-6d0160f0             ❌ FAIL     1307.81   
-bd283c4a             ✅ PASS     879.41    
-cdecee7f             ✅ PASS     489.26    
-e50d258f             ✅ PASS     403.39    
-6ffe8f07             ✅ PASS     1098.35   
-963e52fc             ✅ PASS     272.59    
-88a10436             ✅ PASS     501.36    
-b2862040             ❌ FAIL     1152.55   
-494ef9d7             ✅ PASS     1100.92   
-1e0a9b12             ✅ PASS     351.23    
-1bfc4729             ✅ PASS     520.60    
-2c608aff             ✅ PASS     1035.19   
-df978a02             ❌ FAIL     1162.49   
-6e19193c             ❌ FAIL     1149.27   
-140c817e             ✅ PASS     760.77    
-0e671a1a             ✅ PASS     789.19    
-d687bc17             ✅ PASS     998.32    
-855e0971             ✅ PASS     725.30    
-833966f4             ✅ PASS     411.55    
-97239e3d             ✅ PASS     1479.74   
-a740d043             ✅ PASS     244.83    
-aaef0977             ✅ PASS     564.82    
-48d8fb45             ✅ PASS     593.51    
-f3cdc58f             ✅ PASS     464.69    
-af726779             ❌ FAIL     967.98    
-54db823b             ✅ PASS     468.69    
-6cf79266             ✅ PASS     633.65    
-c909285e             ❌ FAIL     648.33    
-92e50de0             ✅ PASS     689.95    
-cf98881b             ✅ PASS     499.24    
-a2d730bd             ❌ FAIL     988.74    
-e73095fd             ✅ PASS     1012.40   
-825aa9e9             ❌ FAIL     1127.60   
-25d487eb             ✅ PASS     534.12    
-36d67576             ❌ FAIL     847.36    
-d4f3cd78             ✅ PASS     413.90    
-e734a0e8             ✅ PASS     848.22    
-8f2ea7aa             ✅ PASS     932.54    
-0c9aba6e             ✅ PASS     625.34    
-4938f0c2             ✅ PASS     570.39    
-623ea044             ✅ PASS     684.85    
-```
-
-From the `evaluation` dataset...
-
-```
-================================================================================
-BATCH RESULTS SUMMARY
+BATCH RESULTS SUMMARY (train)
 ================================================================================
 Total tasks: 20
-Successful: 5 (25.0%)
-Failed: 15 (75.0%)
-Total time: 16887.27s
-Total prompts sent: 157
+Successful: 10 (50.0%)
+Failed: 10 (50.0%)
+Total time: 11143.67s
+Total prompts sent: 109
 
 Detailed Results:
 Task                 Result     Time (s)   Prompts   
 --------------------------------------------------
-7b5033c1             ✅ PASS     575.98     4         
-58f5dbd5             ❌ FAIL     696.93     9         
-2b83f449             ❌ FAIL     706.35     9         
-2c181942             ❌ FAIL     708.96     9         
-269e22fb             ❌ FAIL     717.62     9         
-e376de54             ✅ PASS     718.13     3         
-45a5af55             ✅ PASS     925.70     5         
-2ba387bc             ✅ PASS     987.91     7         
-62593bfd             ❌ FAIL     1123.94    9         
-8698868d             ✅ PASS     434.38     3         
-edb79dae             ❌ FAIL     656.52     9         
-a251c730             ❌ FAIL     460.09     9         
-36a08778             ❌ FAIL     782.96     9         
-e8686506             ❌ FAIL     787.67     9         
-38007db0             ❌ FAIL     1559.25    9         
-7c66cb00             ❌ FAIL     877.64     9         
-f931b4a8             ❌ FAIL     664.22     9         
-136b0064             ❌ FAIL     969.33     9         
-b10624e5             ❌ FAIL     1046.43    9         
-88e364bc             ❌ FAIL     1487.27    9         
+332efdb3             ✅ PASS     303.70     3         
+91714a58             ✅ PASS     423.16     4         
+85fa5666             ❌ FAIL     672.00     8         
+e7a25a18             ❌ FAIL     720.66     8         
+c9e6f938             ✅ PASS     240.50     3         
+4acc7107             ❌ FAIL     1017.93    8         
+15113be4             ❌ FAIL     706.69     8         
+93b4f4b3             ❌ FAIL     920.90     8         
+6855a6e4             ⚠️ ERROR    6.76       0         
+bda2d7a6             ✅ PASS     348.29     3         
+b15fca0b             ❌ FAIL     662.96     8         
+72a961c9             ✅ PASS     458.53     3         
+5587a8d0             ✅ PASS     255.04     3         
+4938f0c2             ✅ PASS     396.59     3         
+18419cfa             ❌ FAIL     684.13     8         
+db118e2a             ✅ PASS     553.23     4         
+7039b2d7             ✅ PASS     559.00     8         
+23b5c85d             ✅ PASS     343.03     3         
+6aa20dc0             ❌ FAIL     1006.83    8         
+c9680e90             ❌ FAIL     863.73     8       
+
+================================================================================
+BATCH RESULTS SUMMARY (eval)
+================================================================================
+Total tasks: 20
+Successful: 1 (5.0%)
+Failed: 19 (95.0%)
+Total time: 12000.97s
+Total prompts sent: 155
+
+Detailed Results:
+Task                 Result     Time (s)   Prompts   
+--------------------------------------------------
+3a25b0d8             ❌ FAIL     356.19     8         
+2d0172a1             ❌ FAIL     404.27     8         
+7b80bb43             ❌ FAIL     473.04     8         
+8f3a5a89             ❌ FAIL     542.00     8         
+5545f144             ❌ FAIL     682.09     8         
+b9e38dc0             ❌ FAIL     551.46     8         
+e376de54             ❌ FAIL     580.71     8         
+f560132c             ❌ FAIL     737.23     8         
+6e453dd6             ❌ FAIL     741.18     8         
+a47bf94d             ❌ FAIL     755.82     8         
+d8e07eb2             ❌ FAIL     506.34     8         
+4e34c42c             ❌ FAIL     637.78     8         
+981571dc             ❌ FAIL     424.04     8         
+269e22fb             ❌ FAIL     585.69     8         
+b0039139             ❌ FAIL     570.31     8         
+45a5af55             ✅ PASS     562.09     3         
+65b59efc             ❌ FAIL     486.14     8         
+faa9f03d             ❌ FAIL     425.13     8         
+135a2760             ❌ FAIL     1327.54    8         
+1818057f             ❌ FAIL     651.92     8        
 
 ```
