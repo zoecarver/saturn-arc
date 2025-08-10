@@ -54,7 +54,7 @@ Example: when comparing failed problems to GPT-5 prompting without visuals it be
 
 Example: iterating with tools to improve strategy and comparing results to output 
 
-| Input | Output | Tool iteration 1 | Tool iteration 2 | Tool iteration 3 | Tool iteration 4 |
+| Input | Output | Tool invocation 1 | Tool invocation 2 | Tool invocation 3 | Tool invocation 4 |
 |:-----:|:------:|:---------------:|:---------------:|:---------------:|:---------------:|
 | ![Input](batch10-aug10th-organized/fc7cae8d/fc7cae8d_train1_input_060.png) | ![Output](batch10-aug10th-organized/fc7cae8d/fc7cae8d_train1_output_061.png) | ![Tool 1](batch10-aug10th-organized/fc7cae8d/fc7cae8d_tool_069.png) | ![Tool 2](batch10-aug10th-organized/fc7cae8d/fc7cae8d_tool_071.png) | ![Tool 3](batch10-aug10th-organized/fc7cae8d/fc7cae8d_tool_081.png) | ![Tool 4](batch10-aug10th-organized/fc7cae8d/fc7cae8d_tool_070.png) |
 
