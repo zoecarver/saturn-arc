@@ -1,0 +1,74 @@
+[
+  {
+    "task": "bf45cf4b",
+    "success": false,
+    "time": 72.39647388458252,
+    "prompts": 0,
+    "phases": 0,
+    "solver": "visual",
+    "error": "name 'has_function_call' is not defined"
+  },
+  {
+    "task": "db695cfb",
+    "success": false,
+    "time": 108.00290369987488,
+    "prompts": 0,
+    "phases": 0,
+    "solver": "visual",
+    "error": "name 'has_function_call' is not defined"
+  },
+  {
+    "task": "58490d8a",
+    "success": false,
+    "time": 160.00678086280823,
+    "prompts": 0,
+    "phases": 0,
+    "solver": "visual",
+    "error": "name 'has_function_call' is not defined"
+  },
+  {
+    "task": "1ae2feb7",
+    "success": false,
+    "time": 52.515074014663696,
+    "prompts": 0,
+    "phases": 0,
+    "solver": "visual",
+    "error": "name 'has_function_call' is not defined"
+  },
+  {
+    "task": "3e6067c3",
+    "success": false,
+    "time": 213.17767810821533,
+    "prompts": 0,
+    "phases": 0,
+    "solver": "visual",
+    "error": "name 'has_function_call' is not defined"
+  },
+  {
+    "task": "b0039139",
+    "success": false,
+    "time": 249.64914894104004,
+    "prompts": 0,
+    "phases": 0,
+    "solver": "visual",
+    "error": "name 'has_function_call' is not defined"
+  },
+  {
+    "task": "2ba387bc",
+    "success": false,
+    "time": 180.42798328399658,
+    "prompts": 0,
+    "phases": 0,
+    "solver": "visual",
+    "error": "name 'has_function_call' is not defined"
+  },
+  {
+    "task": "4a21e3da",
+    "success": false,
+    "time": 377.11900997161865,
+    "prompts": 0,
+    "phases": 0,
+    "solver": "visual",
+    "error": "name 'has_function_call' is not defined"
+  }
+]
