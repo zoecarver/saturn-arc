@@ -78,20 +78,39 @@ class ARCVisualSolver:
         with open(image_path, "rb") as image_file:
             return base64.b64encode(image_file.read()).decode('utf-8')
     
-    def call_ai_with_image(self, text_prompt: str, image_paths: List[str]) -> str:
-        """Call OpenAI with text and images"""
+    def call_ai_with_image(self, text_prompt: str, image_paths: List[str], image_descriptions: List[str] = None) -> str:
+        """Call OpenAI with text and images with optional descriptions"""
+
+        print(f"[START: {self.current_task_name}]")
+        print("\n" + "="*80)
+        print(f"PHASE PROMPT TO OPENAI:")
+        print("-"*80)
+        print(text_prompt)
+        print("="*80)
+        print(f"[END: {self.current_task_name}]")
+
         
         # Prepare content with images for the new responses API
         content = [{"type": "input_text", "text": text_prompt}]
         
-        for image_path in image_paths:
+        for i, image_path in enumerate(image_paths):
             base64_image = self.encode_image(image_path)
+
+            if not image_descriptions or i >= len(image_descriptions):
+                print("ERROR: image_descriptions must be provided with images")
+
+            content.append({
+                "type": "input_text",
+                "text": f"{image_descriptions[i]}:"
+            })
+
             content.append({
                 "type": "input_image",
                 "image_url": f"data:image/png;base64,{base64_image}"
             })
         
-        messages = self.conversation_history + [{"role": "user", "content": content}]
+        # Add user message to conversation history
+        self.conversation_history.append({"role": "user", "content": content})
         
         # Create the API call with tools always enabled
         call_params = {
@@ -100,26 +119,28 @@ class ARCVisualSolver:
                 "effort": "high"
                 # "max_tokens": 10 * 1000
             },
-            "input": messages,  # Use 'input' instead of 'messages' for responses API
+            "input": self.conversation_history,
             "tools": [VISUALIZATION_TOOL],
             "tool_choice": "auto"
         }
         
         # Keep calling the API while tool calls are being made
-        max_iterations = 10
+        max_iterations = 20
         iteration = 0
-        final_message = None
+        response = None
         
         while iteration < max_iterations:
             print(f"\n📡 API Call iteration {iteration + 1}")
+            # Update input to use current conversation history
+            call_params["input"] = self.conversation_history
             response = self.client_openai.responses.create(**call_params)
             
             # Log the response structure
             print(f"📦 Response output contains {len(response.output)} items")
             
-            # Add response output to input for context
+            # Add response output to conversation history
             if response.output:
-                call_params["input"] += response.output
+                self.conversation_history.extend(response.output)
                 
                 # Log each output item
                 for idx, item in enumerate(response.output):
@@ -131,8 +152,11 @@ class ARCVisualSolver:
                                 if hasattr(content_item, 'type'):
                                     print(f"    Content type: {content_item.type}")
                                     if content_item.type == "output_text" and hasattr(content_item, 'text'):
-                                        preview = content_item.text[:200] + "..." if len(content_item.text) > 200 else content_item.text
-                                        print(f"    Text preview: {preview}")
+                                        print(f"[START: {self.current_task_name}]")
+                                        preview = content_item.text[:2500] + "..." if len(content_item.text) > 2500 else content_item.text
+                                        print(f"RESPONSE (Length: {len(content_item.text)} characters):")
+                                        print(f"{preview}")
+                                        print(f"[END: {self.current_task_name}]")
             
             # Check for function calls in the output
             has_function_call = False
@@ -151,8 +175,8 @@ class ARCVisualSolver:
                         img_path = self.create_grid_image(grid, label="tool")
                         base64_img = self.encode_image(img_path)
                         
-                        # Add function result to input
-                        call_params["input"].append({
+                        # Add function result to conversation history
+                        self.conversation_history.append({
                             "type": "function_call_output",
                             "call_id": item.call_id,
                             "output": json.dumps({
@@ -166,48 +190,35 @@ class ARCVisualSolver:
             
             # Also try to extract any text response even if there were tool calls
             if hasattr(response, 'output_text') and response.output_text:
-                print(f"\n💬 Response text: {response.output_text[:1500]}..." if len(response.output_text) > 500 else f"\n💬 Response text: {response.output_text}")
+                print(f"[START: {self.current_task_name}]")
+                print(f"\n💬 Response text: {response.output_text[:2500]}..." if len(response.output_text) > 2500 else f"\n💬 Response text: {response.output_text}")
+                print(f"[END: {self.current_task_name}]")
             
             if not has_function_call:
                 print("\n✋ No more function calls, ending iteration")
-                # Extract the final text response
-                final_message = response.output_text if hasattr(response, 'output_text') else ""
                 break
         
-        if final_message is None:
+        if iteration >= max_iterations:
             print("\n⚠️ Warning: Maximum iterations reached")
-            # Try to extract text from the last item in input
-            if call_params["input"]:
-                last_item = call_params["input"][-1]
-                if isinstance(last_item, dict) and "content" in last_item:
-                    final_message = str(last_item["content"])
-                else:
-                    final_message = str(last_item)
-            else:
-                final_message = "No response"
-        
-        # Add to conversation history (simplified version without images for history)
-        self.conversation_history.append({"role": "user", "content": text_prompt})
-        self.conversation_history.append({"role": "assistant", "content": final_message})
         
         # Debug output
         print(f"[START: {self.current_task_name}]")
         print("\n" + "="*80)
-        print(f"PHASE PROMPT TO OPENAI:")
-        print("-"*80)
-        print(text_prompt)
         print(f"Images included: {len(image_paths)}")
         print(f"Tool call iterations made: {iteration}")
         print("-"*80)
-        print(f"FINAL RESPONSE FROM OPENAI:")
-        if final_message:
-            print(f"(Length: {len(final_message)} characters)")
-        print("-"*80)
-        print(final_message if final_message else "[No final message received]")
+        
+        # Print response or warning
+        if response and hasattr(response, 'output_text') and response.output_text:
+            print(f"RESPONSE (Length: {len(response.output_text)} characters):")
+            print(response.output_text[:2500] + "..." if len(response.output_text) > 2500 else response.output_text)
+        else:
+            print("🚨🚨🚨 CRITICAL WARNING: No response text available! This will likely cause failures! 🚨🚨🚨")
+        
         print("="*80)
         print(f"[END: {self.current_task_name}]")
         
-        return final_message
+        return response.output_text if response and hasattr(response, 'output_text') else ""
     
     def parse_grid_from_response(self, response: str) -> Optional[List[List[int]]]:
         """Parse a grid from the AI's response"""
@@ -229,7 +240,7 @@ class ARCVisualSolver:
     
     def solve(self, task_file: str) -> Tuple[bool, Optional[List[List[int]]], int]:
         """
-        Main solving loop using phased visual approach
+        Main solving loop using two-prompt approach
         Returns (success, predicted_output, num_phases)
         """
         # Extract task name from file path
@@ -244,13 +255,30 @@ class ARCVisualSolver:
         self.conversation_history = []
         num_phases = 0
         
-        # Phase 1: Show first training example with visual
+        # Phase 1: Create all images and send with descriptions
         print("\n" + "="*80)
-        print("=== Phase 1: First training example ===")
+        print("=== Phase 1: Sending all images with descriptions ===")
         print("="*80)
         
-        input_img_1 = self.create_grid_image(task['train'][0]['input'], label="train1_input")
-        output_img_1 = self.create_grid_image(task['train'][0]['output'], label="train1_output")
+        # Create all training example images
+        all_images = []
+        image_descriptions = []
+        
+        for i, example in enumerate(task['train']):
+            input_img = self.create_grid_image(example['input'], label=f"train{i+1}_input")
+            output_img = self.create_grid_image(example['output'], label=f"train{i+1}_output")
+            all_images.extend([input_img, output_img])
+            image_descriptions.append(f"Training Example {i+1} Input")
+            image_descriptions.append(f"Training Example {i+1} Output")
+        
+        # Create test input image
+        test_input_img = self.create_grid_image(task['test'][0]['input'], label="test_input")
+        all_images.append(test_input_img)
+        image_descriptions.append("Test Input")
+        
+        # Also save test output for logging (but don't send it)
+        test_output_img = self.create_grid_image(task['test'][0]['output'], label="test_output")
+        print(f"  Test output image saved to: {test_output_img}")
         
         prompt_1 = f"""
 You are looking at a visual puzzle. I'll show you examples of inputs and their corresponding outputs.
@@ -263,50 +291,13 @@ Compositional reasoning and turn-by-turn application of rules may be important. 
 
 Some rules have to be applied based on context. Do not fixate of superficial patterns; find what properties have semantic significance and use those as context. Some attributes or properties may not be related; if they aren't consistent across all inputs, don't focus on them. 
 
-Here's the first training example:
-
-Input grid:
-{self.format_grid(task['train'][0]['input'])}
-
-Output grid:
-{self.format_grid(task['train'][0]['output'])}
+See if you can make sense of the puzzle, then I will provide the actual data.
 
 """
 
-        response_1 = self.call_ai_with_image(prompt_1, [input_img_1, output_img_1])
-        num_phases += 1
-        
-        # Phase 2: Show second training input, ask for prediction
-        if len(task['train']) > 1:
-            print("\n" + "="*80)
-            print("=== Phase 2: Second training input - predict output ===")
-            print("="*80)
-            
-            input_img_2 = self.create_grid_image(task['train'][1]['input'], label="train2_input")
-            
-            prompt_2 = f"""
-Now I'll show you the second training input. Based on the pattern you observed in the first example, try to predict what the output should be.
 
-Second training input:
-{self.format_grid(task['train'][1]['input'])}
-"""
-
-            response_2 = self.call_ai_with_image(prompt_2, [input_img_2])
-            num_phases += 1
-            
-            # Phase 3: Show actual second training output
-            print("\n" + "="*80)
-            print("=== Phase 3: Actual second training output ===")
-            print("="*80)
-            
-            output_img_2 = self.create_grid_image(task['train'][1]['output'], label="train2_output")
-            
-            prompt_3 = f"""Here's the actual output for the second training example:
-
-Output grid:
-{self.format_grid(task['train'][1]['output'])}
-
-If you did not produce the correct output earlier, refine your approach and use the tool to iterate. 
+        prompt_2 = """
+Now I'll show you the data that generated these images. Refine the patterns you observed earlier to help you solve the test problem.
 
 Remember every transformation here is deterministic and reproducible. Do not find patterns that only exist in one input while still capturing all transformations and properties of the board.
 
@@ -316,59 +307,37 @@ Compositional reasoning and turn-by-turn application of rules may be important. 
 
 Some rules have to be applied based on context. Do not fixate of superficial patterns; find what properties have semantic significance and use those as context. Some attributes or properties may not be related; if they aren't consistent across all inputs, don't focus on them. 
 
-Continue iterating until the tool generates the correct outputs in both training examples.
-"""
+In the test input, the game may be set up in a novel orientation; elements may be rotated or in places they have never appeared before; the color scheme may also be novel. Your job is to apply the rules you've developed to a novel situation that you have no input/output for. 
 
-            response_3 = self.call_ai_with_image(prompt_3, [output_img_2])
-            num_phases += 1
-        
-        # If there are more training examples, show them
-        for i in range(2, len(task['train'])):
-            print(f"\n" + "="*80)
-            print(f"=== Additional training example {i+1} ===")
-            print("="*80)
-            
-            input_img = self.create_grid_image(task['train'][i]['input'], label=f"train{i+1}_input")
-            output_img = self.create_grid_image(task['train'][i]['output'], label=f"train{i+1}_output")
-            
-            prompt = f"""Here's training example {i+1}:
+The tools here are going to be your biggest asset. In the past, you were able to find the correct solution more often when you leveraged the tools heavily. Make sure you test potential algorithms on *every* training input, and make a tool call for each output guess, then compare it to the actual training output.  Continue iterating until the tool generates the correct outputs in all training examples.
 
-Input:
-{self.format_grid(task['train'][i]['input'])}
-
-Output:
-{self.format_grid(task['train'][i]['output'])}
-"""
-
-            response = self.call_ai_with_image(prompt, [input_img, output_img])
-            num_phases += 1
-        
-        # Phase 4: Test input - ask for output
-        print("\n" + "="*80)
-        print("=== Phase 4: Test input - generate output ===")
-        print("="*80)
-        
-        test_input_img = self.create_grid_image(task['test'][0]['input'], label="test_input")
-        
-        test_output_img = self.create_grid_image(task['test'][0]['output'], label="test_output")
-        print(f"  Test output image saved to: {test_output_img}")
-        
-        prompt_test = f"""Now, here's the test input. Apply the pattern you've learned to generate the output.
-
-Test input:
-{self.format_grid(task['test'][0]['input'])}
-
-Look at the visual representation below. Based on the consistent pattern you've identified from all the training examples, generate the output grid. 
+Based on the consistent pattern you've identified from all the training examples, generate the output grid. 
 
 You can use a tool to generate an image of the data and analyse that along the way. Try making incremental changes to the board and looking at the results by using the visualization tool. 
 
-IMPORTANT: Provide your answer as a grid in the exact same format, with square brackets and comma-separated values. Make sure the dimensions are correct."""
+Remember, the test input may be in a novel orientation, have a new color scheme, or have novel elements. Your job is to apply the consistent, deterministic rules that you've developed to handle this kind of novel test situtation. *Looking* at the image to identify visual semantics will help understand these novel situtaitons.
 
-        response_test = self.call_ai_with_image(prompt_test, [test_input_img])
+IMPORTANT: Provide your answer as a grid in the exact same format, with square brackets and comma-separated values. Make sure the dimensions are correct.
+"""
+
+        for i, example in enumerate(task['train']):
+            prompt_2 += f"Training Example {i+1} Input: \n"
+            prompt_2 += self.format_grid(task['train'][i]['input']) + "\n\n"
+
+            prompt_2 += f"Training Example {i+1} Output: \n"
+            prompt_2 += self.format_grid(task['train'][i]['output']) + "\n\n"
+
+        prompt_2 += f"Test input: \n"
+        prompt_2 += self.format_grid(task['test'][0]['input'])
+
+        response_1 = self.call_ai_with_image(prompt_1, all_images, image_descriptions)
+        num_phases += 1
+
+        response_2 = self.call_ai_with_image(prompt_2, [], [])
         num_phases += 1
         
         # Parse the predicted output
-        predicted_output = self.parse_grid_from_response(response_test)
+        predicted_output = self.parse_grid_from_response(response_2)
         
         # Check if we got a valid prediction
         if not predicted_output:
