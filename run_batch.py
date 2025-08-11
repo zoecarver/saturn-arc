@@ -86,7 +86,8 @@ def solve_single_task(task_file, task_number, total_tasks, use_visual=False):
         }
 
 
-def run_batch_tests(num_tasks: int = 10, dataset: str = "training", parallel: int = 1, use_visual: bool = False):
+def run_batch_tests(num_tasks: int = 10, dataset: str = "training", parallel: int = 1, use_visual: bool = False,
+                   include_tasks: list = None, exclude_tasks: list = None):
     """Run the solver on N randomly selected tasks from specified dataset"""
     
     # Path to data directory
@@ -98,6 +99,12 @@ def run_batch_tests(num_tasks: int = 10, dataset: str = "training", parallel: in
     
     # Get all JSON files and randomly sample
     all_task_files = list(data_dir.glob("*.json"))
+    
+    # Apply include/exclude filters
+    if include_tasks:
+        all_task_files = [f for f in all_task_files if f.stem in include_tasks]
+    elif exclude_tasks:
+        all_task_files = [f for f in all_task_files if f.stem not in exclude_tasks]
     
     # Randomly sample tasks (or take all if requesting more than available)
     num_to_sample = min(num_tasks, len(all_task_files))
@@ -207,6 +214,8 @@ def main():
     dataset = "training"
     parallel = 1
     use_visual = False
+    include_tasks = None
+    exclude_tasks = None
     
     # Simple argument parsing
     args = sys.argv[1:]
@@ -226,6 +235,20 @@ def main():
             else:
                 print("Error: -p/--parallel requires a number")
                 sys.exit(1)
+        elif arg in ["-i", "--include"]:
+            if i + 1 < len(args):
+                include_tasks = args[i + 1].split(',')
+                i += 1  # Skip next arg since we consumed it
+            else:
+                print("Error: -i/--include requires a comma-separated list of task names")
+                sys.exit(1)
+        elif arg in ["-x", "--exclude"]:
+            if i + 1 < len(args):
+                exclude_tasks = args[i + 1].split(',')
+                i += 1  # Skip next arg since we consumed it
+            else:
+                print("Error: -x/--exclude requires a comma-separated list of task names")
+                sys.exit(1)
         elif arg.isdigit():
             num_tasks = int(arg)
         elif arg in ["-h", "--help"]:
@@ -235,13 +258,16 @@ def main():
             print("  -e, --evaluation  Use evaluation dataset")
             print("  -v, --visual      Use visual solver instead of text solver")
             print("  -p, --parallel N  Run N tasks in parallel")
+            print("  -i, --include LIST  Only run these tasks (comma-separated)")
+            print("  -x, --exclude LIST  Skip these tasks (comma-separated)")
             print("  -h, --help        Show this help message")
             print("\nExamples:")
             print("  python run_batch.py              # 10 random training tasks with text solver")
             print("  python run_batch.py 5 -v         # 5 random training tasks with visual solver")
             print("  python run_batch.py 5 -e         # 5 random evaluation tasks")
             print("  python run_batch.py 10 -p 3      # 10 tasks with 3 parallel workers")
-            print("  python run_batch.py 10 -v -p 2   # 10 tasks with visual solver, 2 parallel workers")
+            print("  python run_batch.py -i 4c416de3,89565ca0 -v  # Run specific tasks")
+            print("  python run_batch.py 20 -x 4c416de3,89565ca0  # Run 20 random tasks excluding some")
             sys.exit(0)
         else:
             print(f"Error: Unknown argument '{arg}'")
@@ -250,7 +276,7 @@ def main():
         i += 1
     
     try:
-        successful, failed = run_batch_tests(num_tasks, dataset, parallel, use_visual)
+        successful, failed = run_batch_tests(num_tasks, dataset, parallel, use_visual, include_tasks, exclude_tasks)
         sys.exit(0 if failed == 0 else 1)
     except KeyboardInterrupt:
         print("\n\nBatch run interrupted by user")
