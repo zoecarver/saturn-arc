@@ -66,6 +66,119 @@ DIFF_TOOL = {
     }
 }
 
+# Define the tool for getting training input images
+GET_TRAIN_INPUT_TOOL = {
+    "type": "function",
+    "name": "get_train_input",
+    "description": "Get visual image of a specific training example's input grid.",
+    "parameters": {
+        "type": "object",
+        "properties": {
+            "example_num": {
+                "type": "integer",
+                "description": "Training example number (0-based index)"
+            }
+        },
+        "required": ["example_num"]
+    }
+}
+
+# Define the tool for getting training output images
+GET_TRAIN_OUTPUT_TOOL = {
+    "type": "function",
+    "name": "get_train_output",
+    "description": "Get visual image of a specific training example's output grid.",
+    "parameters": {
+        "type": "object",
+        "properties": {
+            "example_num": {
+                "type": "integer",
+                "description": "Training example number (0-based index)"
+            }
+        },
+        "required": ["example_num"]
+    }
+}
+
+# Define the tool for getting training input data as array
+GET_TRAIN_INPUT_DATA_TOOL = {
+    "type": "function",
+    "name": "get_train_input_data",
+    "description": "Get a specific training example's input grid as a 2D array of numbers.",
+    "parameters": {
+        "type": "object",
+        "properties": {
+            "example_num": {
+                "type": "integer",
+                "description": "Training example number (0-based index)"
+            }
+        },
+        "required": ["example_num"]
+    }
+}
+
+# Define the tool for getting training output data as array
+GET_TRAIN_OUTPUT_DATA_TOOL = {
+    "type": "function",
+    "name": "get_train_output_data",
+    "description": "Get a specific training example's output grid as a 2D array of numbers.",
+    "parameters": {
+        "type": "object",
+        "properties": {
+            "example_num": {
+                "type": "integer",
+                "description": "Training example number (0-based index)"
+            }
+        },
+        "required": ["example_num"]
+    }
+}
+
+# Define the tool for getting test input image
+GET_TEST_INPUT_TOOL = {
+    "type": "function",
+    "name": "get_test_input",
+    "description": "Get visual image of the test input grid.",
+    "parameters": {
+        "type": "object",
+        "properties": {},
+        "required": []
+    }
+}
+
+# Define the tool for getting test input data as array
+GET_TEST_INPUT_DATA_TOOL = {
+    "type": "function",
+    "name": "get_test_input_data",
+    "description": "Get the test input grid as a 2D array of numbers.",
+    "parameters": {
+        "type": "object",
+        "properties": {},
+        "required": []
+    }
+}
+
+# Define the tool for submitting test output
+SUBMIT_TEST_OUTPUT_TOOL = {
+    "type": "function",
+    "name": "submit_test_output",
+    "description": "Submit your final answer for the test output grid. This will end the solving process.",
+    "parameters": {
+        "type": "object",
+        "properties": {
+            "grid": {
+                "type": "array",
+                "items": {
+                    "type": "array",
+                    "items": {"type": "integer"}
+                },
+                "description": "2D array of integers (0-9) representing your predicted test output"
+            }
+        },
+        "required": ["grid"]
+    }
+}
+
 
 class ARCVisualSolver:
     def __init__(self):
@@ -77,6 +190,7 @@ class ARCVisualSolver:
         
         self.conversation_history = []
         self.current_task_name = None
+        self.submitted_answer = None  # Store the submitted test output
         
         # Use img_tmp directory in project root
         self.temp_dir = os.path.join(os.path.dirname(os.path.abspath(__file__)), "img_tmp")
@@ -175,7 +289,7 @@ class ARCVisualSolver:
         
         return result
     
-    def call_ai_with_image(self, text_prompt: str, image_paths: List[str], image_descriptions: List[str] = None) -> str:
+    def call_ai_with_image(self, text_prompt: str, image_paths: List[str], image_descriptions: List[str] = None, task_data: Dict[str, Any] = None) -> str:
         """Call OpenAI with text and images with optional descriptions"""
 
         print(f"[START: {self.current_task_name}]")
@@ -183,6 +297,20 @@ class ARCVisualSolver:
         print(f"PHASE PROMPT TO OPENAI:")
         print("-"*80)
         print(text_prompt)
+        print("-"*80)
+        print(f"CONVERSATION HISTORY ({len(self.conversation_history)} items):")
+        for idx, msg in enumerate(self.conversation_history):
+            if isinstance(msg, dict) and "role" in msg:
+                # User/assistant message format
+                role = msg.get("role", "unknown")
+                content_preview = str(msg.get("content", ""))[:1500] + "..." if len(str(msg.get("content", ""))) > 1500 else str(msg.get("content", ""))
+                print(f"  [{idx}] role={role}, content={content_preview}")
+            elif hasattr(msg, "type"):
+                # Response output item format
+                item_type = msg.type
+                print(f"  [{idx}] type={item_type}")
+            else:
+                print(f"  [{idx}] Unknown format: {str(msg)[:100]}...")
         print("="*80)
         print(f"[END: {self.current_task_name}]")
 
@@ -217,14 +345,18 @@ class ARCVisualSolver:
                 # "max_tokens": 10 * 1000
             },
             "input": self.conversation_history,
-            "tools": [VISUALIZATION_TOOL, DIFF_TOOL],
+            "tools": [VISUALIZATION_TOOL, DIFF_TOOL,
+                      GET_TRAIN_INPUT_TOOL, GET_TRAIN_OUTPUT_TOOL, 
+                      GET_TRAIN_INPUT_DATA_TOOL, GET_TRAIN_OUTPUT_DATA_TOOL,
+                      GET_TEST_INPUT_TOOL, GET_TEST_INPUT_DATA_TOOL, SUBMIT_TEST_OUTPUT_TOOL],
             "tool_choice": "auto"
         }
         
         # Keep calling the API while tool calls are being made
-        max_iterations = 20
+        max_iterations = 50
         iteration = 0
         any_tools_used = False
+        submission_attempts = 0  # Track submission attempts locally
         
         # Make first API call before the loop
         print(f"\n📡 Initial API Call")
@@ -242,7 +374,20 @@ class ARCVisualSolver:
             # Log each output item if present
             if response.output:
                 for idx, item in enumerate(response.output):
-                    print(f"  Item {idx}: type={item.type}")
+                    if item.type == "function_call":
+                        print(f"  Item {idx}: type={item.type}, function={item.name if hasattr(item, 'name') else 'unknown'}")
+                    elif item.type == "reasoning":
+                        print(f"  Item {idx}: type={item.type}")
+                        # Log reasoning summary if available
+                        if hasattr(item, 'summary') and item.summary:
+                            for summary_item in item.summary:
+                                if hasattr(summary_item, 'type') and summary_item.type == "summary_text":
+                                    if hasattr(summary_item, 'text'):
+                                        reasoning_preview = summary_item.text[:1000] + "..." if len(summary_item.text) > 1000 else summary_item.text
+                                        print(f"    REASONING: {reasoning_preview}")
+                    else:
+                        print(f"  Item {idx}: type={item.type}")
+                    
                     if item.type == "message":
                         # Try to extract text from message content
                         if hasattr(item, 'content'):
@@ -290,6 +435,11 @@ class ARCVisualSolver:
                         grid1 = args["grid1"]
                         grid2 = args["grid2"]
                         
+                        # Log the grids being compared for debugging
+                        print(f"  📊 Diff tool called with:")
+                        print(f"     Grid1:\n{grid1}")
+                        print(f"     Grid2:\n{grid2}")
+                        
                         result = self.diff_grids(grid1, grid2)
                         
                         print(f"  📊 Diff completed: {result['different_cells']} differences found ({result['match_percentage']}% match)")
@@ -301,6 +451,216 @@ class ARCVisualSolver:
                             "output": json.dumps(result)
                         })
                         print(f"  ✅ Diff result added to conversation")
+                    
+                    elif item.name == "get_train_input":
+                        # Get training example input image
+                        example_num = args["example_num"]
+                        
+                        if 0 <= example_num < len(task_data["train"]):
+                            example = task_data["train"][example_num]
+                            
+                            # Create input image
+                            img_path = self.create_grid_image(example["input"], label=f"train{example_num}_input_tool")
+                            base64_img = self.encode_image(img_path)
+                            
+                            print(f"  📸 Created training example {example_num} input image")
+                            
+                            # Add function result to conversation history
+                            self.conversation_history.append({
+                                "type": "function_call_output",
+                                "call_id": item.call_id,
+                                "output": json.dumps({
+                                    "image_url": f"data:image/png;base64,{base64_img}",
+                                    "status": "success"
+                                })
+                            })
+                            print(f"  ✅ Training input image added to conversation")
+                        else:
+                            # Invalid example number
+                            self.conversation_history.append({
+                                "type": "function_call_output",
+                                "call_id": item.call_id,
+                                "output": json.dumps({
+                                    "status": "error",
+                                    "error": f"Invalid example number {example_num}. Valid range is 0-{len(task_data['train'])-1}"
+                                })
+                            })
+                            print(f"  ❌ Invalid example number: {example_num}")
+                    
+                    elif item.name == "get_train_output":
+                        # Get training example output image
+                        example_num = args["example_num"]
+                        
+                        if 0 <= example_num < len(task_data["train"]):
+                            example = task_data["train"][example_num]
+                            
+                            # Create output image
+                            img_path = self.create_grid_image(example["output"], label=f"train{example_num}_output_tool")
+                            base64_img = self.encode_image(img_path)
+                            
+                            print(f"  📸 Created training example {example_num} output image")
+                            
+                            # Add function result to conversation history
+                            self.conversation_history.append({
+                                "type": "function_call_output",
+                                "call_id": item.call_id,
+                                "output": json.dumps({
+                                    "image_url": f"data:image/png;base64,{base64_img}",
+                                    "status": "success"
+                                })
+                            })
+                            print(f"  ✅ Training output image added to conversation")
+                        else:
+                            # Invalid example number
+                            self.conversation_history.append({
+                                "type": "function_call_output",
+                                "call_id": item.call_id,
+                                "output": json.dumps({
+                                    "status": "error",
+                                    "error": f"Invalid example number {example_num}. Valid range is 0-{len(task_data['train'])-1}"
+                                })
+                            })
+                            print(f"  ❌ Invalid example number: {example_num}")
+                    
+                    elif item.name == "get_train_input_data":
+                        # Get training example input data as array
+                        example_num = args["example_num"]
+                        
+                        if 0 <= example_num < len(task_data["train"]):
+                            example = task_data["train"][example_num]
+                            
+                            print(f"  📊 Returning training example {example_num} input data")
+                            
+                            # Add function result to conversation history
+                            self.conversation_history.append({
+                                "type": "function_call_output",
+                                "call_id": item.call_id,
+                                "output": json.dumps({
+                                    "grid": example["input"],
+                                    "status": "success"
+                                })
+                            })
+                            print(f"  ✅ Training input data added to conversation")
+                        else:
+                            # Invalid example number
+                            self.conversation_history.append({
+                                "type": "function_call_output",
+                                "call_id": item.call_id,
+                                "output": json.dumps({
+                                    "status": "error",
+                                    "error": f"Invalid example number {example_num}. Valid range is 0-{len(task_data['train'])-1}"
+                                })
+                            })
+                            print(f"  ❌ Invalid example number: {example_num}")
+                    
+                    elif item.name == "get_train_output_data":
+                        # Get training example output data as array
+                        example_num = args["example_num"]
+                        
+                        if 0 <= example_num < len(task_data["train"]):
+                            example = task_data["train"][example_num]
+                            
+                            print(f"  📊 Returning training example {example_num} output data")
+                            
+                            # Add function result to conversation history
+                            self.conversation_history.append({
+                                "type": "function_call_output",
+                                "call_id": item.call_id,
+                                "output": json.dumps({
+                                    "grid": example["output"],
+                                    "status": "success"
+                                })
+                            })
+                            print(f"  ✅ Training output data added to conversation")
+                        else:
+                            # Invalid example number
+                            self.conversation_history.append({
+                                "type": "function_call_output",
+                                "call_id": item.call_id,
+                                "output": json.dumps({
+                                    "status": "error",
+                                    "error": f"Invalid example number {example_num}. Valid range is 0-{len(task_data['train'])-1}"
+                                })
+                            })
+                            print(f"  ❌ Invalid example number: {example_num}")
+                    
+                    elif item.name == "get_test_input":
+                        # Get test input image
+                        test_input = task_data["test"][0]["input"]
+                        
+                        # Create test input image
+                        img_path = self.create_grid_image(test_input, label="test_input_tool")
+                        base64_img = self.encode_image(img_path)
+                        
+                        print(f"  📸 Created test input image")
+                        
+                        # Add function result to conversation history
+                        self.conversation_history.append({
+                            "type": "function_call_output",
+                            "call_id": item.call_id,
+                            "output": json.dumps({
+                                "image_url": f"data:image/png;base64,{base64_img}",
+                                "status": "success"
+                            })
+                        })
+                        print(f"  ✅ Test input image added to conversation")
+                    
+                    elif item.name == "get_test_input_data":
+                        # Get test input data as array
+                        test_input = task_data["test"][0]["input"]
+                        
+                        print(f"  📊 Returning test input data")
+                        
+                        # Add function result to conversation history
+                        self.conversation_history.append({
+                            "type": "function_call_output",
+                            "call_id": item.call_id,
+                            "output": json.dumps({
+                                "grid": test_input,
+                                "status": "success"
+                            })
+                        })
+                        print(f"  ✅ Test input data added to conversation")
+                    
+                    elif item.name == "submit_test_output":
+                        submission_attempts += 1
+
+                        # Submit final test output answer
+                        submitted_grid = args["grid"]
+                        
+                        # Store the submitted answer
+                        self.submitted_answer = submitted_grid
+                        
+                        # Create an image of the submission for logging
+                        submission_img_path = self.create_grid_image(submitted_grid, label=f"submission_attempt_{submission_attempts}")
+                        print(f"  📸 Submission {submission_attempts} saved to: {submission_img_path}")
+                        
+                        # Check against actual test output
+                        actual_output = task_data["test"][0]["output"]
+                        if submitted_grid == actual_output:
+                            print(f"  ✅✅✅ CORRECT! Submitted answer matches test output!")
+                            result_msg = "SUCCESS! Your answer is correct!"
+                        else:
+                            print(f"  ❌ Submitted answer does not match test output")
+                            print(f"  Submitted: {submitted_grid}")
+                            print(f"  Expected:  {actual_output}")
+                            result_msg = "Your answer does not match the expected output. Use the submit_test_output tool to try again. Do not submit the same answer twice. IMPORTANT: submit your second guess with the submit_test_output tool."
+                        
+                        # Add function result to conversation history
+                        self.conversation_history.append({
+                            "type": "function_call_output",
+                            "call_id": item.call_id,
+                            "output": json.dumps({
+                                "status": "success",
+                                "message": result_msg,
+                                "submitted": True
+                            })
+                        })
+
+                        if submission_attempts >= 2 or submitted_grid == actual_output:
+                            # Set flag to break out of main loop
+                            any_tools_used = False  # This will cause the main loop to exit
+                            break  # Break out of the tool processing loop
                     
                     iteration += 1
             
@@ -322,8 +682,8 @@ class ARCVisualSolver:
                     print(f"[START: {self.current_task_name}]")
                     print(f"\nFinal response text: {response.output_text[:500]}..." if len(response.output_text) > 500 else f"\nFinal response text: {response.output_text}")
                     print(f"[END: {self.current_task_name}]")
-                else:
-                    print("🚨🚨🚨 CRITICAL WARNING: No response text available! This will likely cause failures! 🚨🚨🚨")
+                # else:
+                #     print("🚨🚨🚨 CRITICAL WARNING: No response text available! This will likely cause failures! 🚨🚨🚨")
 
                 # Check if this response has function calls
                 response_has_function_calls = False
@@ -351,7 +711,7 @@ class ARCVisualSolver:
             print(f"RESPONSE (Length: {len(response.output_text)} characters):")
             print(response.output_text[:5000] + "..." if len(response.output_text) > 5000 else response.output_text)
         else:
-            print("🚨🚨🚨 CRITICAL WARNING: No response text available! This will likely cause failures! 🚨🚨🚨")
+            print("⚠️ Warning: No response text available.")
         
         print("="*80)
         print(f"[END: {self.current_task_name}]")
@@ -417,76 +777,172 @@ class ARCVisualSolver:
         # Also save test output for logging (but don't send it)
         test_output_img = self.create_grid_image(task['test'][0]['output'], label="test_output")
         print(f"  Test output image saved to: {test_output_img}")
+
+        prompt_0 = """
+Here are example inputs and output for a puzzle that you need to solve. 
+
+The goal is to find what the test's output should be.
+
+Every transformation here is deterministic and reproducible. Do not find patterns that only exist in one input while still capturing all transformations and properties of the board.
+
+Symbols may have semantic significance; properties of the symbols may convey this semantic significance. You need to find what properties carry semantic significance and what properties do not contribute to decision making. 
+
+Compositional reasoning and turn-by-turn application of rules may be important. You may have to apply one transformation to allow the others to make sense. 
+
+Some rules have to be applied based on context. Do not fixate on superficial patterns; find what properties have semantic significance and use those as context. Some attributes or properties may not be related; if they aren't consistent across all inputs, don't focus on them. 
+
+In the test input, the game may be set up in a novel orientation; elements may be rotated or in places they have never appeared before; the color scheme may also be novel. Your job is to develop a set of rules that are generic enough to handle a novel situation that you have no input/output for. 
+
+You can try using a tool to generate an image and analyse that along the way. Try making incremental changes to the board and looking at the results by using the visualization tool. 
+
+Describe the puzzle and what you think the rules are. Describe a high-level theory of what the output should be. Make sure to call out what are important properties of the puzzle and what are *not* important peices (not consistent across training pairs). 
+"""
+
+        content = [{"type": "input_text", "text": prompt_0}]
+        for i, image_path in enumerate(all_images):
+            base64_image = self.encode_image(image_path)
+
+            if not image_descriptions or i >= len(image_descriptions):
+                print("ERROR: image_descriptions must be provided with images")
+
+            content.append({
+                "type": "input_text",
+                "text": f"{image_descriptions[i]}:"
+            })
+
+            content.append({
+                "type": "input_image",
+                "image_url": f"data:image/png;base64,{base64_image}"
+            })
+        
+        self.conversation_history.append({"role": "user", "content": content})
+
+        call_params = {
+            "model": "gpt-5",
+            "reasoning": {
+                "effort": "high"
+                # "max_tokens": 10 * 1000
+            },
+            "input": self.conversation_history,
+            "tools": [VISUALIZATION_TOOL],
+            "tool_choice": "auto"
+        }
+
+        response = self.client_openai.responses.create(**call_params)
+
+        if response.output:
+            print(f"[START: {self.current_task_name}]")
+            print("\n" + "="*80)
+            print("PROMPT 0 OUTPUT: ")
+            
+            # Extract all output text and join into one string
+            all_text_parts = []
+            for idx, item in enumerate(response.output):
+                if item.type == "function_call":
+                    print(f"  Item {idx}: type={item.type}, function={item.name if hasattr(item, 'name') else 'unknown'}")
+                elif item.type == "reasoning":
+                    print(f"  Item {idx}: type={item.type}")
+                    # Log reasoning summary if available
+                    if hasattr(item, 'summary') and item.summary:
+                        for summary_item in item.summary:
+                            if hasattr(summary_item, 'type') and summary_item.type == "summary_text":
+                                if hasattr(summary_item, 'text'):
+                                    reasoning_preview = summary_item.text[:1000] + "..." if len(summary_item.text) > 1000 else summary_item.text
+                                    print(f"    REASONING: {reasoning_preview}")
+                else:
+                    print(f"  Item {idx}: type={item.type}")
+                
+                if item.type == "message":
+                    # Try to extract text from message content
+                    if hasattr(item, 'content'):
+                        for content_item in item.content:
+                            if hasattr(content_item, 'type'):
+                                print(f"    Content type: {content_item.type}")
+                                if content_item.type == "output_text" and hasattr(content_item, 'text'):
+                                    all_text_parts.append(content_item.text)
+                                    preview = content_item.text[:5000] + "..." if len(content_item.text) > 5000 else content_item.text
+                                    print(f"RESPONSE (Length: {len(content_item.text)} characters):")
+                                    print(f"{preview}")
+            
+            print("="*80)
+            print(f"[END: {self.current_task_name}]")
+
+            # Join all text parts and create a clean conversation start
+            if all_text_parts:
+                combined_text = "\n\n".join(all_text_parts)
+                self.conversation_history = [{"role": "assistant", "content": [{"type": "output_text", "text": combined_text}]}]
+                print(f"  ✅ Starting new conversation with combined assistant text ({len(combined_text)} chars)")
+            else:
+                print("  ⚠️ No output text found in response")
+                # self.conversation_history = []
+        else:
+            print("🚨🚨🚨 CRITICAL WARNING: no output found for prompt 0.")
+            # self.conversation_history = []
         
         prompt_1 = f"""
-You are looking at a visual puzzle. I'll show you examples of inputs and their corresponding outputs.
+You are looking at a visual puzzle. You can use tools to see examples of inputs and their corresponding outputs either as images or numerical arrays. There are {len(task['train'])} training pairs and 1 test input.
 
-Remember every transformation here is deterministic and reproducible. Do not find patterns that only exist in one input while still capturing all transformations and properties of the board.
+If you think you know what the output should be submit your guess with submit_test_output. You will get two attempts. 
 
-Symbols may have semantic significance; properties of the symbols may convey this semantic significance. You need to find what properties carry semantic significance and what properties do not contribute to decision making. 
+Tools are your biggest asset. Generally, you are able to find the correct solution more often when you leverage tools heavily. Continue iterating until the visualization tool generates the correct outputs in all training examples.
 
-Some rules have to be applied based on context. Do not fixate on superficial patterns; find what properties have semantic significance and use those as context. Some attributes or properties may not be related; if they aren't consistent across all inputs, don't focus on them. 
+Regardless of how much iteration you do, *always* run your final prediction through the 'visualize_grid' tool and make sure it matches your expectations before submitting it. If the output does not match your expectation, continue refining your approach.
 
-See if you can make sense of the puzzle, then I will provide the actual data.
-
+IMPORTANT: you *must* call submit_test_output exactly once (when you are done). 
 """
 
+# 
 
-        prompt_2 = """
-Now I'll show you the data that generated these images. Refine the patterns you observed earlier to help you solve the test problem.
+# Otherwise iterate and refine the approach.
 
-Remember every transformation here is deterministic and reproducible. Do not find patterns that only exist in one input while still capturing all transformations and properties of the board.
+# Every transformation here is deterministic and reproducible. Do not find patterns that only exist in one input while still capturing all transformations and properties of the board.
 
-Symbols may have semantic significance; properties of the symbols may convey this semantic significance. You need to find what properties carry semantic significance and what properties do not contribute to decision making. 
+# Symbols may have semantic significance; properties of the symbols may convey this semantic significance. You need to find what properties carry semantic significance and what properties do not contribute to decision making. 
 
-Compositional reasoning and turn-by-turn application of rules may be important. You may have to apply one transformation to allow the others to make sense. You can try using a tool to generate an image of the data and analyse that along the way. Try making incremental changes to the board and looking at the results by using the visualization tool. 
+# Compositional reasoning and turn-by-turn application of rules may be important. You may have to apply one transformation to allow the others to make sense. 
 
-Some rules have to be applied based on context. Do not fixate on superficial patterns; find what properties have semantic significance and use those as context. Some attributes or properties may not be related; if they aren't consistent across all inputs, don't focus on them. 
+# Some rules have to be applied based on context. Do not fixate on superficial patterns; find what properties have semantic significance and use those as context. Some attributes or properties may not be related; if they aren't consistent across all inputs, don't focus on them. 
 
-In the test input, the game may be set up in a novel orientation; elements may be rotated or in places they have never appeared before; the color scheme may also be novel. Your job is to apply the rules you've developed to a novel situation that you have no input/output for. 
+# In the test input, the game may be set up in a novel orientation; elements may be rotated or in places they have never appeared before; the color scheme may also be novel. Your job is to apply the rules you've developed to a novel situation that you have no input/output for. 
 
-The tools here are going to be your biggest asset. In the past, you were able to find the correct solution more often when you leveraged the tools heavily. Continue iterating until the tool generates the correct outputs in all training examples.
+# The tools here are going to be your biggest asset. In the past, you were able to find the correct solution more often when you leveraged the tools heavily. Continue iterating until the tool generates the correct outputs in all training examples.
 
-Based on the consistent pattern you've identified from all the training examples, generate a possible output grid. 
+# Based on the consistent pattern you've identified from all the training examples, generate a possible output grid. 
 
-You can use a tool to generate an image of the data and analyse that along the way. Try making incremental changes to the board and looking at the results by using the visualization tool. 
+# You can try using a tool to generate an image of the data and analyse that along the way. Try making incremental changes to the board and looking at the results by using the visualization tool. 
 
-Once you feel that you've identified the rules, STOP. Further iteration after identifying a good set of rules may lead to confusion. Once you have a solution that you are confident in, output the result.
+# Once you feel that you've identified the rules, STOP. Further iteration after identifying a good set of rules may lead to confusion. Once you think you've determined the rules, use those rules to generate an output for the test input and submit it with the 'submit_test_output' tool.
 
-IMPORTANT: Regardless of how much iteration you do, *always* run your final prediction through the 'visualize_grid' tool and make sure it matches your expectations before returning an output. If the output does not match your expectation, continue refining your approach.
 
-Produce an explanation of what the output should look like and observations of the output that you generated with 'visualize_grid'. Explain why parts of the generated image make sense or don't.
-"""
+        # for i, example in enumerate(task['train']):
+        #     prompt_2 += f"Training Example {i+1} Input: \n"
+        #     prompt_2 += self.format_grid(task['train'][i]['input']) + "\n\n"
 
-        prompt_3 = """
-Think about whether your last guess makes sense and refine your approach if necessary. You can continue iterating with tools if you think that would be helpful.
+        #     prompt_2 += f"Training Example {i+1} Output: \n"
+        #     prompt_2 += self.format_grid(task['train'][i]['output']) + "\n\n"
 
-Generate your final guess for the output of the test puzzle.
+        # prompt_2 += f"Test input: \n"
+        # prompt_2 += self.format_grid(task['test'][0]['input'])
 
-IMPORTANT: Provide your answer as a grid in the exact same format, with square brackets and comma-separated values. Make sure the dimensions are correct.
-"""
+        # response_1 = self.call_ai_with_image(prompt_1, all_images, image_descriptions, task)
+        # num_phases += 1
 
-        for i, example in enumerate(task['train']):
-            prompt_2 += f"Training Example {i+1} Input: \n"
-            prompt_2 += self.format_grid(task['train'][i]['input']) + "\n\n"
+        # response_2 = self.call_ai_with_image(prompt_2, [], [], task)
+        # num_phases += 1
 
-            prompt_2 += f"Training Example {i+1} Output: \n"
-            prompt_2 += self.format_grid(task['train'][i]['output']) + "\n\n"
-
-        prompt_2 += f"Test input: \n"
-        prompt_2 += self.format_grid(task['test'][0]['input'])
-
-        response_1 = self.call_ai_with_image(prompt_1, all_images, image_descriptions)
-        num_phases += 1
-
-        response_2 = self.call_ai_with_image(prompt_2, [], [])
-        num_phases += 1
-
-        response_3 = self.call_ai_with_image(prompt_3, [], [])
+        # Reset submitted answer
+        self.submitted_answer = None
+        
+        response_3 = self.call_ai_with_image(prompt_1, [], [], task)
         num_phases += 1
         
-        # Parse the predicted output
-        predicted_output = self.parse_grid_from_response(response_3)
+        # Use submitted answer if available, otherwise parse from response
+        if self.submitted_answer is not None:
+            predicted_output = self.submitted_answer
+            print("\n📤 Using submitted answer from submit_test_output tool")
+        else:
+            # Parse the predicted output from response text
+            predicted_output = self.parse_grid_from_response(response_3)
         
         # Check if we got a valid prediction
         if not predicted_output:
@@ -530,10 +986,7 @@ def main():
         print(f"Solving complete!")
         print(f"Phases used: {num_phases}")
         print(f"Result ({solver.current_task_name}): {'SUCCESS ✅' if success else 'FAILED ❌'}")
-        if prediction:
-            # Save prediction as image using our method
-            pred_path = solver.create_grid_image(prediction, label="final_prediction")
-            print(f"Prediction saved to: {pred_path}")
+        # Image is now created in submit_test_output handler
         print(f"{'='*80}")
         
         sys.exit(0 if success else 1)
