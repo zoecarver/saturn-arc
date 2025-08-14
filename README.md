@@ -288,6 +288,8 @@ db695cfb             ❌ FAIL     1132.00    7 (added post-run)
 
 _This project desperately needs code cleanup and improved logging._
 
+I have other branches (listed below) that address some of the really low hanging fruit: label images more clearly, provide more tools, clean up prompts, allow second attempt. But for some baffling reason it performs much worse (even on specific problems), so I rolled back to this messier approach.
+
 **Branches:**
 * `claude-tool`: testing claude with heavy tool use. Results: totally unable to solve almost any problems, even when given specific instructions on how to find solution
 * `more-tool-use-checkpoint-aug13`, `tool-use`: investigations for heavier tool use and better prompt iterating (fewer prompts with more thinking, more specific instructions, more tools, etc.)
