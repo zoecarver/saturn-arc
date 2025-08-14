@@ -1,30 +1,46 @@
 #!/usr/bin/env python3
 """
 Claude Tool-Heavy Numerical Solver for ARC-AGI
-Uses structured tool orchestration without visual components
+Uses structured tool orchestration with streaming API
 Focus on simplicity and clean logic
 """
 
 import json
 import os
 import sys
-from typing import Dict, List, Any, Optional, Tuple
+from typing import Dict, List, Any, Optional, Tuple, Generator
 import anthropic
+from anthropic.types import ToolUseBlock
+from PIL import Image
+import numpy as np
 
 # Global configuration for API calls
 API_CONFIG = {
     "model": "claude-opus-4-1-20250805",
     "max_tokens": 32000,
-    "temperature": 0.2,  # Lower temperature for more consistent outputs
     "thinking": {
         "type": "enabled",
         "budget_tokens": 16000  # Allocate tokens for thinking (min 1024)
     }
 }
 
+# ARC color palette (0-9 mapped to colors)
+ARC_COLORS = {
+    0: (0, 0, 0),        # Black (background)
+    1: (0, 116, 217),    # Blue
+    2: (255, 65, 54),    # Red
+    3: (46, 204, 64),    # Green
+    4: (255, 220, 0),    # Yellow
+    5: (255, 133, 27),   # Orange
+    6: (240, 18, 190),   # Magenta/Pink
+    7: (127, 219, 255),  # Light Blue/Cyan
+    8: (135, 12, 37),    # Dark Red/Maroon
+    9: (149, 117, 205),  # Purple
+}
+
 
 class ClaudeToolSolver:
-    """Solver using Claude API with heavy tool usage and no visual components"""
+    """Solver using Claude API with heavy tool usage and streaming"""
     
     def __init__(self):
         """Initialize the Claude solver with API credentials"""
@@ -35,6 +51,7 @@ class ClaudeToolSolver:
         self.client = anthropic.Anthropic(api_key=self.api_key)
         self.current_task_name = None
         self.submitted_answer = None
+        self.submission_count = 0  # Track submission attempts
         self.max_tool_calls = 20
         self.max_iterations = 2
         self.messages = []  # Track messages across phases
@@ -47,6 +64,80 @@ class ClaudeToolSolver:
     def format_grid(self, grid: List[List[int]]) -> str:
         """Format a grid for display"""
         return '\n'.join(['[' + ', '.join(str(cell) for cell in row) + ']' for row in grid])
+    
+    def grid_to_image(self, grid: List[List[int]], cell_size: int = 30) -> Image.Image:
+        """
+        Convert a grid to a PNG image
+        
+        Args:
+            grid: 2D list of integers (0-9) representing the grid
+            cell_size: Size of each cell in pixels
+        
+        Returns:
+            PIL Image object
+        """
+        height = len(grid)
+        width = len(grid[0])
+        
+        # Create numpy array for the image
+        img_array = np.zeros((height * cell_size, width * cell_size, 3), dtype=np.uint8)
+        
+        # Fill in the colors
+        for i, row in enumerate(grid):
+            for j, value in enumerate(row):
+                color = ARC_COLORS.get(value, (128, 128, 128))
+                img_array[i*cell_size:(i+1)*cell_size, j*cell_size:(j+1)*cell_size] = color
+        
+        return Image.fromarray(img_array)
+    
+    def save_task_visualizations(self, task_data: Dict[str, Any]) -> None:
+        """
+        Save visualizations of task data for debugging
+        
+        Args:
+            task_data: The task data containing train and test examples
+        """
+        # Create debug directory if it doesn't exist
+        debug_dir = f"debug_{self.current_task_name}"
+        os.makedirs(debug_dir, exist_ok=True)
+        
+        # Save training examples
+        for i, example in enumerate(task_data["train"]):
+            # Save input
+            img = self.grid_to_image(example["input"])
+            img.save(os.path.join(debug_dir, f"train_{i}_input.png"))
+            
+            # Save output
+            img = self.grid_to_image(example["output"])
+            img.save(os.path.join(debug_dir, f"train_{i}_output.png"))
+        
+        # Save test input
+        img = self.grid_to_image(task_data["test"][0]["input"])
+        img.save(os.path.join(debug_dir, f"test_0_input.png"))
+        
+        # Save test output (ground truth) if available
+        if "output" in task_data["test"][0] and task_data["test"][0]["output"]:
+            img = self.grid_to_image(task_data["test"][0]["output"])
+            img.save(os.path.join(debug_dir, f"test_0_output_truth.png"))
+        
+        print(f"📸 Task visualizations saved to {debug_dir}/")
+    
+    def save_prediction_visualization(self, prediction: List[List[int]], label: str = "prediction") -> None:
+        """
+        Save prediction visualization for debugging
+        
+        Args:
+            prediction: The predicted grid
+            label: Label or identifier for this prediction (e.g., "attempt_1", "final", etc.)
+        """
+        debug_dir = f"debug_{self.current_task_name}"
+        os.makedirs(debug_dir, exist_ok=True)
+        
+        img = self.grid_to_image(prediction)
+        filename = f"{label}.png"
+        img.save(os.path.join(debug_dir, filename))
+        
+        print(f"📸 Prediction saved to {debug_dir}/{filename}")
     
     def diff_grids(self, grid1: List[List[int]], grid2: List[List[int]]) -> Dict[str, Any]:
         """Compare two grids and return differences"""
@@ -203,6 +294,10 @@ class ClaudeToolSolver:
         
         elif tool_name == "submit_test_output":
             self.submitted_answer = tool_input["grid"]
+            self.submission_count += 1
+            
+            # Save this prediction attempt for debugging
+            self.save_prediction_visualization(self.submitted_answer, f"prediction_attempt_{self.submission_count}")
             
             # Check against actual test output
             actual_output = task_data["test"][0]["output"]
@@ -232,41 +327,136 @@ class ClaudeToolSolver:
             return "LOW"
         return "UNKNOWN"
     
-    def process_and_log_response(self, response, round_num: int = 0) -> None:
-        """Process response content and log thinking and text"""
+    def log_thinking(self, thinking_text: str) -> None:
+        """Log thinking content in a clean format"""
+        print(f"🧠 THINKING:")
+        print("-" * 40)
+        if len(thinking_text) > 5000:
+            print(thinking_text[:5000] + "...[truncated]")
+        else:
+            print(thinking_text)
+        print("-" * 40)
+    
+    def log_text(self, text: str) -> None:
+        """Log text response in a clean format"""
+        print(f"💬 RESPONSE TEXT:")
+        print("-" * 40)
+        if len(text) > 5000:
+            print(text[:5000] + "...[truncated]")
+        else:
+            print(text)
+        print("-" * 40)
+    
+    def log_tool_call(self, tool_name: str, tool_call_count: int) -> None:
+        """Log tool call information"""
+        print(f"🔧 Tool call {tool_call_count}: {tool_name}")
+    
+    def create_stream(self, messages: List[Dict], tools: List[Dict]) -> Any:
+        """Create a new stream with the given messages and tools"""
+        return self.client.messages.stream(
+            **API_CONFIG,
+            messages=messages,
+            tools=tools,
+            tool_choice={"type": "auto"}
+        )
+    
+    def process_tool_use_block(self, tool_block: ToolUseBlock, task_data: Dict[str, Any]) -> Tuple[Dict[str, Any], bool]:
+        """Process a single tool use block and return result and success status"""
+        result = self.handle_tool_call(tool_block.name, tool_block.input, task_data)
+        is_correct = tool_block.name == "submit_test_output" and result.get("correct", False)
+        
+        if is_correct:
+            print("✅ Correct answer submitted!")
+        
+        return {
+            "tool_use_id": tool_block.id,
+            "content": json.dumps(result)
+        }, is_correct
+    
+    def stream_conversation_round(self, stream: Any, task_data: Dict[str, Any], round_num: int, tool_call_count: int) -> Tuple[List[Dict], bool, int, Any]:
+        """
+        Stream and process one round of conversation
+        Returns: (tool_results, solved, updated_tool_count, response_message)
+        """
         print(f"\n--- Round {round_num} Response ---")
         
-        # Process each content block
-        for content in response.content:
-            if content.type == "thinking":
-                # Log thinking content
-                print(f"🧠 THINKING:")
-                print("-" * 40)
-                # Truncate if too long, but show enough to be useful
-                thinking_text = content.text if hasattr(content, 'text') else str(content)
-                if len(thinking_text) > 5000:
-                    print(thinking_text[:5000] + "...[truncated]")
-                else:
-                    print(thinking_text)
-                print("-" * 40)
+        tool_results = []
+        response_message = None
+        solved = False
+        submission_made = False
+        thinking_text = ""  # Accumulate thinking text
+        
+        with stream as stream:
+            # Collect the response content
+            message_content = []
             
-            elif content.type == "text":
-                # Log regular text response
-                print(f"💬 RESPONSE TEXT:")
-                print("-" * 40)
-                text = content.text if hasattr(content, 'text') else str(content)
-                if len(text) > 5000:
-                    print(text[:5000] + "...[truncated]")
-                else:
-                    print(text)
-                print("-" * 40)
+            for event in stream:
+                # Handle different event types
+                if event.type == "content_block_start":
+                    if event.content_block.type == "thinking":
+                        # Start of thinking block
+                        thinking_text = ""  # Reset for new thinking block
+                    elif event.content_block.type == "text":
+                        # Start of text block
+                        pass
+                    elif event.content_block.type == "tool_use":
+                        # Start of tool use
+                        pass
+                
+                elif event.type == "content_block_delta":
+                    # Handle delta updates
+                    if hasattr(event.delta, 'type'):
+                        if event.delta.type == "thinking_text_delta":
+                            # Accumulate thinking text
+                            thinking_text += event.delta.text
+                        elif event.delta.type == "text_delta":
+                            # Stream text output
+                            print(event.delta.text, end="", flush=True)
+                
+                elif event.type == "content_block_stop":
+                    # Block completed
+                    if hasattr(event, 'content_block'):
+                        message_content.append(event.content_block)
+                        
+                        # Process completed blocks
+                        if event.content_block.type == "thinking":
+                            # Log the accumulated thinking text
+                            self.log_thinking(thinking_text)
+                        elif event.content_block.type == "text":
+                            # Text was already streamed
+                            pass
+                        elif event.content_block.type == "tool_use":
+                            tool_call_count += 1
+                            self.log_tool_call(event.content_block.name, tool_call_count)
+                            
+                            result, is_correct = self.process_tool_use_block(event.content_block, task_data)
+                            tool_results.append(result)
+                            
+                            if is_correct:
+                                solved = True
             
-            elif content.type == "tool_use":
-                # Tool usage will be logged separately
-                pass
+            # Get the final message
+            response_message = stream.get_final_message()
+        
+        return tool_results, solved, tool_call_count, response_message
+    
+    def update_messages_with_response(self, messages: List[Dict], response: Any, tool_results: List[Dict]) -> None:
+        """Update messages list with assistant response and tool results"""
+        # Add assistant message
+        messages.append({
+            "role": "assistant",
+            "content": response.content
+        })
+        
+        # Add tool results if any
+        if tool_results:
+            messages.append({
+                "role": "user",
+                "content": [{"type": "tool_result", **tr} for tr in tool_results]
+            })
     
     def solve_with_structured_approach(self, task_data: Dict[str, Any]) -> Tuple[bool, Optional[List[List[int]]]]:
-        """Solve using structured sequential tool usage"""
+        """Solve using structured sequential tool usage with streaming"""
         
         num_examples = len(task_data["train"])
         
@@ -305,6 +495,8 @@ PHASE 4: Test Application
 PHASE 5: Submission
 11. Use submit_test_output with your answer
 
+To solve this puzzle, identify deterministic and reproducible transformation rules by focusing on the semantic significance of symbols and their properties rather than superficial patterns. Apply compositional reasoning where rules must be used contextually and sometimes sequentially, developing generic transformation rules that can handle novel orientations, positions, and color schemes while capturing all essential properties of the board state.
+
 IMPORTANT: You MUST submit an answer using the submit_test_output tool.
 The answer must be in the correct format - a 2D array like:
 [[0,1,2],[3,4,5],[6,7,8]]
@@ -321,80 +513,40 @@ Number of training examples: {num_examples}"""
         else:
             self.messages.append({"role": "user", "content": prompt})
         
-        # Make API call with tools
-        response = self.client.messages.create(
-            **API_CONFIG,
-            messages=self.messages,
-            tools=self.create_tools(),
-            tool_choice={"type": "auto"}
-        )
-        
-        # Log initial response
-        self.process_and_log_response(response, round_num=0)
-        
-        # Process tool calls iteratively
+        # Process conversation rounds
         tool_call_count = 0
         max_rounds = 50
         
         for round_num in range(max_rounds):
-            # Check if response has tool calls
-            if not response.stop_reason == "tool_use":
+            # Create stream for this round
+            stream = self.create_stream(self.messages, self.create_tools())
+            
+            # Process the stream
+            tool_results, solved, tool_call_count, response = self.stream_conversation_round(
+                stream, task_data, round_num, tool_call_count
+            )
+            
+            if solved:
+                return True, self.submitted_answer
+            
+            # Check if we should continue
+            if response.stop_reason != "tool_use" or not tool_results:
                 break
             
-            # Process tool calls
-            tool_results = []
-            for content in response.content:
-                if content.type == "tool_use":
-                    tool_call_count += 1
-                    print(f"🔧 Tool call {tool_call_count}: {content.name}")
-                    
-                    result = self.handle_tool_call(content.name, content.input, task_data)
-                    tool_results.append({
-                        "tool_use_id": content.id,
-                        "content": json.dumps(result)
-                    })
-                    
-                    # Check if submission was made
-                    if content.name == "submit_test_output" and result.get("correct"):
-                        print("✅ Correct answer submitted!")
-                        return True, self.submitted_answer
+            # Update messages for next round
+            self.update_messages_with_response(self.messages, response, tool_results)
             
-            if not tool_results:
-                break
-            
-            # Add assistant message and tool results to conversation
-            self.messages.append({
-                "role": "assistant",
-                "content": response.content
-            })
-            self.messages.append({
-                "role": "user",
-                "content": [{"type": "tool_result", "tool_use_id": tr["tool_use_id"], "content": tr["content"]} 
-                          for tr in tool_results]
-            })
-            
-            # Check if we've exceeded tool call budget
+            # Check tool call budget
             if tool_call_count >= self.max_tool_calls:
                 self.messages.append({
                     "role": "user",
                     "content": "You've reached the tool call limit. Please submit your final answer now."
                 })
-            
-            # Continue conversation
-            response = self.client.messages.create(
-                **API_CONFIG,
-                messages=self.messages,
-                tools=self.create_tools(),
-                tool_choice={"type": "auto"}
-            )
-            
-            # Log the new response
-            self.process_and_log_response(response, round_num=round_num + 1)
         
         return False, self.submitted_answer
     
     def solve_with_confidence_gates(self, task_data: Dict[str, Any]) -> Tuple[bool, Optional[List[List[int]]]]:
-        """Solve with confidence validation gates"""
+        """Solve with confidence validation gates using streaming"""
         
         # First attempt with structured approach
         success, answer = self.solve_with_structured_approach(task_data)
@@ -404,6 +556,8 @@ Number of training examples: {num_examples}"""
         
         # If first attempt failed, try with validation emphasis
         validation_prompt = f"""Your previous attempt was incorrect. Let's be more careful.
+
+To solve this puzzle, identify deterministic and reproducible transformation rules by focusing on the semantic significance of symbols and their properties rather than superficial patterns. Apply compositional reasoning where rules must be used contextually and sometimes sequentially, developing generic transformation rules that can handle novel orientations, positions, and color schemes while capturing all essential properties of the board state.
 
 Before submitting, validate your answer:
 1. DIMENSIONS: Does output size match typical outputs from training?
@@ -424,55 +578,28 @@ DO NOT just describe what the answer should be - actually call submit_test_outpu
         # Continue with existing messages to maintain context
         self.messages.append({"role": "user", "content": validation_prompt})
         
-        response = self.client.messages.create(
-            **API_CONFIG,
-            messages=self.messages,
-            tools=self.create_tools(),
-            tool_choice={"type": "auto"}
-        )
-        
-        # Log initial response for second attempt
         print("\n=== SECOND ATTEMPT (After Validation Prompt) ===")
-        self.process_and_log_response(response, round_num=0)
         
         # Process second attempt
         tool_call_count = 0
         for round_num in range(25):
-            if not response.stop_reason == "tool_use":
-                break
+            # Create stream for this round
+            stream = self.create_stream(self.messages, self.create_tools())
             
-            tool_results = []
-            for content in response.content:
-                if content.type == "tool_use":
-                    tool_call_count += 1
-                    result = self.handle_tool_call(content.name, content.input, task_data)
-                    tool_results.append({
-                        "tool_use_id": content.id,
-                        "content": json.dumps(result)
-                    })
-                    
-                    if content.name == "submit_test_output" and result.get("correct"):
-                        return True, self.submitted_answer
-            
-            if not tool_results:
-                break
-            
-            self.messages.append({"role": "assistant", "content": response.content})
-            self.messages.append({
-                "role": "user",
-                "content": [{"type": "tool_result", "tool_use_id": tr["tool_use_id"], "content": tr["content"]} 
-                          for tr in tool_results]
-            })
-            
-            response = self.client.messages.create(
-                **API_CONFIG,
-                messages=self.messages,
-                tools=self.create_tools(),
-                tool_choice={"type": "auto"}
+            # Process the stream
+            tool_results, solved, tool_call_count, response = self.stream_conversation_round(
+                stream, task_data, round_num, tool_call_count
             )
             
-            # Log the new response
-            self.process_and_log_response(response, round_num=round_num + 1)
+            if solved:
+                return True, self.submitted_answer
+            
+            # Check if we should continue
+            if response.stop_reason != "tool_use" or not tool_results:
+                break
+            
+            # Update messages for next round
+            self.update_messages_with_response(self.messages, response, tool_results)
         
         return False, self.submitted_answer
     
@@ -486,6 +613,9 @@ DO NOT just describe what the answer should be - actually call submit_test_outpu
         print(f"\nLoaded task: {task_file}")
         print(f"Training examples: {len(task['train'])}, Test examples: {len(task['test'])}")
         
+        # Save initial task visualizations for debugging
+        self.save_task_visualizations(task)
+        
         # Reset state
         self.submitted_answer = None
         self.messages = []  # Reset messages for new task
@@ -493,10 +623,15 @@ DO NOT just describe what the answer should be - actually call submit_test_outpu
         # Try solving with confidence gates
         success, prediction = self.solve_with_confidence_gates(task)
         
+        # Save final prediction if we have one
+        if prediction:
+            self.save_prediction_visualization(prediction, "prediction_final")
+        
         # Report results
         print(f"\n{'='*80}")
         print(f"Task: {self.current_task_name}")
         print(f"Result: {'SUCCESS ✅' if success else 'FAILED ❌'}")
+        print(f"Submission attempts: {self.submission_count}")
         
         if prediction:
             print(f"Prediction shape: {len(prediction)}x{len(prediction[0]) if prediction else 0}")
