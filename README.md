@@ -116,6 +116,8 @@ So, informally: the algorithm scans the `5` area with a local window (effectivel
 
 ### Results 
 
+Statistically 90% confident that the true success rate of the full 120-test evaluation suite falls between 11.2% and 32.8%. 
+
 ```
 ================================================================================
 BATCH RESULTS SUMMARY (eval)
@@ -248,6 +250,12 @@ Both failed with different execution times
 ```
 
 **Baseline** naive prompting (no tools or visuals):
+
+* Clear improvement over naive prompting with GPT5.
+* GPT5 failed 50% of problems solved by the visual approach (of 12 successful problems, failed 6)
+* GPT5 is officially measured at 10% success rate; this puts it at 11% success rate (similar scores increase confidence of results).
+* Analysis of problems that failed show greater understanding and more correct outputs.
+
 ```
 ================================================================================
 BATCH RESULTS SUMMARY (naive prompting)
@@ -274,13 +282,6 @@ b0039139             ✅ PASS     886.55     6
 3e6067c3             ❌ FAIL     1426.99    5     
 db695cfb             ❌ FAIL     1132.00    7 (added post-run)    
 ```
-
-Statistically 90% confident that the true success rate of the full 120-test evaluation suite falls between 11.2% and 32.8%. 
-
-Clear improvement over naive prompting with GPT5:
-* GPT5 failed 50% of problems solved by the visual approach (of 12 successful problems, failed 6)
-    * GPT5 is officially measured at 10% success rate; this puts it at 11% success rate (which seems close enough).
-* Analysis of problems that failed show greater understanding and more correct outputs.
 
 
 ### Project
