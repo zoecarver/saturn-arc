@@ -143,7 +143,7 @@ fc7cae8d ❌ FAIL 1189.15 5
 89565ca0 ❌ FAIL 1257.71 5
 ```
 
-Reproducability (duplicates across tests):
+**Reproducability** (duplicates across tests):
 
 No mismatches between failed/successful runs.
 
@@ -167,3 +167,63 @@ Instance 2: ❌ FAIL - 1,940.38s - 5 phases
 Both failed with different execution times
 ```
 
+**Baseline** naive prompting (no tools or visuals):
+```
+================================================================================
+BATCH RESULTS SUMMARY (naive prompting)
+================================================================================
+Total tasks: 11
+Successful: 6 (50%)
+Failed: 6 (50%)
+Total time: 8821.06s
+Total phases: 55
+
+Detailed Results:
+Task                 Result     Time (s)   Phases    
+--------------------------------------------------
+7b5033c1             ❌ FAIL     248.55     4         
+1ae2feb7             ✅ PASS     362.27     5         
+1818057f             ✅ PASS     492.73     5         
+2ba387bc             ✅ PASS     303.47     6         
+bf45cf4b             ✅ PASS     318.47     5         
+b0039139             ✅ PASS     886.55     6         
+38007db0             ✅ PASS     328.00     4         
+58490d8a             ❌ FAIL     1048.49    5         
+136b0064             ❌ FAIL     1767.34    5         
+7c66cb00             ❌ FAIL     1638.20    5         
+3e6067c3             ❌ FAIL     1426.99    5     
+db695cfb             ❌ FAIL     1132.00    7 (added post-run)    
+```
+
+Statistically 90% confident that the true success rate of the full 120-test evaluation suite falls between 11.2% and 32.8%. 
+
+Clear improvement over naive prompting with GPT5:
+* GPT5 failed 50% of problems solved by the visual approach (of 12 successful problems, failed 6)
+    * GPT5 is officially measured at 10% success rate; this puts it at 11% success rate (which seems close enough).
+* Analysis of problems that failed show greater understanding and more correct outputs.
+
+
+### Random
+
+_This project desperately needs code cleanup and improved logging._
+
+**Branches:**
+* `claude-tool`: testing claude with heavy tool use. Results: totally unable to solve almost any problems, even when given specific instructions on how to find solution
+* `more-tool-use-checkpoint-aug13`, `tool-use`: investigations for heavier tool use and better prompt iterating (fewer prompts with more thinking, more specific instructions, more tools, etc.)
+* `naive-prompting`: baseline for gpt5 without visualization or tools.
+
+### Thoughts and observations 
+
+Future investigation:
+* Solving multiple tests if they exist 
+* Two attempts to solve
+* Improved prompting (specific instructions, more structured flow)
+* Natural language DSL generation (ask model to output functions like "find key", "paint boxes X color", etc.)
+
+Interesting takeaways:
+* More tools are not beneficial (visualization tool was beneficial but any other tools were not, likely overwhelmed the model) 
+* Specific prompting phases help (most successful when gradually introducing new training sets with new prompts) 
+
+Long form thoughts:
+
+_coming soon..._
