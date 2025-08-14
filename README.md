@@ -118,7 +118,7 @@ So, informally: the algorithm scans the `5` area with a local window (effectivel
 
 ```
 ================================================================================
-BATCH RESULTS SUMMARY
+BATCH RESULTS SUMMARY (eval)
 ================================================================================
 Total tasks: 36
 Successful: 8 (22.2%)
