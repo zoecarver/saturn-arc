@@ -106,7 +106,7 @@ class ARCVisualSolver:
         }
         
         # Keep calling the API while tool calls are being made
-        max_iterations = 10
+        max_iterations = 20
         iteration = 0
         final_message = None
         

@@ -2,11 +2,11 @@ I built a Python solver with Claude 🤖 over the weekend to test an idea I had�
 
 The technical implementation uses GPT-5-thinking model, configured with high reasoning effort and function calling capabilities. The solver provides a visualization tool that the model can invoke to generate intermediate grid representations during its reasoning process, allowing for iterative refinement of hypotheses. In successful runs, GPT-5 utilized the tool more than usual, getting a visual representation of a few different approaches. This approach aligns with François Chollet's emphasis on the importance of visual reasoning and compositional generalization—rather than relying purely on pattern memorization, the visual format may help the model identify transformation rules that are more apparent through visual inspection than numerical analysis, potentially engaging different reasoning pathways that are less dependent on training data contamination.
 
-I achieved a 40% score on ARC-AGI-2's evaluation dataset in initial testing of only 10 sample problems, which needs more investigation but represents a significant improvement over the current AI state-of-the-art of 15.9%. Each problem cost roughly $0.90 in tokens to solve. The visual approach may be tapping into the importance of perceptual grounding in abstract reasoning—by presenting puzzles as images rather than symbolic representations, the model might be engaging different cognitive pathways that are less dependent on memorized patterns and more focused on genuine visual pattern recognition. The fact that extensive exploration is needed suggests the model is doing sophisticated pattern matching, but the visual format may help distinguish between superficial statistical correlations and meaningful geometric transformations. Testing on guaranteed unseen data is needed for legitimate validation. Even if the 40% score still reflects some degree of training data influence (or more likely isn't born out in further testing to such a degree), the methodology demonstrates that visual reasoning approaches can substantially improve AI performance on abstract reasoning tasks—notably, naive prompting without visuals failed on problems where the visual solver succeeded, suggesting the visual format itself may be key to accessing latent reasoning capabilities.
+I achieved a 22% score on ARC-AGI-2's evaluation dataset in initial testing of 40 sample problems, which needs more investigation but represents a significant improvement over the current AI state-of-the-art of 15.9%. Each problem cost roughly $0.90 in tokens to solve. The visual approach may be tapping into the importance of perceptual grounding in abstract reasoning—by presenting puzzles as images rather than symbolic representations, the model might be engaging different cognitive pathways that are less dependent on memorized patterns and more focused on genuine visual pattern recognition. The fact that extensive exploration is needed suggests the model is doing sophisticated pattern matching, but the visual format may help distinguish between superficial statistical correlations and meaningful geometric transformations. Testing on guaranteed unseen data is needed for legitimate validation. Even if the 22% score still reflects some degree of training data influence (or more likely isn't born out in further testing to such a degree), the methodology demonstrates that visual reasoning approaches can substantially improve AI performance on abstract reasoning tasks—notably, naive prompting without visuals failed on problems where the visual solver succeeded, suggesting the visual format itself may be key to accessing latent reasoning capabilities.
 
 The detailed analysis of GPT-5's problem-solving patterns reveals genuinely sophisticated behavior that goes beyond simple pattern matching. The model demonstrates systematic hypothesis formation, developing explicit testable rules after examining each training example, and shows progressive refinement when predictions fail—genuinely revising its understanding rather than making superficial adjustments. Perhaps most remarkably, GPT-5 actively uses the visualization tool to test hypotheses, showing exploratory behavior, and frequently assigns meaningful semantic labels to patterns like "onion layers," "rooms and corridors," or "anchor points," suggesting it's building abstract representations rather than just processing pixels. The model consistently acknowledges ambiguity explicitly, emphasizes finding rules that work across ALL examples (showing understanding of determinism requirements), and demonstrates self-correction capabilities by identifying specific aspects of failed rules rather than starting over.
 
-Success patterns emerge from breaking problems into sub-components, invariant detection, and multi-level pattern recognition, while failures typically involve over-specification, ambiguous ordering rules, and edge case handling. The visual approach appears to activate different reasoning pathways through Gestalt principles, direct spatial reasoning engagement, and immediate pattern salience that makes visual patterns like hollow squares or connected regions apparent without requiring coordinate arithmetic. While the 40% success rate (on extremely limited testing) shows both potential and limitations, the systematic exploration and genuine problem-solving behavior observed suggests that visual presentation may indeed unlock spatial reasoning capabilities that purely symbolic approaches fundamentally miss.
+Success patterns emerge from breaking problems into sub-components, invariant detection, and multi-level pattern recognition, while failures typically involve over-specification, ambiguous ordering rules, and edge case handling. The visual approach appears to activate different reasoning pathways through Gestalt principles, direct spatial reasoning engagement, and immediate pattern salience that makes visual patterns like hollow squares or connected regions apparent without requiring coordinate arithmetic. While the 22% success rate (on limited testing) shows both potential and limitations, the systematic exploration and genuine problem-solving behavior observed suggests that visual presentation may indeed unlock spatial reasoning capabilities that purely symbolic approaches fundamentally miss.
 
 
 ### Setup and running
@@ -22,27 +22,58 @@ Success patterns emerge from breaking problems into sub-components, invariant de
 
 ```
 ================================================================================
-BATCH RESULTS SUMMARY (eval)
+BATCH RESULTS SUMMARY
 ================================================================================
-Total tasks: 10
-Successful: 4 (40.0%)
-Failed: 6 (60.0%)
-Total time: 9840.03s
-Total phases: 51
+Total tasks: 36
+Successful: 8 (22.2%)
+Failed: 28 (77.8%)
+Error: 4 (OpenAI account ran out of money)
+Total time: 80322.37s
+Total phases: 177
 
 Detailed Results:
 Task                 Result     Time (s)   Phases    
 --------------------------------------------------
-2ba387bc             ✅ PASS     337.62     6         
-3e6067c3             ✅ PASS     905.73     5         
-dfadab01             ❌ FAIL     1064.52    6         
-2d0172a1             ❌ FAIL     1207.07    6         
-6e4f6532             ❌ FAIL     1387.00    4         
-1ae2feb7             ✅ PASS     477.20     5         
-de809cff             ❌ FAIL     1236.57    4         
-fc7cae8d             ❌ FAIL     1189.15    5         
-58490d8a             ✅ PASS     777.47     5         
-89565ca0             ❌ FAIL     1257.71    5         
+dbff022c             ❌ FAIL     544.96     5         
+1818057f             ✅ PASS     801.99     5         
+7b80bb43             ❌ FAIL     1590.87    4         
+cb2d8a2c             ❌ FAIL     2067.03    6         
+5545f144             ❌ FAIL     2165.85    5         
+fc7cae8d             ❌ FAIL     1940.38    5         
+9bbf930d             ❌ FAIL     2328.38    5         
+b0039139             ✅ PASS     1579.21    6         
+a251c730             ❌ FAIL     1252.88    4         
+2ba387bc             ✅ PASS     493.28     6         
+36a08778             ❌ FAIL     1466.08    8         
+16de56c4             ❌ FAIL     1029.02    5         
+142ca369             ❌ FAIL     2496.15    5         
+dd6b8c4b             ❌ FAIL     1936.63    5         
+62593bfd             ❌ FAIL     2739.46    4         
+faa9f03d             ❌ FAIL     3414.99    6         
+7c66cb00             ✅ PASS     1118.54    5         
+da515329             ⚠️ ERROR   3366.86    0         
+4e34c42c             ⚠️ ERROR   2918.70    0         
+7b5033c1             ✅ PASS     592.80     4         
+e8686506             ❌ FAIL     1523.83    4         
+88e364bc             ❌ FAIL     1163.52    5         
+bf45cf4b             ✅ PASS     809.64     5         
+38007db0             ✅ PASS     651.30     4         
+16b78196             ❌ FAIL     1423.53    4         
+291dc1e1             ❌ FAIL     2085.56    6         
+4c7dc4dd             ❌ FAIL     1204.58    4         
+88bcf3b4             ❌ FAIL     2166.80    7         
+cbebaa4b             ❌ FAIL     4236.07    4         
+7b0280bc             ❌ FAIL     1801.14    5         
+135a2760             ❌ FAIL     1247.79    4         
+136b0064             ✅ PASS     1548.96    5         
+581f7754             ❌ FAIL     3606.33    5         
+3a25b0d8             ❌ FAIL     1195.32    4         
+b9e38dc0             ❌ FAIL     3648.41    5         
+20a9e565             ❌ FAIL     2228.91    5         
+7b3084d4             ⚠️ ERROR   2116.13    0         
+de809cff             ❌ FAIL     4744.59    4         
+8e5c0c38             ❌ FAIL     3137.17    4         
+abc82100             ⚠️ ERROR   3938.73    0       
 
 ```
 
@@ -71,15 +102,66 @@ bf699163             ✅ PASS     752.55     4
 09629e4f             ✅ PASS     2101.93    6     
 ```
 
+Previous run:
+```
+================================================================================
+BATCH RESULTS SUMMARY (eval)
+================================================================================
+Total tasks: 10
+Successful: 4 (40.0%)
+Failed: 6 (60.0%)
+Total time: 9840.03s
+Total phases: 51
+Detailed Results:
+Task Result Time (s) Phases
+--------------------------------------------------
+2ba387bc ✅ PASS 337.62 6
+3e6067c3 ✅ PASS 905.73 5
+dfadab01 ❌ FAIL 1064.52 6
+2d0172a1 ❌ FAIL 1207.07 6
+6e4f6532 ❌ FAIL 1387.00 4
+1ae2feb7 ✅ PASS 477.20 5
+de809cff ❌ FAIL 1236.57 4
+fc7cae8d ❌ FAIL 1189.15 5
+58490d8a ✅ PASS 777.47 5
+89565ca0 ❌ FAIL 1257.71 5
+```
+
+Reproducability (duplicates across tests):
+
+No mismatches between failed/successful runs.
+
+```
+1. 2ba387bc (appears 2 times)
+
+Instance 1: ✅ PASS - 337.62s - 6 phases
+Instance 2: ✅ PASS - 493.28s - 6 phases
+Both passed but with different execution times
+
+2. de809cff (appears 2 times)
+
+Instance 1: ❌ FAIL - 1,236.57s - 4 phases
+Instance 2: ❌ FAIL - 4,744.59s - 4 phases
+Both failed, second run took much longer
+
+3. fc7cae8d (appears 2 times)
+
+Instance 1: ❌ FAIL - 1,189.15s - 5 phases
+Instance 2: ❌ FAIL - 1,940.38s - 5 phases
+Both failed with different execution times
+```
+
 Example: when comparing failed problems to GPT-5 prompting without visuals it becomes clear that the visual solver got much further than a naive implementation would have
 
-| GPT-5 (Naive) | Visual Solver | Correct |
-|:-------------:|:-------------:|:-------:|
-| ![GPT-5 Naive](batch10-aug10th-organized/dfadab01/naive.png) | ![Visual Solver](batch10-aug10th-organized/dfadab01/dfadab01_dfadab01_prediction_066.png) | ![Correct](batch10-aug10th-organized/dfadab01/dfadab01_test_output_058.png) |
+| GPT-5 (Naive) | Visual Solver | Second Attempt | Correct |
+|:-------------:|:-------------:|:--------------:|:-------:|
+| ![GPT-5 Naive](batch10-aug10th-organized/dfadab01/naive.png) | ![Visual Solver](batch10-aug10th-organized/dfadab01/dfadab01_dfadab01_prediction_066.png) | ![Second Attempt](img_doc/dfadab01_additional_prompts.png) | ![Correct](batch10-aug10th-organized/dfadab01/dfadab01_test_output_058.png) |
+| ![GPT-5 Naive](img_doc/e3721c99_naive.png) | ![Visual Solver](img_doc/e3721c99.png) | | ![Correct](img_doc/e3721c99_test_output_019.png) |
 
 Example: iterating with tools to improve strategy and comparing results to output 
 
-| Input | Output | Tool invocation 1 | Tool invocation 2 | Tool invocation 3 | Tool invocation 4 |
+| Input | Output | Tool invocation 1 | Tool invocation 2 | Tool invocation 3 | Tool invocation 4 or First Attempt | Second Attempt |
 |:-----:|:------:|:---------------:|:---------------:|:---------------:|:---------------:|
 | ![Input](batch10-aug10th-organized/fc7cae8d/fc7cae8d_train1_input_060.png) | ![Output](batch10-aug10th-organized/fc7cae8d/fc7cae8d_train1_output_061.png) | ![Tool 1](batch10-aug10th-organized/fc7cae8d/fc7cae8d_tool_069.png) | ![Tool 2](batch10-aug10th-organized/fc7cae8d/fc7cae8d_tool_071.png) | ![Tool 3](batch10-aug10th-organized/fc7cae8d/fc7cae8d_tool_081.png) | ![Tool 4](batch10-aug10th-organized/fc7cae8d/fc7cae8d_tool_070.png) |
+| ![Input](img_doc/db695cfb_test_input_331.png) | ![Output](img_doc/db695cfb_test_output_173.png) | ![Tool 1](img_doc/db695cfb_tool_344.png) | ![Tool 2](img_doc/db695cfb_tool_346.png) | ![Tool 3](img_doc/db695cfb_tool_369.png) | ![First Attempt](img_doc/db695cfb_db695cfb_prediction_371.png) | ![Second Attempt](img_doc/db695cfb_db695cfb_prediction_181.png ) |
 
