@@ -154,14 +154,14 @@ Both failed with different execution times
 Example: when comparing failed problems to GPT-5 prompting without visuals it becomes clear that the visual solver got much further than a naive implementation would have
 
 | GPT-5 (Naive) | Visual Solver | Second Attempt | Correct |
-|:-------------:|:-------------:|:--------------:|:-------:|
+|:-------------:|:-------------:|:-------------:|:-------------:|
 | ![GPT-5 Naive](batch10-aug10th-organized/dfadab01/naive.png) | ![Visual Solver](batch10-aug10th-organized/dfadab01/dfadab01_dfadab01_prediction_066.png) | ![Second Attempt](img_doc/dfadab01_additional_prompts.png) | ![Correct](batch10-aug10th-organized/dfadab01/dfadab01_test_output_058.png) |
 | ![GPT-5 Naive](img_doc/e3721c99_naive.png) | ![Visual Solver](img_doc/e3721c99.png) | | ![Correct](img_doc/e3721c99_test_output_019.png) |
 
 Example: iterating with tools to improve strategy and comparing results to output 
 
 | Input | Output | Tool invocation 1 | Tool invocation 2 | Tool invocation 3 | Tool invocation 4 or First Attempt | Second Attempt |
-|:-----:|:------:|:---------------:|:---------------:|:---------------:|:---------------:|
-| ![Input](batch10-aug10th-organized/fc7cae8d/fc7cae8d_train1_input_060.png) | ![Output](batch10-aug10th-organized/fc7cae8d/fc7cae8d_train1_output_061.png) | ![Tool 1](batch10-aug10th-organized/fc7cae8d/fc7cae8d_tool_069.png) | ![Tool 2](batch10-aug10th-organized/fc7cae8d/fc7cae8d_tool_071.png) | ![Tool 3](batch10-aug10th-organized/fc7cae8d/fc7cae8d_tool_081.png) | ![Tool 4](batch10-aug10th-organized/fc7cae8d/fc7cae8d_tool_070.png) |
+|:-------------:|:-------------:|:-------------:|:-------------:|:-------------:|:-------------:|:-------------:|
+| ![Input](batch10-aug10th-organized/fc7cae8d/fc7cae8d_train1_input_060.png) | ![Output](batch10-aug10th-organized/fc7cae8d/fc7cae8d_train1_output_061.png) | ![Tool 1](batch10-aug10th-organized/fc7cae8d/fc7cae8d_tool_069.png) | ![Tool 2](batch10-aug10th-organized/fc7cae8d/fc7cae8d_tool_071.png) | ![Tool 3](batch10-aug10th-organized/fc7cae8d/fc7cae8d_tool_081.png) | ![Tool 4](batch10-aug10th-organized/fc7cae8d/fc7cae8d_tool_070.png) | |
 | ![Input](img_doc/db695cfb_test_input_331.png) | ![Output](img_doc/db695cfb_test_output_173.png) | ![Tool 1](img_doc/db695cfb_tool_344.png) | ![Tool 2](img_doc/db695cfb_tool_346.png) | ![Tool 3](img_doc/db695cfb_tool_369.png) | ![First Attempt](img_doc/db695cfb_db695cfb_prediction_371.png) | ![Second Attempt](img_doc/db695cfb_db695cfb_prediction_181.png ) |
 
