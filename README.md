@@ -283,7 +283,7 @@ Clear improvement over naive prompting with GPT5:
 * Analysis of problems that failed show greater understanding and more correct outputs.
 
 
-### Random
+### Project
 
 _This project desperately needs code cleanup and improved logging._
 
