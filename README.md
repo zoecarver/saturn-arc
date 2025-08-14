@@ -36,6 +36,84 @@ Example: iterating with tools to improve strategy and comparing results to outpu
 | ![Input](batch10-aug10th-organized/fc7cae8d/fc7cae8d_train1_input_060.png) | ![Output](batch10-aug10th-organized/fc7cae8d/fc7cae8d_train1_output_061.png) | ![Tool 1](batch10-aug10th-organized/fc7cae8d/fc7cae8d_tool_069.png) | ![Tool 2](batch10-aug10th-organized/fc7cae8d/fc7cae8d_tool_071.png) | ![Tool 3](batch10-aug10th-organized/fc7cae8d/fc7cae8d_tool_081.png) | ![Tool 4](batch10-aug10th-organized/fc7cae8d/fc7cae8d_tool_070.png) | |
 | ![Input](img_doc/db695cfb_test_input_331.png) | ![Output](img_doc/db695cfb_test_output_173.png) | ![Tool 1](img_doc/db695cfb_tool_344.png) | ![Tool 2](img_doc/db695cfb_tool_346.png) | ![Tool 3](img_doc/db695cfb_tool_369.png) | ![First Attempt](img_doc/db695cfb_db695cfb_prediction_371.png) | ![Second Attempt](img_doc/db695cfb_db695cfb_prediction_181.png ) |
 
+
+Example: textual reasoning shows (in addition to the images above) that the visual solver is immediately able to identify core rules, while text/data-only inputs yield little understanding. 
+
+<details>
+<summary>Visual Solver reasoning (e3721c99)</summary>
+
+What matters
+- The blue bar/frame divides a small “palette” area from the main board.
+- In the palette, each colored swatch contains a number of black squares. That number encodes a hole-count. The swatch’s color is the color you must apply to any shape on the main board that has that many holes.
+- The orange shapes on the main board are 4-connected components. Their interior black pockets (4-connected black regions fully enclosed by the shape and not connected to the outside background) are the “holes.”
+- Holes stay black. The blue divider and the palette remain unchanged.
+
+What does not matter
+- The exact positions/orientations of the palette swatches.
+- Shape outlines (beyond their hole count) and their positions do not affect the color choice.
+
+Algorithm
+1. Read the palette: for each swatch, count its internal black squares k and record map[k] = swatch color.
+2. Find each orange connected component on the main board.
+3. Count its number of internal holes (black regions enclosed by the component; use flood-fill from outside to exclude background).
+4. If its hole-count h is in map, recolor the entire component to map[h]; otherwise leave it orange.
+5. Keep holes black; leave the blue divider and palette untouched.
+
+Check against training
+- Example 1 palette: 0→yellow, 1→green, 2→blue, 3→red. Output recolors shapes accordingly.
+- Example 2 palette: 0→red, 1→green. Only those two hole-counts occur; shapes recolor accordingly.
+
+For the provided test image
+- Palette on the right encodes: 2 holes → brown, 4 holes → magenta, 5 holes → yellow.
+- Apply the algorithm; any shape with 2/4/5 holes takes those colors; other hole-counts (if any) remain orange.
+
+</details>
+
+<details>
+<summary>Naive reasoning (e3721c99)</summary>
+
+here’s what this puzzle is doing (based on the two training pairs):
+
+## What the task is
+
+* You’re given a 30×30 grid with background `0`s.
+* There are **“example tiles” (a legend)** near the top: tight little bands of non-zero colors laid out over exactly **three rows** (and a few columns).
+  In the first pair those examples show `4`, `3`, `1`, `2` in distinct micro-patterns; in the second pair they show mostly `2` and `3` (with some `1`s elsewhere).
+* Elsewhere in the grid there’s a **big, irregular region of `5`s** (lots of blobs/lines).
+* The output keeps everything that isn’t a `5` **unchanged**, and **recolors every `5`** using only the colors/patterns demonstrated by the examples.
+
+## What changes vs. what stays the same
+
+* **Unchanged:** all `0`s; all pre-existing non-zero colors that are **not** `5` (e.g., the row of `1`s in training #1, the vertical `1`s and the top example bands in training #2).
+* **Changed:** every `5` becomes one of the example colors. No new colors are invented—only colors that appear in the legend are used.
+
+## How the recoloring seems to work
+
+The legend doesn’t just list colors; it shows **micro-stencils**—tiny three-row motifs. Those motifs get **reapplied inside the `5` region according to local shape/thickness**, so you see the same three-row patterns replicated down in the big area:
+
+* A **solid, chunky 3×3 block** of `5`s (dense interior) becomes the **“solid” example color** (in training #1 that’s `4`).
+* A **3×3 “donut”/ring** configuration (edge/thin perimeter) becomes the **“donut” example color** (in training #1 that’s `3`).
+* **Longer, 3×5 ring-like spans** map to the 3×5 legend color (in training #1 that’s `1`).
+* **Even wider, 3×7 alternating/striped spans** map to the 3×7 legend color (in training #1 that’s `2`).
+
+So, informally: the algorithm scans the `5` area with a local window (effectively three rows tall), recognizes which **example stencil** best matches the local thickness/period of the `5`s, and **relabels those `5` cells** with the corresponding legend color. This is why in the outputs you can literally see repeating triplets like `x x x / x 0 x / x x x` (the donut) or solid 3×3 blocks, or the wider 3×5 / 3×7 bands, all in the example colors.
+
+## Evidence from the training pairs
+
+* Only `5`s change; other colors pass through untouched.
+* The output never uses a color that didn’t appear in the examples.
+* The bottom region shows **repeated copies of the legend’s three-row motifs**, lined up wherever the `5`s form matching local shapes (solid interior vs. ring edge vs. longer bands).
+* In training #2, because the top examples are essentially `2` and `3`, the sea of `5`s gets recolored **only** into `2`s and `3`s (with `1`s elsewhere unchanged).
+
+## What to notice in the test input
+
+* The right side contains **new example tiles** arranged in the same three-row “donut” style but with **different colors**: `8` near the top (rows 2–4), `6` mid-grid (rows 8–10), and `4` lower (rows 18–20).
+* There’s again a large area of `5`s spread across the grid, plus a fixed column of `1`s.
+* Following the learned rule, the `5`s will be **repainted** using **only** the example colors shown in this grid (not inventing any others), and in **three-row motifs** that match the local structure (dense interior vs. donut/edge vs. longer spans), while everything else remains as is.
+
+</details>
+
+
 ### Results 
 
 ```
