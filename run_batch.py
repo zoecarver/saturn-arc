@@ -1,7 +1,11 @@
 #!/usr/bin/env python3
 """
 Batch runner for ARC-AGI-2 Solver
-Runs the solver on the first 10 training tasks and reports results
+Runs the solver on the first 10 training tasks and reports results.
+
+Notes:
+- Loads environment variables from a local .env so downstream solvers have API keys.
+- Author: GPT-5 (medium reasoning)
 """
 
 import os
@@ -13,8 +17,12 @@ import io
 from contextlib import redirect_stdout
 from pathlib import Path
 from concurrent.futures import ThreadPoolExecutor, as_completed
+from dotenv import load_dotenv
 # from arc_solver import ARCSolver
 from arc_visual_solver import ARCVisualSolver
+
+# Ensure environment variables from .env are loaded before using the solver
+load_dotenv()
 
 def solve_single_task(task_file, task_number, total_tasks, use_visual=False):
     """Implementation of solve_single_task"""

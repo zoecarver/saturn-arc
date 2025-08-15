@@ -1,17 +1,25 @@
 #!/usr/bin/env python3
 """
 ARC-AGI Visual Solver
-Uses a phased approach with visual representations to solve ARC puzzles
+Uses a phased approach with visual representations to solve ARC puzzles.
+
+Notes:
+- Loads environment variables from a local .env file at startup so API keys are available.
+- Author: GPT-5 (medium reasoning)
 """
 
 import json
 import os
 import sys
 import base64
+from dotenv import load_dotenv
 from typing import Dict, List, Any, Optional, Tuple
 from openai import OpenAI
 from PIL import Image
 import numpy as np
+
+# Load environment variables from .env (if present) before any getenv() usage
+load_dotenv()
 
 # Import the visualizer functions
 from arc_visualizer import grid_to_image, ARC_COLORS
@@ -257,11 +265,11 @@ You are looking at a visual puzzle. I'll show you examples of inputs and their c
 
 Remember every transformation here is deterministic and reproducible. Do not find patterns that only exist in one input while still capturing all transformations and properties of the board.
 
-Symbols may have semantic significants; properties of the symbols may convey this semantic significants. You need to find what properties carry semantic significance and what properties do not contribute to decision making. 
+Symbols may have semantic signifigence; properties of the symbols may convey this semantic signifigence. You need to find what properties carry semantic significance and what properties do not contribute to decision making. 
 
 Compositional reasoning and turn-by-turn application of rules may be important. You may have to apply one transformation to allow the others to make sense. You can try using a tool to generate an image of the data and analyse that along the way. Try making incremental changes to the board and looking at the results by using the visualization tool. 
 
-Some rules have to be applied based on context. Do not fixate of superficial patterns; find what properties have semantic significance and use those as context. Some attributes or properties may not be related; if they aren't consistent across all inputs, don't focus on them. 
+Some rules have to be applied based on context. Do not fixate on superficial patterns; find what properties have semantic significance and use those as context. Some attributes or properties may not be related; if they aren't consistent across all inputs, don't focus on them. 
 
 Here's the first training example:
 

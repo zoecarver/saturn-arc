@@ -1,0 +1,10 @@
+# Project dependencies for the CLI solver and batch runner
+# How this works: install with `python -m pip install -r requirements.txt`
+# This file intentionally excludes Web UI packages; see webui/requirements-webui.txt for the FastAPI app.
+# Author: GPT-5 (medium reasoning)
+
+openai>=1.30.0
+pillow>=10.3.0
+# NumPy version compatibility can vary by Python version; leave flexible for Py3.13 wheels
+numpy>=2.0.0
+python-dotenv>=1.0.1
