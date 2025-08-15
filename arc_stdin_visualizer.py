@@ -11,17 +11,18 @@ from PIL import Image
 import numpy as np
 
 # ARC color palette (0-9 mapped to colors)
+## Fix by @82deutschmark (this is a common thing I have noticed, there must be some disconnect somewhere, but these match what is on the arcprize.org site's visualizer)
 ARC_COLORS = {
     0: (0, 0, 0),        # Black (background)
     1: (0, 116, 217),    # Blue
     2: (255, 65, 54),    # Red
     3: (46, 204, 64),    # Green
     4: (255, 220, 0),    # Yellow
-    5: (255, 133, 27),   # Orange
+    5: (128, 128, 128),  # Grey
     6: (240, 18, 190),   # Magenta/Pink
-    7: (127, 219, 255),  # Light Blue/Cyan
-    8: (135, 12, 37),    # Dark Red/Maroon
-    9: (149, 117, 205),  # Purple
+    7: (255, 133, 27),   # Orange
+    8: (127, 219, 255),  # Light Blue/Cyan
+    9: (128, 0, 0),      # Maroon
 }
 
 def parse_grid_from_text(text: str) -> List[List[int]]:
