@@ -1,0 +1,422 @@
+[MESSAGE] program {
+  grid = Input()
+
+  // 1) Locate 2-row palette at the top edge (right-most nonzero 2xN block)
+  palette = Find("rectangular block", where="touches top edge AND height==2 AND all cells nonzero", prefer="right-most, maximal width")
+  toprow = Row(palette, 0)
+  botrow = Row(palette, 1)
+
+  // 2) Build color mapping: top-row color -> bottom-row color (column-wise)
+  color_map = {}
+  for x in 0..Width(palette)-1 {
+    src = ColorAt(toprow, x)
+    dst = ColorAt(botrow, x)
+    color_map[src] = dst
+  }
+
+  // Helper: fill zero runs bounded by the same color on both ends along a line
+  FillBoundedZeroRuns = Lambda(line, key_color, fill_color) {
+    // find patterns [key_color, 0..., key_color] with only zeros between
+    runs = Find("runs", of=0, within=line, where="bounded on both ends by key_color and between contains only 0")
+    for r in runs { Paint(line, r, fill_color) }
+  }
+
+  // 3) For each mapped color, fill vertically and horizontally
+  for key_color, fill_color in color_map {
+    // vertical columns
+    for col in 0..Width(grid)-1 {
+      line = Column(grid, col)
+      FillBoundedZeroRuns(line, key_color, fill_color)
+    }
+    // horizontal rows
+    for row in 0..Height(grid)-1 {
+      line = Row(grid, row)
+      FillBoundedZeroRuns(line, key_color, fill_color)
+    }
+  }
+
+  Output(grid)
+}
+
+============================================================
+Phase: train_0
+============================================================
+program {
+  grid = Input()
+
+  // 1) Locate 2-row palette at the top edge (right-most nonzero 2xN block)
+  palette = Find("rectangular block", where="touches top edge AND height==2 AND all cells nonzero", prefer="right-most, maximal width")
+  toprow = Row(palette, 0)
+  botrow = Row(palette, 1)
+
+  // 2) Build color mapping: top-row color -> bottom-row color (column-wise)
+  color_map = {}
+  for x in 0..Width(palette)-1 {
+    src = ColorAt(toprow, x)
+    dst = ColorAt(botrow, x)
+    color_map[src] = dst
+  }
+
+  // Helper: fill zero runs bounded by the same color on both ends along a line
+  FillBoundedZeroRuns = Lambda(line, key_color, fill_color) {
+    // find patterns [key_color, 0..., key_color] with only zeros between
+    runs = Find("runs", of=0, within=line, where="bounded on both ends by key_color and between contains only 0")
+    for r in runs { Paint(line, r, fill_color) }
+  }
+
+  // 3) For each mapped color, fill vertically and horizontally
+  for key_color, fill_color in color_map {
+    // vertical columns
+    for col in 0..Width(grid)-1 {
+      line = Column(grid, col)
+      FillBoundedZeroRuns(line, key_color, fill_color)
+    }
+    // horizontal rows
+    for row in 0..Height(grid)-1 {
+      line = Row(grid, row)
+      FillBoundedZeroRuns(line, key_color, fill_color)
+    }
+  }
+
+  Output(grid)
+}
+[MESSAGE] [[2, 6, 0, 0, 8, 8, 8, 8, 0, 0],
+ [4, 5, 0, 0, 8, 0, 0, 8, 0, 0],
+ [6, 8, 0, 0, 8, 0, 0, 8, 0, 0],
+ [8, 1, 0, 0, 8, 8, 8, 8, 0, 0],
+ [0, 0, 0, 0, 0, 0, 0, 0, 0, 0],
+ [0, 5, 5, 5, 5, 5, 0, 4, 4, 4],
+ [0, 5, 0, 0, 0, 5, 0, 4, 0, 4],
+ [0, 0, 5, 5, 5, 5, 0, 4, 4, 4],
+ [0, 0, 0, 0, 0, 0, 0, 4, 0, 4],
+ [0, 0, 0, 0, 0, 0, 0, 4, 4, 4]]
+
+============================================================
+Phase: train_1_predict
+============================================================
+[[2, 6, 0, 0, 8, 8, 8, 8, 0, 0],
+ [4, 5, 0, 0, 8, 0, 0, 8, 0, 0],
+ [6, 8, 0, 0, 8, 0, 0, 8, 0, 0],
+ [8, 1, 0, 0, 8, 8, 8, 8, 0, 0],
+ [0, 0, 0, 0, 0, 0, 0, 0, 0, 0],
+ [0, 5, 5, 5, 5, 5, 0, 4, 4, 4],
+ [0, 5, 0, 0, 0, 5, 0, 4, 0, 4],
+ [0, 0, 5, 5, 5, 5, 0, 4, 4, 4],
+ [0, 0, 0, 0, 0, 0, 0, 4, 0, 4],
+ [0, 0, 0, 0, 0, 0, 0, 4, 4, 4]]
+[MESSAGE] program {
+  grid = Input()
+
+  // 1) Find all 2-thick, all-nonzero palettes on borders
+  horiz_palettes = Find("rectangles",
+                        where="touches top edge AND height==2 AND all cells nonzero",
+                        split="by zero gaps along width")
+  vert_palettes  = Find("rectangles",
+                        where="touches left edge AND width==2 AND all cells nonzero",
+                        split="by zero gaps along height")
+  palettes = Concat(horiz_palettes, vert_palettes)
+
+  // 2) Build color mapping from each palette stripe
+  color_map = {}
+  for pal in palettes {
+    if Height(pal) == 2 {
+      for x in 0..Width(pal)-1 {
+        src = ColorAt(pal, row=0, col=x)
+        dst = ColorAt(pal, row=1, col=x)
+        if not HasKey(color_map, src) { color_map[src] = dst }
+      }
+    }
+    if Width(pal) == 2 {
+      for y in 0..Height(pal)-1 {
+        src = ColorAt(pal, row=y, col=0)
+        dst = ColorAt(pal, row=y, col=1)
+        if not HasKey(color_map, src) { color_map[src] = dst }
+      }
+    }
+  }
+
+  // Helper to fill zero runs bounded by the same key color in a 1D line
+  FillBoundedZeroRuns = Lambda(line, key_color, fill_color) {
+    i = 0
+    while i < Length(line) {
+      if line[i] == key_color {
+        j = i + 1
+        while j < Length(line) AND line[j] == 0 { j += 1 }
+        if j < Length(line) AND line[j] == key_color AND j > i + 1 {
+          Paint(line, range=i+1..j-1, color=fill_color)
+          i = j
+        } else {
+          i += 1
+        }
+      } else {
+        i += 1
+      }
+    }
+  }
+
+  // 3) Apply filling horizontally and vertically for each mapped color
+  for key_color, fill_color in color_map {
+    // rows
+    for r in 0..Height(grid)-1 {
+      line = Row(grid, r)
+      FillBoundedZeroRuns(line, key_color, fill_color)
+    }
+    // columns
+    for c in 0..Width(grid)-1 {
+      line = Column(grid, c)
+      FillBoundedZeroRuns(line, key_color, fill_color)
+    }
+  }
+
+  Output(grid)
+}
+
+============================================================
+Phase: train_1_verify
+============================================================
+program {
+  grid = Input()
+
+  // 1) Find all 2-thick, all-nonzero palettes on borders
+  horiz_palettes = Find("rectangles",
+                        where="touches top edge AND height==2 AND all cells nonzero",
+                        split="by zero gaps along width")
+  vert_palettes  = Find("rectangles",
+                        where="touches left edge AND width==2 AND all cells nonzero",
+                        split="by zero gaps along height")
+  palettes = Concat(horiz_palettes, vert_palettes)
+
+  // 2) Build color mapping from each palette stripe
+  color_map = {}
+  for pal in palettes {
+    if Height(pal) == 2 {
+      for x in 0..Width(pal)-1 {
+        src = ColorAt(pal, row=0, col=x)
+        dst = ColorAt(pal, row=1, col=x)
+        if not HasKey(color_map, src) { color_map[src] = dst }
+      }
+    }
+    if Width(pal) == 2 {
+      for y in 0..Height(pal)-1 {
+        src = ColorAt(pal, row=y, col=0)
+        dst = ColorAt(pal, row=y, col=1)
+        if not HasKey(color_map, src) { color_map[src] = dst }
+      }
+    }
+  }
+
+  // Helper to fill zero runs bounded by the same key color in a 1D line
+  FillBoundedZeroRuns = Lambda(line, key_color, fill_color) {
+    i = 0
+    while i < Length(line) {
+      if line[i] == key_color {
+        j = i + 1
+        while j < Length(line) AND line[j] == 0 { j += 1 }
+        if j < Length(line) AND line[j] == key_color AND j > i + 1 {
+          Paint(line, range=i+1..j-1, color=fill_color)
+          i = j
+        } else {
+          i += 1
+        }
+      } else {
+        i += 1
+      }
+    }
+  }
+
+  // 3) Apply filling horizontally and vertically for each mapped color
+  for key_color, fill_color in color_map {
+    // rows
+    for r in 0..Height(grid)-1 {
+      line = Row(grid, r)
+      FillBoundedZeroRuns(line, key_color, fill_color)
+    }
+    // columns
+    for c in 0..Width(grid)-1 {
+      line = Column(grid, c)
+      FillBoundedZeroRuns(line, key_color, fill_color)
+    }
+  }
+
+  Output(grid)
+}
+[MESSAGE] [[0, 2, 6, 0, 4, 4, 4, 4, 4, 0, 2, 2, 2, 2, 0],
+ [0, 7, 1, 0, 4, 4, 4, 4, 4, 0, 2, 7, 2, 2, 0],
+ [0, 0, 0, 0, 4, 4, 4, 4, 4, 0, 2, 2, 7, 2, 0],
+ [0, 0, 0, 0, 4, 4, 4, 4, 4, 0, 2, 2, 2, 2, 0]]
+
+============================================================
+Phase: train_2_predict
+============================================================
+[[0, 2, 6, 0, 4, 4, 4, 4, 4, 0, 2, 2, 2, 2, 0],
+ [0, 7, 1, 0, 4, 4, 4, 4, 4, 0, 2, 7, 2, 2, 0],
+ [0, 0, 0, 0, 4, 4, 4, 4, 4, 0, 2, 2, 7, 2, 0],
+ [0, 0, 0, 0, 4, 4, 4, 4, 4, 0, 2, 2, 2, 2, 0]]
+[MESSAGE] program {
+  grid = Input()
+
+  // 1) Detect 2-thick palettes on borders (horizontal on top edge, vertical on left edge)
+  top_palettes = Find("rectangles", where="touches top edge AND height==2 AND all cells nonzero",
+                      split="by zero gaps along width")
+  left_palettes = Find("rectangles", where="touches left edge AND width==2 AND all cells nonzero",
+                       split="by zero gaps along height")
+  palettes = Concat(top_palettes, left_palettes)
+
+  // 2) Build color mapping from each palette (top->bottom for horizontal, left->right for vertical)
+  color_map = {}
+  for pal in palettes {
+    if Height(pal) == 2 {
+      for x in 0..Width(pal)-1 {
+        key = ColorAt(pal, row=0, col=x)
+        val = ColorAt(pal, row=1, col=x)
+        color_map[key] = val
+      }
+    }
+    if Width(pal) == 2 {
+      for y in 0..Height(pal)-1 {
+        key = ColorAt(pal, row=y, col=0)
+        val = ColorAt(pal, row=y, col=1)
+        color_map[key] = val
+      }
+    }
+  }
+
+  // Helper: holes of a shape = 4-connected black regions fully enclosed by the shape boundary
+  Holes = Lambda(shape) {
+    Find("black regions", within=BoundingBox(shape), where="fully enclosed by shape (4-connectivity)")
+  }
+
+  // Helper: bridge zeros between two runs of the same component along a 1D line
+  BridgeWithinComponent = Lambda(shape, axis) {
+    lines = Project(shape, onto=axis)                 // all rows if axis==rows, all columns if axis==cols within the bbox of shape
+    for line in lines {
+      segments = Runs(shape.color, within=line, restrict_to="cells belonging to 'shape'")
+      for each adjacent pair (segA, segB) in segments {
+        gap = IntervalBetween(segA, segB)
+        if All(gap, equals=0) { Paint(line, gap, shape.color) }
+      }
+    }
+  }
+
+  // 3) Process each mapped color
+  for key_color, fill_color in color_map {
+    comps = Find("connected components", where=("color == " + key_color))
+
+    // 3a) Fill enclosed holes with mapped color
+    for s in comps {
+      holes = Holes(s)
+      for h in holes { Paint(h, fill_color) }
+    }
+
+    // 3b) If identity mapping, also bridge zero gaps within the same component (row- and column-wise)
+    if fill_color == key_color {
+      for s in comps {
+        BridgeWithinComponent(s, axis="rows")
+        BridgeWithinComponent(s, axis="cols")
+      }
+    }
+  }
+
+  Output(grid)
+}
+
+============================================================
+Phase: train_2_verify
+============================================================
+program {
+  grid = Input()
+
+  // 1) Detect 2-thick palettes on borders (horizontal on top edge, vertical on left edge)
+  top_palettes = Find("rectangles", where="touches top edge AND height==2 AND all cells nonzero",
+                      split="by zero gaps along width")
+  left_palettes = Find("rectangles", where="touches left edge AND width==2 AND all cells nonzero",
+                       split="by zero gaps along height")
+  palettes = Concat(top_palettes, left_palettes)
+
+  // 2) Build color mapping from each palette (top->bottom for horizontal, left->right for vertical)
+  color_map = {}
+  for pal in palettes {
+    if Height(pal) == 2 {
+      for x in 0..Width(pal)-1 {
+        key = ColorAt(pal, row=0, col=x)
+        val = ColorAt(pal, row=1, col=x)
+        color_map[key] = val
+      }
+    }
+    if Width(pal) == 2 {
+      for y in 0..Height(pal)-1 {
+        key = ColorAt(pal, row=y, col=0)
+        val = ColorAt(pal, row=y, col=1)
+        color_map[key] = val
+      }
+    }
+  }
+
+  // Helper: holes of a shape = 4-connected black regions fully enclosed by the shape boundary
+  Holes = Lambda(shape) {
+    Find("black regions", within=BoundingBox(shape), where="fully enclosed by shape (4-connectivity)")
+  }
+
+  // Helper: bridge zeros between two runs of the same component along a 1D line
+  BridgeWithinComponent = Lambda(shape, axis) {
+    lines = Project(shape, onto=axis)                 // all rows if axis==rows, all columns if axis==cols within the bbox of shape
+    for line in lines {
+      segments = Runs(shape.color, within=line, restrict_to="cells belonging to 'shape'")
+      for each adjacent pair (segA, segB) in segments {
+        gap = IntervalBetween(segA, segB)
+        if All(gap, equals=0) { Paint(line, gap, shape.color) }
+      }
+    }
+  }
+
+  // 3) Process each mapped color
+  for key_color, fill_color in color_map {
+    comps = Find("connected components", where=("color == " + key_color))
+
+    // 3a) Fill enclosed holes with mapped color
+    for s in comps {
+      holes = Holes(s)
+      for h in holes { Paint(h, fill_color) }
+    }
+
+    // 3b) If identity mapping, also bridge zero gaps within the same component (row- and column-wise)
+    if fill_color == key_color {
+      for s in comps {
+        BridgeWithinComponent(s, axis="rows")
+        BridgeWithinComponent(s, axis="cols")
+      }
+    }
+  }
+
+  Output(grid)
+}
+[MESSAGE] [[0, 1, 1, 1, 1, 1, 0, 0, 3, 3, 3, 3, 0],
+ [0, 1, 0, 0, 0, 1, 0, 0, 3, 0, 0, 3, 0],
+ [0, 1, 1, 0, 0, 1, 0, 0, 3, 0, 0, 3, 0],
+ [0, 0, 1, 1, 1, 1, 0, 0, 3, 3, 3, 3, 0],
+ [0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0],
+ [0, 0, 0, 0, 0, 0, 0, 0, 5, 5, 5, 0, 0],
+ [0, 0, 2, 0, 0, 0, 0, 5, 0, 0, 0, 5, 0],
+ [0, 2, 0, 2, 0, 0, 0, 5, 0, 0, 0, 0, 5],
+ [0, 0, 2, 0, 0, 0, 0, 0, 5, 5, 5, 5, 5],
+ [0, 0, 0, 0, 0, 0, 0, 0, 5, 0, 0, 0, 0],
+ [0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 2, 0, 0],
+ [5, 4, 6, 7, 8, 0, 0, 0, 0, 2, 0, 2, 0],
+ [9, 8, 3, 1, 2, 0, 0, 0, 0, 0, 2, 0, 0]]
+
+============================================================
+Phase: test_predict
+============================================================
+[[0, 1, 1, 1, 1, 1, 0, 0, 3, 3, 3, 3, 0],
+ [0, 1, 0, 0, 0, 1, 0, 0, 3, 0, 0, 3, 0],
+ [0, 1, 1, 0, 0, 1, 0, 0, 3, 0, 0, 3, 0],
+ [0, 0, 1, 1, 1, 1, 0, 0, 3, 3, 3, 3, 0],
+ [0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0],
+ [0, 0, 0, 0, 0, 0, 0, 0, 5, 5, 5, 0, 0],
+ [0, 0, 2, 0, 0, 0, 0, 5, 0, 0, 0, 5, 0],
+ [0, 2, 0, 2, 0, 0, 0, 5, 0, 0, 0, 0, 5],
+ [0, 0, 2, 0, 0, 0, 0, 0, 5, 5, 5, 5, 5],
+ [0, 0, 0, 0, 0, 0, 0, 0, 5, 0, 0, 0, 0],
+ [0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 2, 0, 0],
+ [5, 4, 6, 7, 8, 0, 0, 0, 0, 2, 0, 2, 0],
+ [9, 8, 3, 1, 2, 0, 0, 0, 0, 0, 2, 0, 0]]

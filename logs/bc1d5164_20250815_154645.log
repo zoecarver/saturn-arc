@@ -1,0 +1,88 @@
+[MESSAGE] program {
+  grid = Input()
+
+  nonzeros = Find("cells", where="color != 0")
+  fg = If(Count(UniqueColors(nonzeros))==1, Then=First(UniqueColors(nonzeros)), Else=MostFrequentColor(nonzeros))
+
+  box = BoundingBox(nonzeros)
+
+  row_bands = {
+    "top": Rows(box.top),
+    "mid": Rows(box.top+1 .. box.bottom-1),
+    "bot": Rows(box.bottom)
+  }
+  col_bands = {
+    "left": Cols(box.left),
+    "mid": Cols(box.left+1 .. box.right-1),
+    "right": Cols(box.right)
+  }
+
+  out = NewGrid(height=3, width=3, fill=0)
+
+  BandIndex = {
+    rows: {"top":1, "mid":2, "bot":3},
+    cols: {"left":1, "mid":2, "right":3}
+  }
+
+  Lambda("presence_to_3x3",
+    "For each rname in ['top','mid','bot'] and cname in ['left','mid','right']:
+       region = Select(grid, rows=row_bands[rname], cols=col_bands[cname])
+       if Any(region, where='color != 0'):
+           out[ BandIndex.rows[rname], BandIndex.cols[cname] ] = fg"
+  )
+
+  Apply("presence_to_3x3")
+
+  Output(out)
+}
+
+============================================================
+Phase: train_0
+============================================================
+program {
+  grid = Input()
+
+  nonzeros = Find("cells", where="color != 0")
+  fg = If(Count(UniqueColors(nonzeros))==1, Then=First(UniqueColors(nonzeros)), Else=MostFrequentColor(nonzeros))
+
+  box = BoundingBox(nonzeros)
+
+  row_bands = {
+    "top": Rows(box.top),
+    "mid": Rows(box.top+1 .. box.bottom-1),
+    "bot": Rows(box.bottom)
+  }
+  col_bands = {
+    "left": Cols(box.left),
+    "mid": Cols(box.left+1 .. box.right-1),
+    "right": Cols(box.right)
+  }
+
+  out = NewGrid(height=3, width=3, fill=0)
+
+  BandIndex = {
+    rows: {"top":1, "mid":2, "bot":3},
+    cols: {"left":1, "mid":2, "right":3}
+  }
+
+  Lambda("presence_to_3x3",
+    "For each rname in ['top','mid','bot'] and cname in ['left','mid','right']:
+       region = Select(grid, rows=row_bands[rname], cols=col_bands[cname])
+       if Any(region, where='color != 0'):
+           out[ BandIndex.rows[rname], BandIndex.cols[cname] ] = fg"
+  )
+
+  Apply("presence_to_3x3")
+
+  Output(out)
+}
+[MESSAGE] [[2, 2, 2],
+ [0, 2, 2],
+ [2, 0, 2]]
+
+============================================================
+Phase: train_1_predict
+============================================================
+[[2, 2, 2],
+ [0, 2, 2],
+ [2, 0, 2]]

@@ -1,0 +1,190 @@
+[MESSAGE] program {
+  grid = Input()
+
+  // Identify dividers: full-width uniform nonzero rows
+  dividers = Find("rows", where="uniform nonzero across full width", sort="top->bottom")
+
+  // Partition the grid by dividers
+  template_zone = Region(grid, where="above", ref=dividers[0])
+  repeat_zone   = Region(grid, where="between", refs=[dividers[0], dividers[1]])
+  fg_zone       = Region(grid, where="between", refs=[dividers[1], dividers[2]])
+  bg_zone       = Region(grid, where="below", ref=dividers[2])
+
+  // Build binary template from the top zone
+  template_cc   = Largest(Find("connected components", within=template_zone, where="nonzero"))
+  template_crop = Crop(template_zone, BoundingBox(template_cc))
+  template_mask = Map(template_crop, rule="nonzero->1, zero->0")
+
+  // Palette: foreground from the block above the last divider, background from the block below
+  fg_color = UniqueColor(fg_zone, exclude=0)
+  bg_color = UniqueColor(bg_zone, exclude=0)
+
+  // Paint the template with the palette
+  tile = Paint(template_mask, map={1:fg_color, 0:bg_color})
+
+  // Repeat count encoded by middle-zone components (e.g., number of vertical bars)
+  repeats = Count(Find("connected components", within=repeat_zone, where="nonzero"))
+
+  // Separator: 1-row of background color (same thickness as a divider)
+  separator = MakeGrid(h=1, w=Width(tile), fill=bg_color)
+
+  // Output: stack 'repeats' copies of the tile with a background separator between copies
+  output = RepeatStack(tile, count=repeats, direction="vertical", separator=separator)
+
+  Output(output)
+}
+
+============================================================
+Phase: train_0
+============================================================
+program {
+  grid = Input()
+
+  // Identify dividers: full-width uniform nonzero rows
+  dividers = Find("rows", where="uniform nonzero across full width", sort="top->bottom")
+
+  // Partition the grid by dividers
+  template_zone = Region(grid, where="above", ref=dividers[0])
+  repeat_zone   = Region(grid, where="between", refs=[dividers[0], dividers[1]])
+  fg_zone       = Region(grid, where="between", refs=[dividers[1], dividers[2]])
+  bg_zone       = Region(grid, where="below", ref=dividers[2])
+
+  // Build binary template from the top zone
+  template_cc   = Largest(Find("connected components", within=template_zone, where="nonzero"))
+  template_crop = Crop(template_zone, BoundingBox(template_cc))
+  template_mask = Map(template_crop, rule="nonzero->1, zero->0")
+
+  // Palette: foreground from the block above the last divider, background from the block below
+  fg_color = UniqueColor(fg_zone, exclude=0)
+  bg_color = UniqueColor(bg_zone, exclude=0)
+
+  // Paint the template with the palette
+  tile = Paint(template_mask, map={1:fg_color, 0:bg_color})
+
+  // Repeat count encoded by middle-zone components (e.g., number of vertical bars)
+  repeats = Count(Find("connected components", within=repeat_zone, where="nonzero"))
+
+  // Separator: 1-row of background color (same thickness as a divider)
+  separator = MakeGrid(h=1, w=Width(tile), fill=bg_color)
+
+  // Output: stack 'repeats' copies of the tile with a background separator between copies
+  output = RepeatStack(tile, count=repeats, direction="vertical", separator=separator)
+
+  Output(output)
+}
+[MESSAGE] [[8, 8, 8, 3, 8, 8, 8, 3, 8, 8, 8],
+ [3, 8, 3, 3, 3, 8, 3, 3, 3, 8, 3],
+ [8, 8, 8, 3, 8, 8, 8, 3, 8, 8, 8]]
+
+============================================================
+Phase: train_1_predict
+============================================================
+[[8, 8, 8, 3, 8, 8, 8, 3, 8, 8, 8],
+ [3, 8, 3, 3, 3, 8, 3, 3, 3, 8, 3],
+ [8, 8, 8, 3, 8, 8, 8, 3, 8, 8, 8]]
+[MESSAGE] program {
+  grid = Input()
+
+  // Detect divider orientation: full-span uniform nonzero lines (need at least 3)
+  row_divs = Find("rows", where="uniform nonzero across full width", sort="top->bottom")
+  col_divs = Find("columns", where="uniform nonzero across full height", sort="left->right")
+  orientation = Choose("horizontal" if Count(row_divs) >= 3 else "vertical")
+  divs = row_divs if orientation=="horizontal" else col_divs
+
+  // Partition the grid into four zones along the divider axis
+  if orientation == "horizontal" {
+    template_zone = Region(grid, where="above", ref=divs[0])
+    repeat_zone   = Region(grid, where="between", refs=[divs[0], divs[1]])
+    bg_zone       = Region(grid, where="between", refs=[divs[1], divs[2]])
+    fg_zone       = Region(grid, where="below", ref=divs[2])
+  } else {
+    template_zone = Region(grid, where="left of", ref=divs[0])
+    repeat_zone   = Region(grid, where="between", refs=[divs[0], divs[1]])
+    bg_zone       = Region(grid, where="between", refs=[divs[1], divs[2]])
+    fg_zone       = Region(grid, where="right of", ref=divs[2])
+  }
+
+  // Build inverted binary template from the leading zone
+  shape        = Largest(Find("connected components", within=template_zone, where="nonzero"))
+  bbox         = BoundingBox(shape)
+  template_crop= Crop(template_zone, bbox)
+  // Invert: zeros become foreground, nonzeros become background
+  mask         = Map(template_crop, rule="zero->1, nonzero->0")
+
+  // Palette: background from the zone before the last divider, foreground from the trailing zone
+  bg_color = UniqueColor(bg_zone, exclude=0)
+  fg_color = UniqueColor(fg_zone, exclude=0)
+
+  // Colorize the template
+  tile = Paint(mask, map={1:fg_color, 0:bg_color})
+
+  // Number of repetitions encoded by the count of nonzero components in the middle zone
+  repeats = Count(Find("connected components", within=repeat_zone, where="nonzero"))
+
+  // Separator: one line of background color along the stacking axis
+  separator = (orientation=="horizontal")
+              ? MakeGrid(h=1, w=Width(tile), fill=bg_color)
+              : MakeGrid(h=Height(tile), w=1, fill=bg_color)
+
+  // Stack tiles along the axis orthogonal to the dividers
+  output = (orientation=="horizontal")
+           ? RepeatStack(tile, count=repeats, direction="vertical", separator=separator)
+           : RepeatStack(tile, count=repeats, direction="horizontal", separator=separator)
+
+  Output(output)
+}
+
+============================================================
+Phase: train_1_verify
+============================================================
+program {
+  grid = Input()
+
+  // Detect divider orientation: full-span uniform nonzero lines (need at least 3)
+  row_divs = Find("rows", where="uniform nonzero across full width", sort="top->bottom")
+  col_divs = Find("columns", where="uniform nonzero across full height", sort="left->right")
+  orientation = Choose("horizontal" if Count(row_divs) >= 3 else "vertical")
+  divs = row_divs if orientation=="horizontal" else col_divs
+
+  // Partition the grid into four zones along the divider axis
+  if orientation == "horizontal" {
+    template_zone = Region(grid, where="above", ref=divs[0])
+    repeat_zone   = Region(grid, where="between", refs=[divs[0], divs[1]])
+    bg_zone       = Region(grid, where="between", refs=[divs[1], divs[2]])
+    fg_zone       = Region(grid, where="below", ref=divs[2])
+  } else {
+    template_zone = Region(grid, where="left of", ref=divs[0])
+    repeat_zone   = Region(grid, where="between", refs=[divs[0], divs[1]])
+    bg_zone       = Region(grid, where="between", refs=[divs[1], divs[2]])
+    fg_zone       = Region(grid, where="right of", ref=divs[2])
+  }
+
+  // Build inverted binary template from the leading zone
+  shape        = Largest(Find("connected components", within=template_zone, where="nonzero"))
+  bbox         = BoundingBox(shape)
+  template_crop= Crop(template_zone, bbox)
+  // Invert: zeros become foreground, nonzeros become background
+  mask         = Map(template_crop, rule="zero->1, nonzero->0")
+
+  // Palette: background from the zone before the last divider, foreground from the trailing zone
+  bg_color = UniqueColor(bg_zone, exclude=0)
+  fg_color = UniqueColor(fg_zone, exclude=0)
+
+  // Colorize the template
+  tile = Paint(mask, map={1:fg_color, 0:bg_color})
+
+  // Number of repetitions encoded by the count of nonzero components in the middle zone
+  repeats = Count(Find("connected components", within=repeat_zone, where="nonzero"))
+
+  // Separator: one line of background color along the stacking axis
+  separator = (orientation=="horizontal")
+              ? MakeGrid(h=1, w=Width(tile), fill=bg_color)
+              : MakeGrid(h=Height(tile), w=1, fill=bg_color)
+
+  // Stack tiles along the axis orthogonal to the dividers
+  output = (orientation=="horizontal")
+           ? RepeatStack(tile, count=repeats, direction="vertical", separator=separator)
+           : RepeatStack(tile, count=repeats, direction="horizontal", separator=separator)
+
+  Output(output)
+}

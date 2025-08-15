@@ -1,0 +1,500 @@
+[MESSAGE] program {
+  grid = Input()
+  canvas = BlankLike(grid)
+
+  // template: the magenta shape made of all 6-cells (two 2x2 blocks on a diagonal)
+  template6 = Template(from=grid, where="color==6", mode="union within tight bounding box", origin="top-left", as="relative mask")
+
+  // anchors
+  a2 = Find("cells", in=grid, where="color==2")
+  a3 = Find("cells", in=grid, where="color==3")
+  a5 = Find("cells", in=grid, where="color==5")
+
+  // helper: draw a 4x4 hollow square (ring) of a given color at top-left anchor
+  Ring4 = Lambda("ring4", args=["color","at"]) {
+    Paint(Outline(Rect(width=4, height=4, top_left=at)), color)
+  }
+
+  // place rings from 2s and 3s
+  ForEach(p in a2) { Ring4(color=4, at=p, on=canvas) }
+  ForEach(p in a3) { Ring4(color=1, at=p, on=canvas) }
+
+  // place the 6-template at each 5-anchor, but only if it does not overlap anything already painted
+  ForEach(p in a5) {
+    stamp = Translate(template6, origin_to=p)
+    if Fits(stamp, within=canvas.bounds) AND Not Intersects(stamp, with=NonZero(canvas)) {
+      Paint(stamp, color=6, on=canvas)
+    }
+  }
+
+  Output(canvas)
+}
+
+============================================================
+Phase: train_0
+============================================================
+program {
+  grid = Input()
+  canvas = BlankLike(grid)
+
+  // template: the magenta shape made of all 6-cells (two 2x2 blocks on a diagonal)
+  template6 = Template(from=grid, where="color==6", mode="union within tight bounding box", origin="top-left", as="relative mask")
+
+  // anchors
+  a2 = Find("cells", in=grid, where="color==2")
+  a3 = Find("cells", in=grid, where="color==3")
+  a5 = Find("cells", in=grid, where="color==5")
+
+  // helper: draw a 4x4 hollow square (ring) of a given color at top-left anchor
+  Ring4 = Lambda("ring4", args=["color","at"]) {
+    Paint(Outline(Rect(width=4, height=4, top_left=at)), color)
+  }
+
+  // place rings from 2s and 3s
+  ForEach(p in a2) { Ring4(color=4, at=p, on=canvas) }
+  ForEach(p in a3) { Ring4(color=1, at=p, on=canvas) }
+
+  // place the 6-template at each 5-anchor, but only if it does not overlap anything already painted
+  ForEach(p in a5) {
+    stamp = Translate(template6, origin_to=p)
+    if Fits(stamp, within=canvas.bounds) AND Not Intersects(stamp, with=NonZero(canvas)) {
+      Paint(stamp, color=6, on=canvas)
+    }
+  }
+
+  Output(canvas)
+}
+[MESSAGE] [[0, 0, 0, 0, 0, 0, 0, 0, 0, 0],
+ [0, 1, 1, 1, 1, 4, 4, 4, 4, 0],
+ [0, 1, 0, 1, 0, 4, 0, 0, 4, 0],
+ [0, 1, 0, 1, 0, 4, 0, 0, 4, 0],
+ [0, 1, 1, 1, 1, 4, 4, 4, 4, 0],
+ [0, 4, 4, 4, 4, 1, 1, 1, 1, 0],
+ [0, 4, 0, 4, 0, 1, 0, 0, 1, 0],
+ [0, 4, 0, 4, 0, 1, 0, 0, 1, 0],
+ [0, 4, 4, 4, 4, 1, 1, 1, 1, 0],
+ [0, 0, 0, 0, 0, 0, 0, 0, 0, 0]]
+
+============================================================
+Phase: train_1_predict
+============================================================
+[[0, 0, 0, 0, 0, 0, 0, 0, 0, 0],
+ [0, 1, 1, 1, 1, 4, 4, 4, 4, 0],
+ [0, 1, 0, 1, 0, 4, 0, 0, 4, 0],
+ [0, 1, 0, 1, 0, 4, 0, 0, 4, 0],
+ [0, 1, 1, 1, 1, 4, 4, 4, 4, 0],
+ [0, 4, 4, 4, 4, 1, 1, 1, 1, 0],
+ [0, 4, 0, 4, 0, 1, 0, 0, 1, 0],
+ [0, 4, 0, 4, 0, 1, 0, 0, 1, 0],
+ [0, 4, 4, 4, 4, 1, 1, 1, 1, 0],
+ [0, 0, 0, 0, 0, 0, 0, 0, 0, 0]]
+[MESSAGE] program {
+  grid = Input()
+  canvas = BlankLike(grid)
+
+  // build the magenta template from existing 6-cells
+  template6 = Capture("relative mask of all cells where color==6", origin="top-left of tight bbox")
+
+  // anchors
+  a2 = Find("cells", where="color==2")
+  a3 = Find("cells", where="color==3")
+  a5 = Find("cells", where="color==5")
+
+  // draw a 4x4 full ring (corners included)
+  RingFull4 = Lambda("ring_full4", args=["color","at"]) {
+    box = Rect(width=4, height=4, top_left=at)
+    if Fits(box, within=canvas.bounds) {
+      Paint(Outline(box), color)
+    }
+  }
+
+  // draw a 4x4 ring without its four corner cells
+  RingNotched4 = Lambda("ring_notched4", args=["color","at"]) {
+    box = Rect(width=4, height=4, top_left=at)
+    if Fits(box, within=canvas.bounds) {
+      edge = Outline(box)
+      corners = Corners(box)
+      Paint(edge - corners, color)
+    }
+  }
+
+  // apply rings
+  ForEach(p in a2) { RingFull4(color=4, at=p, on=canvas) }
+  ForEach(p in a3) { RingNotched4(color=1, at=p, on=canvas) }
+
+  // stamp the magenta template at each 5-anchor (only if it fits and does not overlap what was already painted)
+  ForEach(p in a5) {
+    stamp = Translate(template6, origin_to=p)
+    if Fits(Bounds(stamp), within=canvas.bounds) AND Not Intersects(stamp, with=NonZero(canvas)) {
+      Paint(stamp, color=6, on=canvas)
+    }
+  }
+
+  Output(canvas)
+}
+
+============================================================
+Phase: train_1_verify
+============================================================
+program {
+  grid = Input()
+  canvas = BlankLike(grid)
+
+  // build the magenta template from existing 6-cells
+  template6 = Capture("relative mask of all cells where color==6", origin="top-left of tight bbox")
+
+  // anchors
+  a2 = Find("cells", where="color==2")
+  a3 = Find("cells", where="color==3")
+  a5 = Find("cells", where="color==5")
+
+  // draw a 4x4 full ring (corners included)
+  RingFull4 = Lambda("ring_full4", args=["color","at"]) {
+    box = Rect(width=4, height=4, top_left=at)
+    if Fits(box, within=canvas.bounds) {
+      Paint(Outline(box), color)
+    }
+  }
+
+  // draw a 4x4 ring without its four corner cells
+  RingNotched4 = Lambda("ring_notched4", args=["color","at"]) {
+    box = Rect(width=4, height=4, top_left=at)
+    if Fits(box, within=canvas.bounds) {
+      edge = Outline(box)
+      corners = Corners(box)
+      Paint(edge - corners, color)
+    }
+  }
+
+  // apply rings
+  ForEach(p in a2) { RingFull4(color=4, at=p, on=canvas) }
+  ForEach(p in a3) { RingNotched4(color=1, at=p, on=canvas) }
+
+  // stamp the magenta template at each 5-anchor (only if it fits and does not overlap what was already painted)
+  ForEach(p in a5) {
+    stamp = Translate(template6, origin_to=p)
+    if Fits(Bounds(stamp), within=canvas.bounds) AND Not Intersects(stamp, with=NonZero(canvas)) {
+      Paint(stamp, color=6, on=canvas)
+    }
+  }
+
+  Output(canvas)
+}
+[MESSAGE] [[0, 0, 0, 0, 0, 0, 4, 4, 4, 4],
+ [0, 0, 0, 0, 0, 0, 4, 0, 0, 4],
+ [0, 0, 0, 0, 0, 0, 4, 0, 0, 4],
+ [0, 0, 0, 0, 0, 0, 4, 4, 4, 4],
+ [0, 0, 0, 0, 4, 4, 4, 4, 0, 0],
+ [0, 0, 0, 0, 4, 0, 0, 4, 0, 0],
+ [4, 4, 4, 4, 4, 0, 4, 4, 4, 4],
+ [4, 0, 0, 4, 4, 4, 4, 4, 0, 4],
+ [4, 0, 0, 4, 0, 0, 4, 0, 0, 4],
+ [4, 4, 4, 4, 0, 0, 4, 4, 4, 4]]
+
+============================================================
+Phase: train_2_predict
+============================================================
+[[0, 0, 0, 0, 0, 0, 4, 4, 4, 4],
+ [0, 0, 0, 0, 0, 0, 4, 0, 0, 4],
+ [0, 0, 0, 0, 0, 0, 4, 0, 0, 4],
+ [0, 0, 0, 0, 0, 0, 4, 4, 4, 4],
+ [0, 0, 0, 0, 4, 4, 4, 4, 0, 0],
+ [0, 0, 0, 0, 4, 0, 0, 4, 0, 0],
+ [4, 4, 4, 4, 4, 0, 4, 4, 4, 4],
+ [4, 0, 0, 4, 4, 4, 4, 4, 0, 4],
+ [4, 0, 0, 4, 0, 0, 4, 0, 0, 4],
+ [4, 4, 4, 4, 0, 0, 4, 4, 4, 4]]
+[MESSAGE] program {
+  grid = Input()
+  canvas = BlankLike(grid)
+
+  // build the 6-template from the union of all 6-cells (relative to its tight bbox top-left)
+  template6 = Template(from=grid, where="color==6", mode="union", origin="top-left of bbox", as="relative mask")
+
+  // anchors
+  a2 = Find("cells", in=grid, where="color==2")
+  a3 = Find("cells", in=grid, where="color==3")
+  a5 = Find("cells", in=grid, where="color==5")
+
+  // geometry helpers
+  RingFull4 = Lambda("ring_full4", args=["color","at"]) {
+    box = Rect(width=4, height=4, top_left=at)
+    Paint(Outline(box), color, on=canvas)
+  }
+  RingNotched4 = Lambda("ring_notched4", args=["color","at"]) {
+    box = Rect(width=4, height=4, top_left=at)
+    Paint(Outline(box) - Corners(box), color, on=canvas)
+  }
+
+  // cleanliness test for 2-anchors: the 4x4 placement area must contain no nonzero pixels in the SOURCE grid except the anchor itself
+  AreaCleanExceptAnchor = Lambda("clean", args=["at","anchor_color"]) {
+    box = Rect(width=4, height=4, top_left=at)
+    return Fits(box, within=grid.bounds) AND
+           All(Cells(box), where="(r,c)==at OR grid[r,c]==0")
+  }
+
+  // place blue rings from 2s (only on clean 4x4 areas)
+  ForEach(p in a2) {
+    if AreaCleanExceptAnchor(at=p, anchor_color=2) {
+      RingFull4(color=4, at=p)
+    }
+  }
+
+  // place yellow notched rings from 3s (just fit check)
+  ForEach(p in a3) {
+    if Fits(Rect(4,4, top_left=p), within=grid.bounds) {
+      RingNotched4(color=1, at=p)
+    }
+  }
+
+  // stamp the 6-template at each 5-anchor if it fits and does not overlap what is already painted
+  ForEach(p in a5) {
+    stamp = Translate(template6, origin_to=p)
+    if Not Empty(template6) AND Fits(Bounds(stamp), within=canvas.bounds) AND
+       Not Intersects(stamp, with=NonZero(canvas)) {
+      Paint(stamp, color=6, on=canvas)
+    }
+  }
+
+  Output(canvas)
+}
+
+============================================================
+Phase: train_2_verify
+============================================================
+program {
+  grid = Input()
+  canvas = BlankLike(grid)
+
+  // build the 6-template from the union of all 6-cells (relative to its tight bbox top-left)
+  template6 = Template(from=grid, where="color==6", mode="union", origin="top-left of bbox", as="relative mask")
+
+  // anchors
+  a2 = Find("cells", in=grid, where="color==2")
+  a3 = Find("cells", in=grid, where="color==3")
+  a5 = Find("cells", in=grid, where="color==5")
+
+  // geometry helpers
+  RingFull4 = Lambda("ring_full4", args=["color","at"]) {
+    box = Rect(width=4, height=4, top_left=at)
+    Paint(Outline(box), color, on=canvas)
+  }
+  RingNotched4 = Lambda("ring_notched4", args=["color","at"]) {
+    box = Rect(width=4, height=4, top_left=at)
+    Paint(Outline(box) - Corners(box), color, on=canvas)
+  }
+
+  // cleanliness test for 2-anchors: the 4x4 placement area must contain no nonzero pixels in the SOURCE grid except the anchor itself
+  AreaCleanExceptAnchor = Lambda("clean", args=["at","anchor_color"]) {
+    box = Rect(width=4, height=4, top_left=at)
+    return Fits(box, within=grid.bounds) AND
+           All(Cells(box), where="(r,c)==at OR grid[r,c]==0")
+  }
+
+  // place blue rings from 2s (only on clean 4x4 areas)
+  ForEach(p in a2) {
+    if AreaCleanExceptAnchor(at=p, anchor_color=2) {
+      RingFull4(color=4, at=p)
+    }
+  }
+
+  // place yellow notched rings from 3s (just fit check)
+  ForEach(p in a3) {
+    if Fits(Rect(4,4, top_left=p), within=grid.bounds) {
+      RingNotched4(color=1, at=p)
+    }
+  }
+
+  // stamp the 6-template at each 5-anchor if it fits and does not overlap what is already painted
+  ForEach(p in a5) {
+    stamp = Translate(template6, origin_to=p)
+    if Not Empty(template6) AND Fits(Bounds(stamp), within=canvas.bounds) AND
+       Not Intersects(stamp, with=NonZero(canvas)) {
+      Paint(stamp, color=6, on=canvas)
+    }
+  }
+
+  Output(canvas)
+}
+[MESSAGE] [[4, 4, 4, 4, 4, 4, 4, 4, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0],
+ [4, 0, 0, 4, 4, 0, 0, 4, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0],
+ [4, 0, 0, 4, 4, 0, 0, 4, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0],
+ [4, 4, 4, 4, 4, 4, 4, 4, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0],
+ [4, 4, 4, 4, 0, 1, 1, 0, 4, 4, 4, 4, 0, 1, 1, 0, 0, 0, 0, 0],
+ [4, 0, 0, 4, 1, 0, 0, 1, 4, 0, 0, 4, 1, 0, 0, 1, 0, 0, 0, 0],
+ [4, 0, 0, 4, 1, 0, 0, 1, 4, 0, 0, 4, 1, 0, 0, 1, 0, 0, 0, 0],
+ [4, 4, 4, 4, 0, 1, 1, 0, 4, 4, 4, 4, 0, 1, 1, 0, 0, 0, 0, 0],
+ [0, 0, 0, 0, 0, 1, 1, 0, 0, 0, 0, 0, 4, 4, 4, 4, 0, 0, 0, 0],
+ [0, 0, 0, 0, 1, 0, 0, 1, 0, 0, 0, 0, 4, 0, 0, 4, 0, 0, 0, 0],
+ [0, 0, 0, 0, 1, 0, 0, 1, 0, 0, 0, 0, 4, 0, 0, 4, 0, 0, 0, 0],
+ [0, 0, 0, 0, 0, 1, 1, 0, 0, 0, 0, 0, 4, 4, 4, 4, 0, 0, 0, 0],
+ [0, 0, 0, 0, 0, 1, 1, 0, 4, 4, 4, 4, 0, 1, 1, 0, 4, 4, 4, 4],
+ [0, 0, 0, 0, 1, 0, 0, 1, 4, 0, 0, 4, 1, 0, 0, 1, 4, 0, 0, 4],
+ [0, 0, 0, 0, 1, 0, 0, 1, 4, 0, 0, 4, 1, 0, 0, 1, 4, 0, 0, 4],
+ [0, 0, 0, 0, 0, 1, 1, 0, 4, 4, 4, 4, 0, 1, 1, 0, 4, 4, 4, 4],
+ [0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 4, 4, 4, 4, 4, 4, 4, 4],
+ [0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 4, 0, 0, 4, 4, 0, 0, 4],
+ [0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 4, 0, 0, 4, 4, 0, 0, 4],
+ [0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 4, 4, 4, 4, 4, 4, 4, 4]]
+
+============================================================
+Phase: train_3_predict
+============================================================
+[[4, 4, 4, 4, 4, 4, 4, 4, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0],
+ [4, 0, 0, 4, 4, 0, 0, 4, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0],
+ [4, 0, 0, 4, 4, 0, 0, 4, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0],
+ [4, 4, 4, 4, 4, 4, 4, 4, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0],
+ [4, 4, 4, 4, 0, 1, 1, 0, 4, 4, 4, 4, 0, 1, 1, 0, 0, 0, 0, 0],
+ [4, 0, 0, 4, 1, 0, 0, 1, 4, 0, 0, 4, 1, 0, 0, 1, 0, 0, 0, 0],
+ [4, 0, 0, 4, 1, 0, 0, 1, 4, 0, 0, 4, 1, 0, 0, 1, 0, 0, 0, 0],
+ [4, 4, 4, 4, 0, 1, 1, 0, 4, 4, 4, 4, 0, 1, 1, 0, 0, 0, 0, 0],
+ [0, 0, 0, 0, 0, 1, 1, 0, 0, 0, 0, 0, 4, 4, 4, 4, 0, 0, 0, 0],
+ [0, 0, 0, 0, 1, 0, 0, 1, 0, 0, 0, 0, 4, 0, 0, 4, 0, 0, 0, 0],
+ [0, 0, 0, 0, 1, 0, 0, 1, 0, 0, 0, 0, 4, 0, 0, 4, 0, 0, 0, 0],
+ [0, 0, 0, 0, 0, 1, 1, 0, 0, 0, 0, 0, 4, 4, 4, 4, 0, 0, 0, 0],
+ [0, 0, 0, 0, 0, 1, 1, 0, 4, 4, 4, 4, 0, 1, 1, 0, 4, 4, 4, 4],
+ [0, 0, 0, 0, 1, 0, 0, 1, 4, 0, 0, 4, 1, 0, 0, 1, 4, 0, 0, 4],
+ [0, 0, 0, 0, 1, 0, 0, 1, 4, 0, 0, 4, 1, 0, 0, 1, 4, 0, 0, 4],
+ [0, 0, 0, 0, 0, 1, 1, 0, 4, 4, 4, 4, 0, 1, 1, 0, 4, 4, 4, 4],
+ [0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 4, 4, 4, 4, 4, 4, 4, 4],
+ [0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 4, 0, 0, 4, 4, 0, 0, 4],
+ [0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 4, 0, 0, 4, 4, 0, 0, 4],
+ [0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 4, 4, 4, 4, 4, 4, 4, 4]]
+[MESSAGE] program {
+  grid = Input()
+  canvas = BlankLike(grid)
+  tile = 4
+
+  // Anchors: tokens that instruct which 4x4 pattern to stamp at their top-left cell
+  a2 = Find("cells", where="value==2")
+  a3 = Find("cells", where="value==3")
+  a5 = Find("cells", where="value==5")
+  a8 = Find("cells", where="value==8")
+
+  // Shape templates (relative to a 4x4 tile, origin at tile's top-left)
+  Ring4 = Lambda("ring4", args=["color","at"]) {
+    box = Rect(width=4, height=4, top_left=at)
+    if Fits(box, within=canvas.bounds) { Paint(Outline(box), color, on=canvas) }
+  }
+  NotchedRing4 = Lambda("notched_ring4", args=["color","at"]) {
+    box = Rect(width=4, height=4, top_left=at)
+    if Fits(box, within=canvas.bounds) {
+      Paint(Outline(box) - Corners(box), color, on=canvas)
+    }
+  }
+  DiagonalDouble2x2 = Lambda("diag_double_2x2", args=["color","at"]) {
+    // two 2x2 blocks on opposite corners of the 4x4 tile
+    tl = Rect(2,2, top_left=at)
+    br = Rect(2,2, top_left=at+[2,2])
+    shape = tl ∪ br
+    if Fits(Bounds(shape), within=canvas.bounds) { Paint(shape, color, on=canvas) }
+  }
+  CornersPlusCenter = Lambda("corners_plus_center", args=["color","at"]) {
+    box = Rect(4,4, top_left=at)
+    corners = Corners(box)
+    center = Rect(2,2, top_left=at+[1,1])
+    shape = corners ∪ center
+    if Fits(Bounds(shape), within=canvas.bounds) { Paint(shape, color, on=canvas) }
+  }
+
+  // Apply stamps by anchor type
+  ForEach(p in a2) { Ring4(color=4, at=p) }                 // 2 -> blue 4x4 ring (color 4)
+  ForEach(p in a3) { NotchedRing4(color=1, at=p) }          // 3 -> yellow ring without corners (color 1)
+  ForEach(p in a5) { DiagonalDouble2x2(color=6, at=p) }     // 5 -> two opposite 2x2 blocks (color 6)
+  ForEach(p in a8) { CornersPlusCenter(color=7, at=p) }     // 8 -> corners + center 2x2 (color 7)
+
+  Output(canvas)
+}
+
+============================================================
+Phase: train_3_verify
+============================================================
+program {
+  grid = Input()
+  canvas = BlankLike(grid)
+  tile = 4
+
+  // Anchors: tokens that instruct which 4x4 pattern to stamp at their top-left cell
+  a2 = Find("cells", where="value==2")
+  a3 = Find("cells", where="value==3")
+  a5 = Find("cells", where="value==5")
+  a8 = Find("cells", where="value==8")
+
+  // Shape templates (relative to a 4x4 tile, origin at tile's top-left)
+  Ring4 = Lambda("ring4", args=["color","at"]) {
+    box = Rect(width=4, height=4, top_left=at)
+    if Fits(box, within=canvas.bounds) { Paint(Outline(box), color, on=canvas) }
+  }
+  NotchedRing4 = Lambda("notched_ring4", args=["color","at"]) {
+    box = Rect(width=4, height=4, top_left=at)
+    if Fits(box, within=canvas.bounds) {
+      Paint(Outline(box) - Corners(box), color, on=canvas)
+    }
+  }
+  DiagonalDouble2x2 = Lambda("diag_double_2x2", args=["color","at"]) {
+    // two 2x2 blocks on opposite corners of the 4x4 tile
+    tl = Rect(2,2, top_left=at)
+    br = Rect(2,2, top_left=at+[2,2])
+    shape = tl ∪ br
+    if Fits(Bounds(shape), within=canvas.bounds) { Paint(shape, color, on=canvas) }
+  }
+  CornersPlusCenter = Lambda("corners_plus_center", args=["color","at"]) {
+    box = Rect(4,4, top_left=at)
+    corners = Corners(box)
+    center = Rect(2,2, top_left=at+[1,1])
+    shape = corners ∪ center
+    if Fits(Bounds(shape), within=canvas.bounds) { Paint(shape, color, on=canvas) }
+  }
+
+  // Apply stamps by anchor type
+  ForEach(p in a2) { Ring4(color=4, at=p) }                 // 2 -> blue 4x4 ring (color 4)
+  ForEach(p in a3) { NotchedRing4(color=1, at=p) }          // 3 -> yellow ring without corners (color 1)
+  ForEach(p in a5) { DiagonalDouble2x2(color=6, at=p) }     // 5 -> two opposite 2x2 blocks (color 6)
+  ForEach(p in a8) { CornersPlusCenter(color=7, at=p) }     // 8 -> corners + center 2x2 (color 7)
+
+  Output(canvas)
+}
+[MESSAGE] [[0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0],
+ [7, 0, 0, 7, 7, 0, 0, 7, 7, 0, 0, 7, 7, 0, 0, 7, 7, 0, 0, 7],
+ [0, 7, 7, 0, 0, 7, 7, 0, 0, 7, 7, 0, 0, 7, 7, 0, 0, 7, 7, 0],
+ [0, 7, 7, 0, 0, 7, 7, 0, 0, 7, 7, 0, 0, 7, 7, 0, 0, 7, 7, 0],
+ [7, 0, 0, 7, 7, 0, 0, 7, 7, 0, 0, 7, 7, 0, 0, 7, 7, 0, 0, 7],
+ [7, 0, 0, 7, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 7, 0, 0, 7],
+ [0, 7, 7, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 7, 7, 0],
+ [0, 7, 7, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 7, 7, 0],
+ [7, 0, 0, 7, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 7, 0, 0, 7],
+ [7, 0, 0, 7, 0, 0, 0, 0, 7, 0, 0, 7, 0, 0, 0, 0, 7, 0, 0, 7],
+ [0, 7, 7, 0, 0, 0, 0, 0, 0, 7, 7, 0, 0, 0, 0, 0, 0, 7, 7, 0],
+ [0, 7, 7, 0, 0, 0, 0, 0, 0, 7, 7, 0, 0, 0, 0, 0, 0, 7, 7, 0],
+ [7, 0, 0, 7, 0, 0, 0, 0, 7, 0, 0, 7, 0, 0, 0, 0, 7, 0, 0, 7],
+ [7, 0, 0, 7, 0, 0, 0, 0, 0, 0, 0, 0, 7, 0, 0, 7, 7, 0, 0, 7],
+ [0, 7, 7, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 7, 7, 0, 0, 7, 7, 0],
+ [0, 7, 7, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 7, 7, 0, 0, 7, 7, 0],
+ [7, 0, 0, 7, 0, 0, 0, 0, 0, 0, 0, 0, 7, 0, 0, 7, 7, 0, 0, 7],
+ [7, 0, 0, 7, 7, 0, 0, 7, 7, 0, 0, 7, 7, 0, 0, 7, 7, 0, 0, 7],
+ [0, 7, 7, 0, 0, 7, 7, 0, 0, 7, 7, 0, 0, 7, 7, 0, 0, 7, 7, 0],
+ [0, 7, 7, 0, 0, 7, 7, 0, 0, 7, 7, 0, 0, 7, 7, 0, 0, 7, 7, 0]]
+
+============================================================
+Phase: test_predict
+============================================================
+[[0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0],
+ [7, 0, 0, 7, 7, 0, 0, 7, 7, 0, 0, 7, 7, 0, 0, 7, 7, 0, 0, 7],
+ [0, 7, 7, 0, 0, 7, 7, 0, 0, 7, 7, 0, 0, 7, 7, 0, 0, 7, 7, 0],
+ [0, 7, 7, 0, 0, 7, 7, 0, 0, 7, 7, 0, 0, 7, 7, 0, 0, 7, 7, 0],
+ [7, 0, 0, 7, 7, 0, 0, 7, 7, 0, 0, 7, 7, 0, 0, 7, 7, 0, 0, 7],
+ [7, 0, 0, 7, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 7, 0, 0, 7],
+ [0, 7, 7, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 7, 7, 0],
+ [0, 7, 7, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 7, 7, 0],
+ [7, 0, 0, 7, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 7, 0, 0, 7],
+ [7, 0, 0, 7, 0, 0, 0, 0, 7, 0, 0, 7, 0, 0, 0, 0, 7, 0, 0, 7],
+ [0, 7, 7, 0, 0, 0, 0, 0, 0, 7, 7, 0, 0, 0, 0, 0, 0, 7, 7, 0],
+ [0, 7, 7, 0, 0, 0, 0, 0, 0, 7, 7, 0, 0, 0, 0, 0, 0, 7, 7, 0],
+ [7, 0, 0, 7, 0, 0, 0, 0, 7, 0, 0, 7, 0, 0, 0, 0, 7, 0, 0, 7],
+ [7, 0, 0, 7, 0, 0, 0, 0, 0, 0, 0, 0, 7, 0, 0, 7, 7, 0, 0, 7],
+ [0, 7, 7, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 7, 7, 0, 0, 7, 7, 0],
+ [0, 7, 7, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 7, 7, 0, 0, 7, 7, 0],
+ [7, 0, 0, 7, 0, 0, 0, 0, 0, 0, 0, 0, 7, 0, 0, 7, 7, 0, 0, 7],
+ [7, 0, 0, 7, 7, 0, 0, 7, 7, 0, 0, 7, 7, 0, 0, 7, 7, 0, 0, 7],
+ [0, 7, 7, 0, 0, 7, 7, 0, 0, 7, 7, 0, 0, 7, 7, 0, 0, 7, 7, 0],
+ [0, 7, 7, 0, 0, 7, 7, 0, 0, 7, 7, 0, 0, 7, 7, 0, 0, 7, 7, 0]]

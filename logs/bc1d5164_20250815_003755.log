@@ -1,0 +1,376 @@
+[MESSAGE] program {
+  input = Grid()
+  bg = MostFrequentColor(input)
+  H = Height(input)
+  W = Width(input)
+
+  // Map any cell to one of 3x3 buckets by row/col edge vs interior
+  EdgeClass = Lambda("pos,size -> class", {
+    return (pos==0) ? 0 : (pos==size-1) ? 2 : 1
+  })
+
+  buckets = Dict(default=List) // keys: (i,j) with i,j in {0,1,2}
+
+  for (r,c,color) in Cells(input) {
+    if color == bg: continue
+    i = EdgeClass(r, H)
+    j = EdgeClass(c, W)
+    buckets[(i,j)].append(color)
+  }
+
+  out = NewGrid(3,3, fill=bg)
+  for i in [0,1,2] {
+    for j in [0,1,2] {
+      if NotEmpty(buckets[(i,j)]) {
+        out[i,j] = ModeColor(buckets[(i,j)], tie_break="first")
+      }
+    }
+  }
+
+  return out
+}
+
+============================================================
+Phase: train_0
+============================================================
+program {
+  input = Grid()
+  bg = MostFrequentColor(input)
+  H = Height(input)
+  W = Width(input)
+
+  // Map any cell to one of 3x3 buckets by row/col edge vs interior
+  EdgeClass = Lambda("pos,size -> class", {
+    return (pos==0) ? 0 : (pos==size-1) ? 2 : 1
+  })
+
+  buckets = Dict(default=List) // keys: (i,j) with i,j in {0,1,2}
+
+  for (r,c,color) in Cells(input) {
+    if color == bg: continue
+    i = EdgeClass(r, H)
+    j = EdgeClass(c, W)
+    buckets[(i,j)].append(color)
+  }
+
+  out = NewGrid(3,3, fill=bg)
+  for i in [0,1,2] {
+    for j in [0,1,2] {
+      if NotEmpty(buckets[(i,j)]) {
+        out[i,j] = ModeColor(buckets[(i,j)], tie_break="first")
+      }
+    }
+  }
+
+  return out
+}
+[MESSAGE] [[2, 2, 2],
+ [0, 2, 2],
+ [2, 0, 2]]
+
+============================================================
+Phase: train_1_predict
+============================================================
+[[2, 2, 2],
+ [0, 2, 2],
+ [2, 0, 2]]
+[MESSAGE] program {
+  input = Grid()
+  bg = MostFrequentColor(input)
+  H = Height(input)
+  W = Width(input)
+
+  EdgeClass = Lambda("pos,size -> class", {
+    return (pos==0) ? 0 : (pos==size-1) ? 2 : 1
+  })
+
+  buckets = Dict(default=List)
+
+  for (r,c,color) in Cells(input) {
+    if color == bg: continue
+    i = EdgeClass(r, H)
+    j = EdgeClass(c, W)
+    buckets[(i,j)].append(color)
+  }
+
+  out = NewGrid(3,3, fill=bg)
+  for i in [0,1,2] {
+    for j in [0,1,2] {
+      if NotEmpty(buckets[(i,j)]) {
+        out[i,j] = ModeColor(buckets[(i,j)], tie_break="first")
+      }
+    }
+  }
+
+  return out
+}
+
+============================================================
+Phase: train_1_verify
+============================================================
+program {
+  input = Grid()
+  bg = MostFrequentColor(input)
+  H = Height(input)
+  W = Width(input)
+
+  EdgeClass = Lambda("pos,size -> class", {
+    return (pos==0) ? 0 : (pos==size-1) ? 2 : 1
+  })
+
+  buckets = Dict(default=List)
+
+  for (r,c,color) in Cells(input) {
+    if color == bg: continue
+    i = EdgeClass(r, H)
+    j = EdgeClass(c, W)
+    buckets[(i,j)].append(color)
+  }
+
+  out = NewGrid(3,3, fill=bg)
+  for i in [0,1,2] {
+    for j in [0,1,2] {
+      if NotEmpty(buckets[(i,j)]) {
+        out[i,j] = ModeColor(buckets[(i,j)], tie_break="first")
+      }
+    }
+  }
+
+  return out
+}
+[MESSAGE] [[4, 4, 0],
+ [0, 4, 4],
+ [4, 0, 4]]
+
+============================================================
+Phase: train_2_predict
+============================================================
+[[4, 4, 0],
+ [0, 4, 4],
+ [4, 0, 4]]
+[MESSAGE] program {
+  input = Grid()
+  bg = MostFrequentColor(input)
+  H = Height(input)
+  W = Width(input)
+
+  // Classify into 3x3 bins: top/middle/bottom x left/middle/right
+  EdgeClass = Lambda("pos,size -> class", {
+    return (pos==0) ? 0 : (pos==size-1) ? 2 : 1
+  })
+
+  buckets = Dict(default=List) // key: (rowClass,colClass)
+
+  for (r,c,color) in Cells(input, order="row-major") {
+    if color == bg: continue
+    i = EdgeClass(r, H)
+    j = EdgeClass(c, W)
+    buckets[(i,j)].append(color)
+  }
+
+  out = NewGrid(3,3, fill=bg)
+  for i in [0,1,2] {
+    for j in [0,1,2] {
+      if NotEmpty(buckets[(i,j)]) {
+        out[i,j] = ModeColor(buckets[(i,j)], tie_break="first")
+      }
+    }
+  }
+
+  return out
+}
+
+============================================================
+Phase: train_2_verify
+============================================================
+program {
+  input = Grid()
+  bg = MostFrequentColor(input)
+  H = Height(input)
+  W = Width(input)
+
+  // Classify into 3x3 bins: top/middle/bottom x left/middle/right
+  EdgeClass = Lambda("pos,size -> class", {
+    return (pos==0) ? 0 : (pos==size-1) ? 2 : 1
+  })
+
+  buckets = Dict(default=List) // key: (rowClass,colClass)
+
+  for (r,c,color) in Cells(input, order="row-major") {
+    if color == bg: continue
+    i = EdgeClass(r, H)
+    j = EdgeClass(c, W)
+    buckets[(i,j)].append(color)
+  }
+
+  out = NewGrid(3,3, fill=bg)
+  for i in [0,1,2] {
+    for j in [0,1,2] {
+      if NotEmpty(buckets[(i,j)]) {
+        out[i,j] = ModeColor(buckets[(i,j)], tie_break="first")
+      }
+    }
+  }
+
+  return out
+}
+[MESSAGE] [[0, 3, 0],
+ [3, 0, 3],
+ [0, 0, 3]]
+
+============================================================
+Phase: train_3_predict
+============================================================
+[[0, 3, 0],
+ [3, 0, 3],
+ [0, 0, 3]]
+[MESSAGE] program {
+  input = Grid()
+  bg = MostFrequentColor(input)
+  H = Height(input)
+  W = Width(input)
+
+  // Classify into 3x3 bins: top/middle/bottom x left/middle/right
+  EdgeClass = Lambda("pos,size -> class", {
+    return (pos==0) ? 0 : (pos==size-1) ? 2 : 1
+  })
+
+  buckets = Dict(default=List) // key: (rowClass,colClass)
+
+  for (r,c,color) in Cells(input, order="row-major") {
+    if color == bg: continue
+    i = EdgeClass(r, H)
+    j = EdgeClass(c, W)
+    buckets[(i,j)].append(color)
+  }
+
+  out = NewGrid(3,3, fill=bg)
+  for i in [0,1,2] {
+    for j in [0,1,2] {
+      if NotEmpty(buckets[(i,j)]) {
+        out[i,j] = ModeColor(buckets[(i,j)], tie_break="first")
+      }
+    }
+  }
+
+  return out
+}
+
+============================================================
+Phase: train_3_verify
+============================================================
+program {
+  input = Grid()
+  bg = MostFrequentColor(input)
+  H = Height(input)
+  W = Width(input)
+
+  // Classify into 3x3 bins: top/middle/bottom x left/middle/right
+  EdgeClass = Lambda("pos,size -> class", {
+    return (pos==0) ? 0 : (pos==size-1) ? 2 : 1
+  })
+
+  buckets = Dict(default=List) // key: (rowClass,colClass)
+
+  for (r,c,color) in Cells(input, order="row-major") {
+    if color == bg: continue
+    i = EdgeClass(r, H)
+    j = EdgeClass(c, W)
+    buckets[(i,j)].append(color)
+  }
+
+  out = NewGrid(3,3, fill=bg)
+  for i in [0,1,2] {
+    for j in [0,1,2] {
+      if NotEmpty(buckets[(i,j)]) {
+        out[i,j] = ModeColor(buckets[(i,j)], tie_break="first")
+      }
+    }
+  }
+
+  return out
+}
+[MESSAGE] [[0, 8, 0],
+ [8, 8, 8],
+ [0, 8, 0]]
+
+============================================================
+Phase: train_4_predict
+============================================================
+[[0, 8, 0],
+ [8, 8, 8],
+ [0, 8, 0]]
+[MESSAGE] program {
+  input = Grid()
+  bg = MostFrequentColor(input)
+  H = Height(input)
+  W = Width(input)
+
+  EdgeClass = Lambda("pos,size -> class", {
+    return (pos==0) ? 0 : (pos==size-1) ? 2 : 1
+  })
+
+  buckets = Dict(default=List) // key: (rowClass,colClass)
+
+  for (r,c,color) in Cells(input, order="row-major") {
+    if color == bg: continue
+    i = EdgeClass(r, H)
+    j = EdgeClass(c, W)
+    buckets[(i,j)].append(color)
+  }
+
+  out = NewGrid(3,3, fill=bg)
+  for i in [0,1,2] {
+    for j in [0,1,2] {
+      if NotEmpty(buckets[(i,j)]) {
+        out[i,j] = ModeColor(buckets[(i,j)], tie_break="first")
+      }
+    }
+  }
+
+  return out
+}
+
+============================================================
+Phase: train_4_verify
+============================================================
+program {
+  input = Grid()
+  bg = MostFrequentColor(input)
+  H = Height(input)
+  W = Width(input)
+
+  EdgeClass = Lambda("pos,size -> class", {
+    return (pos==0) ? 0 : (pos==size-1) ? 2 : 1
+  })
+
+  buckets = Dict(default=List) // key: (rowClass,colClass)
+
+  for (r,c,color) in Cells(input, order="row-major") {
+    if color == bg: continue
+    i = EdgeClass(r, H)
+    j = EdgeClass(c, W)
+    buckets[(i,j)].append(color)
+  }
+
+  out = NewGrid(3,3, fill=bg)
+  for i in [0,1,2] {
+    for j in [0,1,2] {
+      if NotEmpty(buckets[(i,j)]) {
+        out[i,j] = ModeColor(buckets[(i,j)], tie_break="first")
+      }
+    }
+  }
+
+  return out
+}
+[MESSAGE] [[0, 1, 1],
+ [1, 0, 0],
+ [0, 1, 1]]
+
+============================================================
+Phase: test_predict
+============================================================
+[[0, 1, 1],
+ [1, 0, 0],
+ [0, 1, 1]]

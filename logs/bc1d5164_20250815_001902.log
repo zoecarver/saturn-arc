@@ -1,0 +1,392 @@
+[MESSAGE] program {
+  G = InputGrid()
+  H = Height(G)
+  W = Width(G)
+
+  row_bands = [
+    Rows(1),
+    Rows(2..H-1),
+    Rows(H)
+  ]
+  col_bands = [
+    Cols(1),
+    Cols(2..W-1),
+    Cols(W)
+  ]
+
+  Out = NewGrid(3, 3, fill=0)
+
+  for i in 1..3 {
+    for j in 1..3 {
+      block = Subgrid(G, rows=row_bands[i], cols=col_bands[j])
+      nz = UniqueColors(block, exclude=0)
+      if Size(nz) == 0 {
+        color = 0
+      } else {
+        color = ModeColor(block, exclude=0, tie_breaker="lowest_value")
+      }
+      SetCell(Out, i, j, color)
+    }
+  }
+
+  Return(Out)
+}
+
+============================================================
+Phase: train_0
+============================================================
+program {
+  G = InputGrid()
+  H = Height(G)
+  W = Width(G)
+
+  row_bands = [
+    Rows(1),
+    Rows(2..H-1),
+    Rows(H)
+  ]
+  col_bands = [
+    Cols(1),
+    Cols(2..W-1),
+    Cols(W)
+  ]
+
+  Out = NewGrid(3, 3, fill=0)
+
+  for i in 1..3 {
+    for j in 1..3 {
+      block = Subgrid(G, rows=row_bands[i], cols=col_bands[j])
+      nz = UniqueColors(block, exclude=0)
+      if Size(nz) == 0 {
+        color = 0
+      } else {
+        color = ModeColor(block, exclude=0, tie_breaker="lowest_value")
+      }
+      SetCell(Out, i, j, color)
+    }
+  }
+
+  Return(Out)
+}
+[MESSAGE] [[2, 2, 2],
+ [0, 2, 2],
+ [2, 0, 2]]
+
+============================================================
+Phase: train_1_predict
+============================================================
+[[2, 2, 2],
+ [0, 2, 2],
+ [2, 0, 2]]
+[MESSAGE] program {
+  G = InputGrid()
+  H = Height(G)
+  W = Width(G)
+
+  row_bands = [
+    Rows(1),
+    Rows(2..H-1),
+    Rows(H)
+  ]
+  col_bands = [
+    Cols(1),
+    Cols(2..W-1),
+    Cols(W)
+  ]
+
+  Out = NewGrid(3, 3, fill=0)
+
+  for i in 1..3 {
+    for j in 1..3 {
+      block = Subgrid(G, rows=row_bands[i], cols=col_bands[j])
+      if Any(block, where="value != 0") {
+        color = ModeColor(block, exclude=0, tie_breaker="lowest_value")
+      } else {
+        color = 0
+      }
+      SetCell(Out, i, j, color)
+    }
+  }
+
+  Return(Out)
+}
+
+============================================================
+Phase: train_1_verify
+============================================================
+program {
+  G = InputGrid()
+  H = Height(G)
+  W = Width(G)
+
+  row_bands = [
+    Rows(1),
+    Rows(2..H-1),
+    Rows(H)
+  ]
+  col_bands = [
+    Cols(1),
+    Cols(2..W-1),
+    Cols(W)
+  ]
+
+  Out = NewGrid(3, 3, fill=0)
+
+  for i in 1..3 {
+    for j in 1..3 {
+      block = Subgrid(G, rows=row_bands[i], cols=col_bands[j])
+      if Any(block, where="value != 0") {
+        color = ModeColor(block, exclude=0, tie_breaker="lowest_value")
+      } else {
+        color = 0
+      }
+      SetCell(Out, i, j, color)
+    }
+  }
+
+  Return(Out)
+}
+[MESSAGE] [[4, 4, 0],
+ [0, 4, 4],
+ [4, 0, 4]]
+
+============================================================
+Phase: train_2_predict
+============================================================
+[[4, 4, 0],
+ [0, 4, 4],
+ [4, 0, 4]]
+[MESSAGE] program {
+  G = InputGrid()
+  H = Height(G)
+  W = Width(G)
+
+  row_bands = [
+    Rows(1),
+    Rows(2..H-1),
+    Rows(H)
+  ]
+  col_bands = [
+    Cols(1),
+    Cols(2..W-1),
+    Cols(W)
+  ]
+
+  Out = NewGrid(3, 3, fill=0)
+
+  for i in 1..3 {
+    for j in 1..3 {
+      block = Subgrid(G, rows=row_bands[i], cols=col_bands[j])
+      if Any(block, where="value != 0") {
+        color = ModeColor(block, exclude=0, tie_breaker="lowest_value")
+      } else {
+        color = 0
+      }
+      SetCell(Out, i, j, color)
+    }
+  }
+
+  Return(Out)
+}
+
+============================================================
+Phase: train_2_verify
+============================================================
+program {
+  G = InputGrid()
+  H = Height(G)
+  W = Width(G)
+
+  row_bands = [
+    Rows(1),
+    Rows(2..H-1),
+    Rows(H)
+  ]
+  col_bands = [
+    Cols(1),
+    Cols(2..W-1),
+    Cols(W)
+  ]
+
+  Out = NewGrid(3, 3, fill=0)
+
+  for i in 1..3 {
+    for j in 1..3 {
+      block = Subgrid(G, rows=row_bands[i], cols=col_bands[j])
+      if Any(block, where="value != 0") {
+        color = ModeColor(block, exclude=0, tie_breaker="lowest_value")
+      } else {
+        color = 0
+      }
+      SetCell(Out, i, j, color)
+    }
+  }
+
+  Return(Out)
+}
+[MESSAGE] [[0, 3, 0],
+ [3, 0, 3],
+ [0, 0, 3]]
+
+============================================================
+Phase: train_3_predict
+============================================================
+[[0, 3, 0],
+ [3, 0, 3],
+ [0, 0, 3]]
+[MESSAGE] program {
+  G = InputGrid()
+  H = Height(G)
+  W = Width(G)
+
+  row_bands = [
+    Rows(1),
+    Rows(2..H-1),
+    Rows(H)
+  ]
+  col_bands = [
+    Cols(1),
+    Cols(2..W-1),
+    Cols(W)
+  ]
+
+  Out = NewGrid(3, 3, fill=0)
+
+  for i in 1..3 {
+    for j in 1..3 {
+      block = Subgrid(G, rows=row_bands[i], cols=col_bands[j])
+      if Any(block, where="value != 0") {
+        color = ModeColor(block, exclude=0, tie_breaker="lowest_value")
+      } else {
+        color = 0
+      }
+      SetCell(Out, i, j, color)
+    }
+  }
+
+  Return(Out)
+}
+
+============================================================
+Phase: train_3_verify
+============================================================
+program {
+  G = InputGrid()
+  H = Height(G)
+  W = Width(G)
+
+  row_bands = [
+    Rows(1),
+    Rows(2..H-1),
+    Rows(H)
+  ]
+  col_bands = [
+    Cols(1),
+    Cols(2..W-1),
+    Cols(W)
+  ]
+
+  Out = NewGrid(3, 3, fill=0)
+
+  for i in 1..3 {
+    for j in 1..3 {
+      block = Subgrid(G, rows=row_bands[i], cols=col_bands[j])
+      if Any(block, where="value != 0") {
+        color = ModeColor(block, exclude=0, tie_breaker="lowest_value")
+      } else {
+        color = 0
+      }
+      SetCell(Out, i, j, color)
+    }
+  }
+
+  Return(Out)
+}
+[MESSAGE] [[0, 8, 0],
+ [8, 8, 8],
+ [0, 8, 0]]
+
+============================================================
+Phase: train_4_predict
+============================================================
+[[0, 8, 0],
+ [8, 8, 8],
+ [0, 8, 0]]
+[MESSAGE] program {
+  G = InputGrid()
+  H = Height(G)
+  W = Width(G)
+
+  row_bands = [
+    Rows(1),
+    Rows(2..H-1),
+    Rows(H)
+  ]
+  col_bands = [
+    Cols(1),
+    Cols(2..W-1),
+    Cols(W)
+  ]
+
+  Out = NewGrid(3, 3, fill=0)
+
+  for i in 1..3 {
+    for j in 1..3 {
+      block = Subgrid(G, rows=row_bands[i], cols=col_bands[j])
+      if Any(block, where="value != 0") {
+        color = ModeColor(block, exclude=0, tie_breaker="lowest_value")
+      } else {
+        color = 0
+      }
+      SetCell(Out, i, j, color)
+    }
+  }
+
+  Return(Out)
+}
+
+============================================================
+Phase: train_4_verify
+============================================================
+program {
+  G = InputGrid()
+  H = Height(G)
+  W = Width(G)
+
+  row_bands = [
+    Rows(1),
+    Rows(2..H-1),
+    Rows(H)
+  ]
+  col_bands = [
+    Cols(1),
+    Cols(2..W-1),
+    Cols(W)
+  ]
+
+  Out = NewGrid(3, 3, fill=0)
+
+  for i in 1..3 {
+    for j in 1..3 {
+      block = Subgrid(G, rows=row_bands[i], cols=col_bands[j])
+      if Any(block, where="value != 0") {
+        color = ModeColor(block, exclude=0, tie_breaker="lowest_value")
+      } else {
+        color = 0
+      }
+      SetCell(Out, i, j, color)
+    }
+  }
+
+  Return(Out)
+}
+[MESSAGE] [[0, 0, 1],
+ [1, 0, 0],
+ [0, 1, 1]]
+
+============================================================
+Phase: test_predict
+============================================================
+[[0, 0, 1],
+ [1, 0, 0],
+ [0, 1, 1]]

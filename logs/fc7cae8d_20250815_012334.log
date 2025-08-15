@@ -1,0 +1,232 @@
+[MESSAGE] program {
+  grid = Input()
+
+  // Identify the main inner canvas as the largest connected region of the most common nonzero color
+  canvas_color = MostFrequentColor(grid, exclude=0)
+  canvas_cc = Largest(Find("connected_components", where=("color == " + canvas_color), connectivity=4))
+
+  // Crop to the minimal axis-aligned bounding box of this canvas
+  inner_box = BoundingBox(canvas_cc)
+  inner = Crop(grid, inner_box)
+
+  // Rotate the cropped inner canvas 90 degrees counter-clockwise
+  result = Rotate(inner, direction="ccw90")
+
+  Output(result)
+}
+
+============================================================
+Phase: train_0
+============================================================
+program {
+  grid = Input()
+
+  // Identify the main inner canvas as the largest connected region of the most common nonzero color
+  canvas_color = MostFrequentColor(grid, exclude=0)
+  canvas_cc = Largest(Find("connected_components", where=("color == " + canvas_color), connectivity=4))
+
+  // Crop to the minimal axis-aligned bounding box of this canvas
+  inner_box = BoundingBox(canvas_cc)
+  inner = Crop(grid, inner_box)
+
+  // Rotate the cropped inner canvas 90 degrees counter-clockwise
+  result = Rotate(inner, direction="ccw90")
+
+  Output(result)
+}
+[MESSAGE] [[2, 2, 2, 2, 2, 2, 2, 2, 2, 2],
+ [2, 8, 2, 2, 2, 2, 4, 2, 2, 2],
+ [2, 8, 2, 2, 2, 2, 4, 4, 4, 2],
+ [2, 2, 2, 2, 2, 2, 2, 2, 4, 2],
+ [2, 2, 2, 2, 2, 2, 4, 4, 4, 2],
+ [2, 2, 2, 2, 2, 2, 4, 2, 2, 2],
+ [2, 2, 2, 2, 2, 2, 4, 4, 4, 2],
+ [2, 2, 2, 2, 2, 2, 2, 2, 4, 2],
+ [2, 4, 2, 2, 2, 2, 4, 4, 4, 2],
+ [2, 2, 2, 2, 2, 2, 2, 2, 2, 2]]
+
+============================================================
+Phase: train_1_predict
+============================================================
+[[2, 2, 2, 2, 2, 2, 2, 2, 2, 2],
+ [2, 8, 2, 2, 2, 2, 4, 2, 2, 2],
+ [2, 8, 2, 2, 2, 2, 4, 4, 4, 2],
+ [2, 2, 2, 2, 2, 2, 2, 2, 4, 2],
+ [2, 2, 2, 2, 2, 2, 4, 4, 4, 2],
+ [2, 2, 2, 2, 2, 2, 4, 2, 2, 2],
+ [2, 2, 2, 2, 2, 2, 4, 4, 4, 2],
+ [2, 2, 2, 2, 2, 2, 2, 2, 4, 2],
+ [2, 4, 2, 2, 2, 2, 4, 4, 4, 2],
+ [2, 2, 2, 2, 2, 2, 2, 2, 2, 2]]
+[MESSAGE] program {
+  grid = Input()
+
+  // Find the inner canvas as the single largest 4-connected component among nonzero colors
+  canvas = Largest(Find("connected_components", where="color != 0", connectivity=4))
+
+  // Crop to the tight bounding box of this canvas (keep everything inside, including other colors/holes)
+  inner = Crop(grid, BoundingBox(canvas))
+
+  // Rotate the cropped inner canvas 90 degrees counter-clockwise
+  result = Rotate(inner, direction="ccw90")
+
+  Output(result)
+}
+
+============================================================
+Phase: train_1_verify
+============================================================
+program {
+  grid = Input()
+
+  // Find the inner canvas as the single largest 4-connected component among nonzero colors
+  canvas = Largest(Find("connected_components", where="color != 0", connectivity=4))
+
+  // Crop to the tight bounding box of this canvas (keep everything inside, including other colors/holes)
+  inner = Crop(grid, BoundingBox(canvas))
+
+  // Rotate the cropped inner canvas 90 degrees counter-clockwise
+  result = Rotate(inner, direction="ccw90")
+
+  Output(result)
+}
+[MESSAGE] [[5, 5, 4],
+ [0, 4, 4],
+ [0, 0, 4],
+ [0, 4, 4],
+ [0, 4, 4],
+ [0, 0, 4],
+ [0, 0, 4],
+ [0, 0, 4],
+ [0, 4, 4],
+ [0, 0, 4],
+ [0, 0, 4],
+ [0, 4, 4],
+ [4, 4, 4],
+ [0, 0, 4],
+ [0, 0, 4],
+ [0, 4, 4],
+ [0, 0, 4],
+ [0, 4, 4],
+ [0, 4, 4],
+ [0, 0, 4],
+ [0, 0, 4],
+ [2, 2, 4]]
+
+============================================================
+Phase: train_2_predict
+============================================================
+[[5, 5, 4],
+ [0, 4, 4],
+ [0, 0, 4],
+ [0, 4, 4],
+ [0, 4, 4],
+ [0, 0, 4],
+ [0, 0, 4],
+ [0, 0, 4],
+ [0, 4, 4],
+ [0, 0, 4],
+ [0, 0, 4],
+ [0, 4, 4],
+ [4, 4, 4],
+ [0, 0, 4],
+ [0, 0, 4],
+ [0, 4, 4],
+ [0, 0, 4],
+ [0, 4, 4],
+ [0, 4, 4],
+ [0, 0, 4],
+ [0, 0, 4],
+ [2, 2, 4]]
+[MESSAGE] [[5, 5, 4],
+ [0, 4, 4],
+ [0, 0, 4],
+ [0, 4, 4],
+ [0, 4, 4],
+ [0, 0, 4],
+ [0, 0, 4],
+ [0, 0, 4],
+ [0, 4, 4],
+ [0, 0, 4],
+ [0, 0, 4],
+ [0, 4, 4],
+ [4, 4, 4],
+ [0, 0, 4],
+ [0, 0, 4],
+ [0, 4, 4],
+ [0, 0, 4],
+ [0, 4, 4],
+ [0, 4, 4],
+ [0, 0, 4],
+ [0, 0, 4],
+ [2, 2, 4]]
+
+============================================================
+Phase: train_2_verify
+============================================================
+[[5, 5, 4],
+ [0, 4, 4],
+ [0, 0, 4],
+ [0, 4, 4],
+ [0, 4, 4],
+ [0, 0, 4],
+ [0, 0, 4],
+ [0, 0, 4],
+ [0, 4, 4],
+ [0, 0, 4],
+ [0, 0, 4],
+ [0, 4, 4],
+ [4, 4, 4],
+ [0, 0, 4],
+ [0, 0, 4],
+ [0, 4, 4],
+ [0, 0, 4],
+ [0, 4, 4],
+ [0, 4, 4],
+ [0, 0, 4],
+ [0, 0, 4],
+ [2, 2, 4]]
+[MESSAGE] [[4, 4, 0, 0, 4, 4, 0, 4, 4, 4, 4, 4],
+ [0, 4, 4, 4, 4, 4, 4, 4, 4, 4, 4, 4],
+ [0, 7, 7, 7, 7, 7, 7, 7, 4, 9, 9, 4],
+ [0, 4, 4, 4, 4, 4, 4, 7, 4, 4, 4, 4],
+ [4, 6, 6, 6, 6, 6, 4, 7, 4, 9, 9, 4],
+ [4, 6, 4, 4, 4, 6, 4, 7, 4, 4, 4, 4],
+ [4, 6, 4, 4, 4, 4, 4, 7, 4, 9, 9, 4],
+ [4, 6, 4, 4, 4, 4, 4, 7, 4, 4, 4, 4],
+ [4, 6, 6, 4, 4, 4, 4, 7, 4, 9, 9, 4],
+ [4, 4, 4, 4, 4, 4, 4, 7, 4, 4, 4, 4],
+ [6, 6, 6, 6, 6, 4, 4, 7, 4, 9, 9, 4],
+ [4, 4, 4, 4, 6, 4, 4, 7, 4, 4, 4, 4],
+ [4, 4, 4, 4, 6, 4, 4, 7, 4, 9, 9, 4],
+ [0, 4, 4, 4, 6, 4, 4, 7, 4, 4, 4, 4],
+ [0, 0, 4, 4, 6, 4, 4, 7, 4, 9, 9, 4],
+ [0, 0, 4, 4, 4, 6, 4, 7, 4, 4, 4, 4],
+ [0, 0, 4, 4, 6, 6, 4, 7, 4, 9, 9, 4],
+ [0, 4, 4, 4, 4, 4, 4, 7, 4, 8, 8, 4],
+ [7, 7, 7, 7, 7, 7, 7, 7, 4, 8, 8, 4],
+ [4, 4, 4, 4, 4, 4, 4, 4, 4, 4, 4, 4]]
+
+============================================================
+Phase: test_predict
+============================================================
+[[4, 4, 0, 0, 4, 4, 0, 4, 4, 4, 4, 4],
+ [0, 4, 4, 4, 4, 4, 4, 4, 4, 4, 4, 4],
+ [0, 7, 7, 7, 7, 7, 7, 7, 4, 9, 9, 4],
+ [0, 4, 4, 4, 4, 4, 4, 7, 4, 4, 4, 4],
+ [4, 6, 6, 6, 6, 6, 4, 7, 4, 9, 9, 4],
+ [4, 6, 4, 4, 4, 6, 4, 7, 4, 4, 4, 4],
+ [4, 6, 4, 4, 4, 4, 4, 7, 4, 9, 9, 4],
+ [4, 6, 4, 4, 4, 4, 4, 7, 4, 4, 4, 4],
+ [4, 6, 6, 4, 4, 4, 4, 7, 4, 9, 9, 4],
+ [4, 4, 4, 4, 4, 4, 4, 7, 4, 4, 4, 4],
+ [6, 6, 6, 6, 6, 4, 4, 7, 4, 9, 9, 4],
+ [4, 4, 4, 4, 6, 4, 4, 7, 4, 4, 4, 4],
+ [4, 4, 4, 4, 6, 4, 4, 7, 4, 9, 9, 4],
+ [0, 4, 4, 4, 6, 4, 4, 7, 4, 4, 4, 4],
+ [0, 0, 4, 4, 6, 4, 4, 7, 4, 9, 9, 4],
+ [0, 0, 4, 4, 4, 6, 4, 7, 4, 4, 4, 4],
+ [0, 0, 4, 4, 6, 6, 4, 7, 4, 9, 9, 4],
+ [0, 4, 4, 4, 4, 4, 4, 7, 4, 8, 8, 4],
+ [7, 7, 7, 7, 7, 7, 7, 7, 4, 8, 8, 4],
+ [4, 4, 4, 4, 4, 4, 4, 4, 4, 4, 4, 4]]

@@ -1,0 +1,54 @@
+[MESSAGE] program {
+  grid = Input()
+
+  // 1) Find the horizontal divider
+  divider = Find("row", where="entire row is a single nonzero color")
+  top    = Region("above", divider)
+  bottom = Region("below", divider)
+
+  // 2) Build mapping from hole-count to color using swatches above the divider
+  swatches = Find("connected components", in=top, where="color != 0 and color != divider.color")
+  color_map = {}
+  for s in swatches {
+    holes = Count(Find("black regions", within=s, where="fully enclosed by s"))
+    color_map[holes] = GetColor(s)
+  }
+
+  // 3) Recolor each target shape below the divider according to its number of holes
+  targets = Find("connected components", in=bottom, where="color != 0 and color != divider.color")
+  for t in targets {
+    h = Count(Find("black regions", within=t, where="fully enclosed by t"))
+    Paint(t, color_map[h], preserve="enclosed black holes")
+  }
+
+  Output(grid)
+}
+
+============================================================
+Phase: train_0
+============================================================
+program {
+  grid = Input()
+
+  // 1) Find the horizontal divider
+  divider = Find("row", where="entire row is a single nonzero color")
+  top    = Region("above", divider)
+  bottom = Region("below", divider)
+
+  // 2) Build mapping from hole-count to color using swatches above the divider
+  swatches = Find("connected components", in=top, where="color != 0 and color != divider.color")
+  color_map = {}
+  for s in swatches {
+    holes = Count(Find("black regions", within=s, where="fully enclosed by s"))
+    color_map[holes] = GetColor(s)
+  }
+
+  // 3) Recolor each target shape below the divider according to its number of holes
+  targets = Find("connected components", in=bottom, where="color != 0 and color != divider.color")
+  for t in targets {
+    h = Count(Find("black regions", within=t, where="fully enclosed by t"))
+    Paint(t, color_map[h], preserve="enclosed black holes")
+  }
+
+  Output(grid)
+}
