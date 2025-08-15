@@ -1,1 +1,5 @@
 __pycache__
+.env
+.windsurf/rules/web.md
+/exampleUI
+/webui-node
