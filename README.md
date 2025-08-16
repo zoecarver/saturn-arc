@@ -291,6 +291,7 @@ _This project desperately needs code cleanup and improved logging._
 I have other branches (listed below) that address some of the really low hanging fruit: label images more clearly, provide more tools, clean up prompts, allow second attempt. But for some baffling reason it performs much worse (even on specific problems), so I rolled back to this messier approach.
 
 **Branches:**
+* `dsl`: Use DSL to allow model to represent puzzle in a structured and efficient way. Does not work well, but very clean implementation and some cool tools/ideas that should be pulled into the main branch.
 * `claude-tool`: testing claude with heavy tool use. Results: totally unable to solve almost any problems, even when given specific instructions on how to find solution
 * `more-tool-use-checkpoint-aug13`, `tool-use`: investigations for heavier tool use and better prompt iterating (fewer prompts with more thinking, more specific instructions, more tools, etc.)
 * `naive-prompting`: baseline for gpt5 without visualization or tools.
