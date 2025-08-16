@@ -1,0 +1,320 @@
+[MESSAGE] program {
+  G = Input()
+
+  // 1) Read stripe sequence (top→bottom) as (color, thickness)
+  stripes = Find("horizontal color-bands spanning full width", merge_consecutive_rows=true, return="ordered list of {color, thickness}")
+
+  // 2) Output size: all outer bands mirrored around the center + final core
+  last = Tail(stripes)
+  outer = AllButLast(stripes)
+  side = 2 * Sum(Get(outer, "thickness")) + Get(last, "thickness")
+  Out = NewGrid(side, side, fill="void")
+
+  // 3) Start from the center: a filled square of the last stripe
+  core = CenterSquare(Out, side=Get(last, "thickness"))
+  Paint(core, Get(last, "color"))
+  bbox = BoundingBox(core)
+
+  // 4) Surround inward→outward by the remaining stripes (reverse order)
+  SurroundInOrder = Lambda("surround_in_order", "
+    Given bbox and a list of stripes in reverse order (from next-to-last back to first):
+      For each stripe:
+        t = stripe.thickness
+        c = stripe.color
+        new_bbox = Expand(bbox, by=t)
+        ring = RegionBetween(outer=new_bbox, inner=bbox)
+        Paint(ring, c)
+        bbox = new_bbox
+      Return bbox
+  ")
+
+  SurroundInOrder(bbox, Reverse(outer))
+
+  Output(Out)
+}
+
+============================================================
+Phase: train_0
+============================================================
+program {
+  G = Input()
+
+  // 1) Read stripe sequence (top→bottom) as (color, thickness)
+  stripes = Find("horizontal color-bands spanning full width", merge_consecutive_rows=true, return="ordered list of {color, thickness}")
+
+  // 2) Output size: all outer bands mirrored around the center + final core
+  last = Tail(stripes)
+  outer = AllButLast(stripes)
+  side = 2 * Sum(Get(outer, "thickness")) + Get(last, "thickness")
+  Out = NewGrid(side, side, fill="void")
+
+  // 3) Start from the center: a filled square of the last stripe
+  core = CenterSquare(Out, side=Get(last, "thickness"))
+  Paint(core, Get(last, "color"))
+  bbox = BoundingBox(core)
+
+  // 4) Surround inward→outward by the remaining stripes (reverse order)
+  SurroundInOrder = Lambda("surround_in_order", "
+    Given bbox and a list of stripes in reverse order (from next-to-last back to first):
+      For each stripe:
+        t = stripe.thickness
+        c = stripe.color
+        new_bbox = Expand(bbox, by=t)
+        ring = RegionBetween(outer=new_bbox, inner=bbox)
+        Paint(ring, c)
+        bbox = new_bbox
+      Return bbox
+  ")
+
+  SurroundInOrder(bbox, Reverse(outer))
+
+  Output(Out)
+}
+[MESSAGE] [[2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2],
+ [2, 3, 3, 3, 3, 3, 3, 3, 3, 3, 3, 3, 3, 3, 3, 3, 3, 3, 3, 3, 3, 3, 3, 2],
+ [2, 3, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 3, 2],
+ [2, 3, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 3, 2],
+ [2, 3, 2, 2, 3, 3, 3, 3, 3, 3, 3, 3, 3, 3, 3, 3, 3, 3, 3, 3, 2, 2, 3, 2],
+ [2, 3, 2, 2, 3, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 3, 2, 2, 3, 2],
+ [2, 3, 2, 2, 3, 2, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 2, 3, 2, 2, 3, 2],
+ [2, 3, 2, 2, 3, 2, 1, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 1, 2, 3, 2, 2, 3, 2],
+ [2, 3, 2, 2, 3, 2, 1, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 1, 2, 3, 2, 2, 3, 2],
+ [2, 3, 2, 2, 3, 2, 1, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 1, 2, 3, 2, 2, 3, 2],
+ [2, 3, 2, 2, 3, 2, 1, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 1, 2, 3, 2, 2, 3, 2],
+ [2, 3, 2, 2, 3, 2, 1, 2, 2, 2, 2, 8, 8, 2, 2, 2, 2, 1, 2, 3, 2, 2, 3, 2],
+ [2, 3, 2, 2, 3, 2, 1, 2, 2, 2, 2, 8, 8, 2, 2, 2, 2, 1, 2, 3, 2, 2, 3, 2],
+ [2, 3, 2, 2, 3, 2, 1, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 1, 2, 3, 2, 2, 3, 2],
+ [2, 3, 2, 2, 3, 2, 1, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 1, 2, 3, 2, 2, 3, 2],
+ [2, 3, 2, 2, 3, 2, 1, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 1, 2, 3, 2, 2, 3, 2],
+ [2, 3, 2, 2, 3, 2, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 2, 3, 2, 2, 3, 2],
+ [2, 3, 2, 2, 3, 2, 1, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 1, 2, 3, 2, 2, 3, 2],
+ [2, 3, 2, 2, 3, 2, 1, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 1, 2, 3, 2, 2, 3, 2],
+ [2, 3, 2, 2, 3, 2, 1, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 1, 2, 3, 2, 2, 3, 2],
+ [2, 3, 2, 2, 3, 2, 1, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 1, 2, 3, 2, 2, 3, 2],
+ [2, 3, 2, 2, 3, 2, 1, 2, 2, 2, 2, 8, 8, 2, 2, 2, 2, 1, 2, 3, 2, 2, 3, 2],
+ [2, 3, 2, 2, 3, 2, 1, 2, 2, 2, 2, 8, 8, 2, 2, 2, 2, 1, 2, 3, 2, 2, 3, 2],
+ [2, 3, 2, 2, 3, 2, 1, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 1, 2, 3, 2, 2, 3, 2],
+ [2, 3, 2, 2, 3, 2, 1, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 1, 2, 3, 2, 2, 3, 2]]
+
+============================================================
+Phase: train_1_predict
+============================================================
+[[2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2],
+ [2, 3, 3, 3, 3, 3, 3, 3, 3, 3, 3, 3, 3, 3, 3, 3, 3, 3, 3, 3, 3, 3, 3, 2],
+ [2, 3, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 3, 2],
+ [2, 3, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 3, 2],
+ [2, 3, 2, 2, 3, 3, 3, 3, 3, 3, 3, 3, 3, 3, 3, 3, 3, 3, 3, 3, 2, 2, 3, 2],
+ [2, 3, 2, 2, 3, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 3, 2, 2, 3, 2],
+ [2, 3, 2, 2, 3, 2, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 2, 3, 2, 2, 3, 2],
+ [2, 3, 2, 2, 3, 2, 1, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 1, 2, 3, 2, 2, 3, 2],
+ [2, 3, 2, 2, 3, 2, 1, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 1, 2, 3, 2, 2, 3, 2],
+ [2, 3, 2, 2, 3, 2, 1, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 1, 2, 3, 2, 2, 3, 2],
+ [2, 3, 2, 2, 3, 2, 1, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 1, 2, 3, 2, 2, 3, 2],
+ [2, 3, 2, 2, 3, 2, 1, 2, 2, 2, 2, 8, 8, 2, 2, 2, 2, 1, 2, 3, 2, 2, 3, 2],
+ [2, 3, 2, 2, 3, 2, 1, 2, 2, 2, 2, 8, 8, 2, 2, 2, 2, 1, 2, 3, 2, 2, 3, 2],
+ [2, 3, 2, 2, 3, 2, 1, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 1, 2, 3, 2, 2, 3, 2],
+ [2, 3, 2, 2, 3, 2, 1, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 1, 2, 3, 2, 2, 3, 2],
+ [2, 3, 2, 2, 3, 2, 1, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 1, 2, 3, 2, 2, 3, 2],
+ [2, 3, 2, 2, 3, 2, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 2, 3, 2, 2, 3, 2],
+ [2, 3, 2, 2, 3, 2, 1, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 1, 2, 3, 2, 2, 3, 2],
+ [2, 3, 2, 2, 3, 2, 1, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 1, 2, 3, 2, 2, 3, 2],
+ [2, 3, 2, 2, 3, 2, 1, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 1, 2, 3, 2, 2, 3, 2],
+ [2, 3, 2, 2, 3, 2, 1, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 1, 2, 3, 2, 2, 3, 2],
+ [2, 3, 2, 2, 3, 2, 1, 2, 2, 2, 2, 8, 8, 2, 2, 2, 2, 1, 2, 3, 2, 2, 3, 2],
+ [2, 3, 2, 2, 3, 2, 1, 2, 2, 2, 2, 8, 8, 2, 2, 2, 2, 1, 2, 3, 2, 2, 3, 2],
+ [2, 3, 2, 2, 3, 2, 1, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 1, 2, 3, 2, 2, 3, 2],
+ [2, 3, 2, 2, 3, 2, 1, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 1, 2, 3, 2, 2, 3, 2]]
+[MESSAGE] program {
+  G = Input()
+
+  // Read stripe sequence as ordered list of {color, thickness}
+  stripes = Find("horizontal bands spanning full width", order="top->bottom", merge_adjacent_same_color=true, return="{color, thickness}")
+
+  center = Tail(stripes)                  // innermost filled square
+  outer  = AllButLast(stripes)            // rings to surround the core, from inner→outer
+
+  side = 2 * Sum(Get(outer, "thickness")) + Get(center, "thickness")
+  Out  = NewGrid(side, side, fill="void")
+
+  // Place core: a filled centered square with the last stripe's color and thickness
+  core = CenterSquare(Out, side=center.thickness)
+  Paint(core, center.color)
+  bbox = BoundingBox(core)
+
+  // Surround outward with rings in reverse order of the remaining stripes
+  Surround = Lambda("surround", "
+    Given bbox and stripes:
+      for stripe in Reverse(stripes):
+        t = stripe.thickness
+        c = stripe.color
+        new_bbox = Expand(bbox, by=t)
+        ring = RegionBetween(outer=new_bbox, inner=bbox)
+        Paint(ring, c)
+        bbox = new_bbox
+  ")
+
+  Surround(bbox, outer)
+
+  Output(Out)
+}
+
+============================================================
+Phase: train_1_verify
+============================================================
+program {
+  G = Input()
+
+  // Read stripe sequence as ordered list of {color, thickness}
+  stripes = Find("horizontal bands spanning full width", order="top->bottom", merge_adjacent_same_color=true, return="{color, thickness}")
+
+  center = Tail(stripes)                  // innermost filled square
+  outer  = AllButLast(stripes)            // rings to surround the core, from inner→outer
+
+  side = 2 * Sum(Get(outer, "thickness")) + Get(center, "thickness")
+  Out  = NewGrid(side, side, fill="void")
+
+  // Place core: a filled centered square with the last stripe's color and thickness
+  core = CenterSquare(Out, side=center.thickness)
+  Paint(core, center.color)
+  bbox = BoundingBox(core)
+
+  // Surround outward with rings in reverse order of the remaining stripes
+  Surround = Lambda("surround", "
+    Given bbox and stripes:
+      for stripe in Reverse(stripes):
+        t = stripe.thickness
+        c = stripe.color
+        new_bbox = Expand(bbox, by=t)
+        ring = RegionBetween(outer=new_bbox, inner=bbox)
+        Paint(ring, c)
+        bbox = new_bbox
+  ")
+
+  Surround(bbox, outer)
+
+  Output(Out)
+}
+[MESSAGE] program {
+  G = Input()
+
+  // Extract ordered horizontal stripe runs (color, thickness)
+  stripes = Find("horizontal full-width bands", order="top->bottom", merge_consecutive_same_color=true, return="{color, thickness}")
+
+  core  = Tail(stripes)        // last run becomes the filled center
+  outer = AllButLast(stripes)  // all prior runs become concentric rings, inside→outside is reverse order
+
+  side = 2 * Sum(Get(outer, "thickness")) + Get(core, "thickness")
+  Out  = NewGrid(side, side, fill="void")
+
+  // Place centered core square
+  core_sq = CenterSquare(Out, side=Get(core, "thickness"))
+  Paint(core_sq, Get(core, "color"))
+  bbox = BoundingBox(core_sq)
+
+  // Surround outward by rings using reversed 'outer' runs
+  SurroundOutward = Lambda("surround_outward", "
+    Given bbox and runs (list of {color c, thickness t}) in reverse order:
+      for run in Reverse(runs):
+        t = run.thickness
+        c = run.color
+        nb = Expand(bbox, by=t)
+        ring = RegionBetween(outer=nb, inner=bbox)
+        Paint(ring, c)
+        bbox = nb
+  ")
+
+  SurroundOutward(bbox, outer)
+
+  Output(Out)
+}
+
+============================================================
+Phase: test_refine
+============================================================
+program {
+  G = Input()
+
+  // Extract ordered horizontal stripe runs (color, thickness)
+  stripes = Find("horizontal full-width bands", order="top->bottom", merge_consecutive_same_color=true, return="{color, thickness}")
+
+  core  = Tail(stripes)        // last run becomes the filled center
+  outer = AllButLast(stripes)  // all prior runs become concentric rings, inside→outside is reverse order
+
+  side = 2 * Sum(Get(outer, "thickness")) + Get(core, "thickness")
+  Out  = NewGrid(side, side, fill="void")
+
+  // Place centered core square
+  core_sq = CenterSquare(Out, side=Get(core, "thickness"))
+  Paint(core_sq, Get(core, "color"))
+  bbox = BoundingBox(core_sq)
+
+  // Surround outward by rings using reversed 'outer' runs
+  SurroundOutward = Lambda("surround_outward", "
+    Given bbox and runs (list of {color c, thickness t}) in reverse order:
+      for run in Reverse(runs):
+        t = run.thickness
+        c = run.color
+        nb = Expand(bbox, by=t)
+        ring = RegionBetween(outer=nb, inner=bbox)
+        Paint(ring, c)
+        bbox = nb
+  ")
+
+  SurroundOutward(bbox, outer)
+
+  Output(Out)
+}
+[MESSAGE] [[3, 3, 3, 3, 3, 3, 3, 3, 3, 3, 3, 3, 3, 3, 3, 3, 3, 3, 3, 3, 3, 3, 3, 3, 3, 3],
+ [3, 3, 3, 3, 3, 3, 3, 3, 3, 3, 3, 3, 3, 3, 3, 3, 3, 3, 3, 3, 3, 3, 3, 3, 3, 3],
+ [3, 3, 8, 8, 8, 8, 8, 8, 8, 8, 8, 8, 8, 8, 8, 8, 8, 8, 8, 8, 8, 8, 8, 8, 3, 3],
+ [3, 3, 8, 8, 8, 8, 8, 8, 8, 8, 8, 8, 8, 8, 8, 8, 8, 8, 8, 8, 8, 8, 8, 8, 3, 3],
+ [3, 3, 8, 8, 8, 8, 8, 8, 8, 8, 8, 8, 8, 8, 8, 8, 8, 8, 8, 8, 8, 8, 8, 8, 3, 3],
+ [3, 3, 8, 8, 8, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 8, 8, 8, 3, 3],
+ [3, 3, 8, 8, 8, 2, 8, 8, 8, 8, 8, 8, 8, 8, 8, 8, 8, 8, 8, 8, 2, 8, 8, 8, 3, 3],
+ [3, 3, 8, 8, 8, 2, 8, 8, 8, 8, 8, 8, 8, 8, 8, 8, 8, 8, 8, 8, 8, 2, 8, 8, 8, 3, 3],
+ [3, 3, 8, 8, 8, 2, 8, 8, 3, 3, 3, 3, 3, 3, 3, 3, 3, 3, 8, 8, 2, 8, 8, 8, 3, 3],
+ [3, 3, 8, 8, 8, 2, 8, 8, 3, 7, 7, 7, 7, 7, 7, 7, 7, 3, 8, 8, 2, 8, 8, 8, 3, 3],
+ [3, 3, 8, 8, 8, 2, 8, 8, 3, 7, 7, 7, 7, 7, 7, 7, 7, 7, 3, 8, 8, 2, 8, 8, 8, 3, 3],
+ [3, 3, 8, 8, 8, 2, 8, 8, 3, 7, 7, 5, 5, 5, 5, 7, 7, 3, 8, 8, 2, 8, 8, 8, 3, 3],
+ [3, 3, 8, 8, 8, 2, 8, 8, 3, 7, 7, 5, 8, 8, 5, 7, 7, 3, 8, 8, 2, 8, 8, 8, 3, 3],
+ [3, 3, 8, 8, 8, 2, 8, 8, 3, 7, 7, 5, 8, 8, 5, 7, 7, 3, 8, 8, 2, 8, 8, 8, 3, 3],
+ [3, 3, 8, 8, 8, 2, 8, 8, 3, 7, 7, 5, 5, 5, 5, 7, 7, 3, 8, 8, 2, 8, 8, 8, 3, 3],
+ [3, 3, 8, 8, 8, 2, 8, 8, 3, 7, 7, 7, 7, 7, 7, 7, 7, 7, 3, 8, 8, 2, 8, 8, 8, 3, 3],
+ [3, 3, 8, 8, 8, 2, 8, 8, 3, 7, 7, 7, 7, 7, 7, 7, 7, 3, 8, 8, 2, 8, 8, 8, 3, 3],
+ [3, 3, 8, 8, 8, 2, 8, 8, 3, 3, 3, 3, 3, 3, 3, 3, 3, 3, 8, 8, 2, 8, 8, 8, 3, 3],
+ [3, 3, 8, 8, 8, 2, 8, 8, 8, 8, 8, 8, 8, 8, 8, 8, 8, 8, 8, 8, 8, 2, 8, 8, 8, 3, 3],
+ [3, 3, 8, 8, 8, 2, 8, 8, 8, 8, 8, 8, 8, 8, 8, 8, 8, 8, 8, 2, 8, 8, 8, 3, 3],
+ [3, 3, 8, 8, 8, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 8, 8, 8, 3, 3],
+ [3, 3, 8, 8, 8, 8, 8, 8, 8, 8, 8, 8, 8, 8, 8, 8, 8, 8, 8, 8, 8, 8, 8, 8, 3, 3],
+ [3, 3, 8, 8, 8, 8, 8, 8, 8, 8, 8, 8, 8, 8, 8, 8, 8, 8, 8, 8, 8, 8, 8, 8, 3, 3],
+ [3, 3, 8, 8, 8, 8, 8, 8, 8, 8, 8, 8, 8, 8, 8, 8, 8, 8, 8, 8, 8, 8, 8, 8, 3, 3],
+ [3, 3, 3, 3, 3, 3, 3, 3, 3, 3, 3, 3, 3, 3, 3, 3, 3, 3, 3, 3, 3, 3, 3, 3, 3, 3]]
+
+============================================================
+Phase: test_predict
+============================================================
+[[3, 3, 3, 3, 3, 3, 3, 3, 3, 3, 3, 3, 3, 3, 3, 3, 3, 3, 3, 3, 3, 3, 3, 3, 3, 3],
+ [3, 3, 3, 3, 3, 3, 3, 3, 3, 3, 3, 3, 3, 3, 3, 3, 3, 3, 3, 3, 3, 3, 3, 3, 3, 3],
+ [3, 3, 8, 8, 8, 8, 8, 8, 8, 8, 8, 8, 8, 8, 8, 8, 8, 8, 8, 8, 8, 8, 8, 8, 3, 3],
+ [3, 3, 8, 8, 8, 8, 8, 8, 8, 8, 8, 8, 8, 8, 8, 8, 8, 8, 8, 8, 8, 8, 8, 8, 3, 3],
+ [3, 3, 8, 8, 8, 8, 8, 8, 8, 8, 8, 8, 8, 8, 8, 8, 8, 8, 8, 8, 8, 8, 8, 8, 3, 3],
+ [3, 3, 8, 8, 8, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 8, 8, 8, 3, 3],
+ [3, 3, 8, 8, 8, 2, 8, 8, 8, 8, 8, 8, 8, 8, 8, 8, 8, 8, 8, 8, 2, 8, 8, 8, 3, 3],
+ [3, 3, 8, 8, 8, 2, 8, 8, 8, 8, 8, 8, 8, 8, 8, 8, 8, 8, 8, 8, 8, 2, 8, 8, 8, 3, 3],
+ [3, 3, 8, 8, 8, 2, 8, 8, 3, 3, 3, 3, 3, 3, 3, 3, 3, 3, 8, 8, 2, 8, 8, 8, 3, 3],
+ [3, 3, 8, 8, 8, 2, 8, 8, 3, 7, 7, 7, 7, 7, 7, 7, 7, 3, 8, 8, 2, 8, 8, 8, 3, 3],
+ [3, 3, 8, 8, 8, 2, 8, 8, 3, 7, 7, 7, 7, 7, 7, 7, 7, 7, 3, 8, 8, 2, 8, 8, 8, 3, 3],
+ [3, 3, 8, 8, 8, 2, 8, 8, 3, 7, 7, 5, 5, 5, 5, 7, 7, 3, 8, 8, 2, 8, 8, 8, 3, 3],
+ [3, 3, 8, 8, 8, 2, 8, 8, 3, 7, 7, 5, 8, 8, 5, 7, 7, 3, 8, 8, 2, 8, 8, 8, 3, 3],
+ [3, 3, 8, 8, 8, 2, 8, 8, 3, 7, 7, 5, 8, 8, 5, 7, 7, 3, 8, 8, 2, 8, 8, 8, 3, 3],
+ [3, 3, 8, 8, 8, 2, 8, 8, 3, 7, 7, 5, 5, 5, 5, 7, 7, 3, 8, 8, 2, 8, 8, 8, 3, 3],
+ [3, 3, 8, 8, 8, 2, 8, 8, 3, 7, 7, 7, 7, 7, 7, 7, 7, 7, 3, 8, 8, 2, 8, 8, 8, 3, 3],
+ [3, 3, 8, 8, 8, 2, 8, 8, 3, 7, 7, 7, 7, 7, 7, 7, 7, 3, 8, 8, 2, 8, 8, 8, 3, 3],
+ [3, 3, 8, 8, 8, 2, 8, 8, 3, 3, 3, 3, 3, 3, 3, 3, 3, 3, 8, 8, 2, 8, 8, 8, 3, 3],
+ [3, 3, 8, 8, 8, 2, 8, 8, 8, 8, 8, 8, 8, 8, 8, 8, 8, 8, 8, 8, 8, 2, 8, 8, 8, 3, 3],
+ [3, 3, 8, 8, 8, 2, 8, 8, 8, 8, 8, 8, 8, 8, 8, 8, 8, 8, 8, 2, 8, 8, 8, 3, 3],
+ [3, 3, 8, 8, 8, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 8, 8, 8, 3, 3],
+ [3, 3, 8, 8, 8, 8, 8, 8, 8, 8, 8, 8, 8, 8, 8, 8, 8, 8, 8, 8, 8, 8, 8, 8, 3, 3],
+ [3, 3, 8, 8, 8, 8, 8, 8, 8, 8, 8, 8, 8, 8, 8, 8, 8, 8, 8, 8, 8, 8, 8, 8, 3, 3],
+ [3, 3, 8, 8, 8, 8, 8, 8, 8, 8, 8, 8, 8, 8, 8, 8, 8, 8, 8, 8, 8, 8, 8, 8, 3, 3],
+ [3, 3, 3, 3, 3, 3, 3, 3, 3, 3, 3, 3, 3, 3, 3, 3, 3, 3, 3, 3, 3, 3, 3, 3, 3, 3]]

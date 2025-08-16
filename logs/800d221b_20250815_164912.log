@@ -1,0 +1,658 @@
+[MESSAGE] program {
+  grid = Input()
+  colors { maroon=8, green=3, yellow=4, bg=9 }
+
+  original = Snapshot(grid)
+
+  // 1) Identify the maroon hub and set its center to yellow, preserve its ring as maroon
+  hub = Find("3x3 solid block", where="color == maroon")
+  ring = Border(hub)
+  center = Center(hub)
+  Paint(center, yellow)
+  Keep(ring, maroon)
+
+  // 2) Recolor all other maroon paths by context with respect to the original grid
+  nonring_maroon = Subtract(Find("pixels", where="color == maroon"), ring)
+  path_components = ConnectedComponents(nonring_maroon, connectivity=4)
+
+  for comp in path_components {
+    if Touches(comp, color=green, within=original, connectivity=4) {
+      Paint(comp, green)
+    } else {
+      Paint(comp, yellow)
+    }
+  }
+
+  // 3) Corner smoothing for yellow paths: complete background corners surrounded by yellow
+  FillWhere(
+    pattern="2x2 windows with exactly three cells color==yellow and one cell color==bg",
+    target="the bg cell in each such window",
+    paint=yellow
+  )
+
+  Output(grid)
+}
+
+============================================================
+Phase: train_0
+============================================================
+program {
+  grid = Input()
+  colors { maroon=8, green=3, yellow=4, bg=9 }
+
+  original = Snapshot(grid)
+
+  // 1) Identify the maroon hub and set its center to yellow, preserve its ring as maroon
+  hub = Find("3x3 solid block", where="color == maroon")
+  ring = Border(hub)
+  center = Center(hub)
+  Paint(center, yellow)
+  Keep(ring, maroon)
+
+  // 2) Recolor all other maroon paths by context with respect to the original grid
+  nonring_maroon = Subtract(Find("pixels", where="color == maroon"), ring)
+  path_components = ConnectedComponents(nonring_maroon, connectivity=4)
+
+  for comp in path_components {
+    if Touches(comp, color=green, within=original, connectivity=4) {
+      Paint(comp, green)
+    } else {
+      Paint(comp, yellow)
+    }
+  }
+
+  // 3) Corner smoothing for yellow paths: complete background corners surrounded by yellow
+  FillWhere(
+    pattern="2x2 windows with exactly three cells color==yellow and one cell color==bg",
+    target="the bg cell in each such window",
+    paint=yellow
+  )
+
+  Output(grid)
+}
+[MESSAGE] [[0, 0, 0, 0, 0, 0, 0, 1, 2, 2],
+ [0, 0, 0, 0, 1, 1, 1, 1, 2, 1],
+ [0, 0, 0, 0, 1, 0, 0, 1, 1, 1],
+ [0, 0, 0, 5, 5, 5, 0, 0, 0, 0],
+ [0, 1, 1, 5, 2, 5, 1, 1, 1, 0],
+ [0, 1, 0, 5, 5, 5, 0, 0, 1, 0],
+ [0, 1, 0, 0, 0, 0, 0, 0, 1, 0],
+ [1, 1, 1, 1, 0, 0, 0, 1, 1, 1],
+ [2, 1, 1, 1, 0, 0, 0, 1, 2, 2],
+ [1, 2, 1, 1, 0, 0, 0, 1, 1, 2]]
+
+============================================================
+Phase: train_1_predict
+============================================================
+[[0, 0, 0, 0, 0, 0, 0, 1, 2, 2],
+ [0, 0, 0, 0, 1, 1, 1, 1, 2, 1],
+ [0, 0, 0, 0, 1, 0, 0, 1, 1, 1],
+ [0, 0, 0, 5, 5, 5, 0, 0, 0, 0],
+ [0, 1, 1, 5, 2, 5, 1, 1, 1, 0],
+ [0, 1, 0, 5, 5, 5, 0, 0, 1, 0],
+ [0, 1, 0, 0, 0, 0, 0, 0, 1, 0],
+ [1, 1, 1, 1, 0, 0, 0, 1, 1, 1],
+ [2, 1, 1, 1, 0, 0, 0, 1, 2, 2],
+ [1, 2, 1, 1, 0, 0, 0, 1, 1, 2]]
+[MESSAGE] program {
+  grid = Input()
+  original = Snapshot(grid)
+
+  // Identify roles
+  bg = MostFrequentColor(grid)
+  hub = Find("3x3 solid block", where="uniform AND color != bg")
+  wire = GetColor(hub)
+  ring = Border(hub)
+  center = Center(hub)
+  palette = ColorsPresent(grid, exclude=[bg, wire])  // exactly two colors
+  A, B = Unpack(palette)
+
+  // Split the wire network into branches by removing the hub ring
+  wire_pixels = Find("pixels", where=EqualsColor(wire))
+  branches = ConnectedComponents(Subtract(wire_pixels, ring), connectivity=4)
+
+  // Assign each branch to the palette color it touches (from the original grid)
+  assignment = {}
+  for branch in branches {
+    touchA = Touches(branch, color=A, within=original, connectivity=4)
+    touchB = Touches(branch, color=B, within=original, connectivity=4)
+    if touchA XOR touchB { assignment[branch] = touchA ? A : B }
+    if touchA AND touchB { assignment[branch] = DominantAdjacentColor(branch, among=[A,B], within=original) }
+    if NOT touchA AND NOT touchB { assignment[branch] = "unassigned" }
+  }
+
+  // Primary color = palette color used by the most branches (tie-breaker: higher frequency in grid)
+  countA = Count(branches, where=Equals(assignment[branch], A))
+  countB = Count(branches, where=Equals(assignment[branch], B))
+  primary = If(countA > countB, A, If(countB > countA, B, ArgMax([A,B], by=FrequencyInGrid(grid))))
+
+  // Recolor branches and hub center; preserve hub ring
+  for branch in branches {
+    target = assignment[branch] == "unassigned" ? primary : assignment[branch]
+    Paint(branch, target)
+  }
+  Paint(center, primary)
+  Keep(ring, wire)
+
+  // Smoothing: fill primary-color corner singles (optional when none exist)
+  Lambda("fill_primary_corners", "Find all 2x2 windows with exactly three cells == primary and one cell == bg; paint the bg cell primary")
+  Apply("fill_primary_corners", to="entire grid")
+
+  Output(grid)
+}
+
+============================================================
+Phase: train_1_verify
+============================================================
+program {
+  grid = Input()
+  original = Snapshot(grid)
+
+  // Identify roles
+  bg = MostFrequentColor(grid)
+  hub = Find("3x3 solid block", where="uniform AND color != bg")
+  wire = GetColor(hub)
+  ring = Border(hub)
+  center = Center(hub)
+  palette = ColorsPresent(grid, exclude=[bg, wire])  // exactly two colors
+  A, B = Unpack(palette)
+
+  // Split the wire network into branches by removing the hub ring
+  wire_pixels = Find("pixels", where=EqualsColor(wire))
+  branches = ConnectedComponents(Subtract(wire_pixels, ring), connectivity=4)
+
+  // Assign each branch to the palette color it touches (from the original grid)
+  assignment = {}
+  for branch in branches {
+    touchA = Touches(branch, color=A, within=original, connectivity=4)
+    touchB = Touches(branch, color=B, within=original, connectivity=4)
+    if touchA XOR touchB { assignment[branch] = touchA ? A : B }
+    if touchA AND touchB { assignment[branch] = DominantAdjacentColor(branch, among=[A,B], within=original) }
+    if NOT touchA AND NOT touchB { assignment[branch] = "unassigned" }
+  }
+
+  // Primary color = palette color used by the most branches (tie-breaker: higher frequency in grid)
+  countA = Count(branches, where=Equals(assignment[branch], A))
+  countB = Count(branches, where=Equals(assignment[branch], B))
+  primary = If(countA > countB, A, If(countB > countA, B, ArgMax([A,B], by=FrequencyInGrid(grid))))
+
+  // Recolor branches and hub center; preserve hub ring
+  for branch in branches {
+    target = assignment[branch] == "unassigned" ? primary : assignment[branch]
+    Paint(branch, target)
+  }
+  Paint(center, primary)
+  Keep(ring, wire)
+
+  // Smoothing: fill primary-color corner singles (optional when none exist)
+  Lambda("fill_primary_corners", "Find all 2x2 windows with exactly three cells == primary and one cell == bg; paint the bg cell primary")
+  Apply("fill_primary_corners", to="entire grid")
+
+  Output(grid)
+}
+[MESSAGE] program {
+  grid = Input()
+  original = Snapshot(grid)
+
+  // Identify background and colors
+  bg = MostFrequentColor(grid)
+  nonbg = ColorsPresent(grid, exclude=[bg])
+
+  // Detect wire color as the thinnest, most path-like color
+  ThinnessScore = Lambda("thinness(color)", "Perimeter(color)/Area(color) with bias for longer 4-connected paths")
+  wire = ArgMax(nonbg, by=ThinnessScore(color))
+
+  // Find a wire hub to preserve: prefer a 3x3 ring (outer 8==wire, center!=wire); else none
+  hub_ring = Find("3x3 ring", where="outer cells color==wire AND center color!=wire")
+  center = If(Exists(hub_ring), Center(hub_ring), None())
+
+  // Palette colors are the remaining two (terminals)
+  palette = ColorsPresent(grid, exclude=[bg, wire])
+  A, B = Unpack(palette)
+
+  // Split wire network into branches, excluding the hub ring if present
+  wire_pixels = Find("pixels", where="color==wire")
+  branches = ConnectedComponents(Exists(hub_ring) ? Subtract(wire_pixels, hub_ring) : wire_pixels, connectivity=4)
+
+  // Assign each branch to the palette color it touches in the original grid
+  Assign = Lambda("assign_branch(branch)", "
+    touchA = Touches(branch, color=A, within=original, connectivity=4)
+    touchB = Touches(branch, color=B, within=original, connectivity=4)
+    if touchA and not touchB -> return A
+    if touchB and not touchA -> return B
+    if touchA and touchB -> return DominantAdjacentColor(branch, among=[A,B], within=original)
+    return 'unassigned'
+  ")
+  assignment = { branch: Assign(branch) for branch in branches }
+
+  // Choose primary color as the one assigned to more branches (tie-breaker: higher total adjacency length along wire)
+  countA = Count(branches, where="assignment[branch]==A")
+  countB = Count(branches, where="assignment[branch]==B")
+  primary = If(countA>countB, A,
+            If(countB>countA, B,
+              ArgMax([A,B], by=AdjacencyLength(Find('pixels', where='color==wire'), to=color, within=original))))
+
+  // Recolor branches and hub center; keep hub ring as wire
+  for branch in branches {
+    target = assignment[branch]=='unassigned' ? primary : assignment[branch]
+    Paint(branch, target)
+  }
+  if center != None() { Paint(center, primary) }
+  if Exists(hub_ring) { Keep(hub_ring, wire) }
+
+  // Corner smoothing: fill bg corners surrounded by primary (optional but consistent with examples)
+  FillWhere(
+    pattern="2x2 windows with exactly three cells color==primary and one cell color==bg",
+    target="the bg cell",
+    paint=primary
+  )
+
+  Output(grid)
+}
+
+============================================================
+Phase: train_2_predict
+============================================================
+program {
+  grid = Input()
+  original = Snapshot(grid)
+
+  // Identify background and colors
+  bg = MostFrequentColor(grid)
+  nonbg = ColorsPresent(grid, exclude=[bg])
+
+  // Detect wire color as the thinnest, most path-like color
+  ThinnessScore = Lambda("thinness(color)", "Perimeter(color)/Area(color) with bias for longer 4-connected paths")
+  wire = ArgMax(nonbg, by=ThinnessScore(color))
+
+  // Find a wire hub to preserve: prefer a 3x3 ring (outer 8==wire, center!=wire); else none
+  hub_ring = Find("3x3 ring", where="outer cells color==wire AND center color!=wire")
+  center = If(Exists(hub_ring), Center(hub_ring), None())
+
+  // Palette colors are the remaining two (terminals)
+  palette = ColorsPresent(grid, exclude=[bg, wire])
+  A, B = Unpack(palette)
+
+  // Split wire network into branches, excluding the hub ring if present
+  wire_pixels = Find("pixels", where="color==wire")
+  branches = ConnectedComponents(Exists(hub_ring) ? Subtract(wire_pixels, hub_ring) : wire_pixels, connectivity=4)
+
+  // Assign each branch to the palette color it touches in the original grid
+  Assign = Lambda("assign_branch(branch)", "
+    touchA = Touches(branch, color=A, within=original, connectivity=4)
+    touchB = Touches(branch, color=B, within=original, connectivity=4)
+    if touchA and not touchB -> return A
+    if touchB and not touchA -> return B
+    if touchA and touchB -> return DominantAdjacentColor(branch, among=[A,B], within=original)
+    return 'unassigned'
+  ")
+  assignment = { branch: Assign(branch) for branch in branches }
+
+  // Choose primary color as the one assigned to more branches (tie-breaker: higher total adjacency length along wire)
+  countA = Count(branches, where="assignment[branch]==A")
+  countB = Count(branches, where="assignment[branch]==B")
+  primary = If(countA>countB, A,
+            If(countB>countA, B,
+              ArgMax([A,B], by=AdjacencyLength(Find('pixels', where='color==wire'), to=color, within=original))))
+
+  // Recolor branches and hub center; keep hub ring as wire
+  for branch in branches {
+    target = assignment[branch]=='unassigned' ? primary : assignment[branch]
+    Paint(branch, target)
+  }
+  if center != None() { Paint(center, primary) }
+  if Exists(hub_ring) { Keep(hub_ring, wire) }
+
+  // Corner smoothing: fill bg corners surrounded by primary (optional but consistent with examples)
+  FillWhere(
+    pattern="2x2 windows with exactly three cells color==primary and one cell color==bg",
+    target="the bg cell",
+    paint=primary
+  )
+
+  Output(grid)
+}
+[MESSAGE] program {
+  grid = Input()
+  original = Snapshot(grid)
+
+  // 1) Identify roles
+  bg = MostFrequentColor(grid)
+  nonbg = ColorsPresent(grid, exclude=[bg])
+
+  PathLikeScore = Lambda("path_like(color)", "
+    pixels = Find('pixels', where=EqualsColor(color))
+    deg12 = Count(pixels, where=Degree4(p)==1 OR Degree4(p)==2)
+    fat2x2 = Count(Find('2x2 windows', where='all cells color=='+color))
+    score = deg12 - 3*fat2x2
+    return score
+  ")
+  wire = ArgMax(nonbg, by=PathLikeScore(color))
+
+  palette = ColorsPresent(grid, exclude=[bg, wire])
+  A, B = Unpack(palette)
+
+  // 2) Locate the hub as a 3x3 window with wire border (ring or solid)
+  ring_candidates = Find('3x3 windows', where="all 8 border cells color==wire")
+  if IsEmpty(ring_candidates) {
+    // Fallback: pick the 3x3 with the most wire, preferring one with 4 exits
+    ring_candidates = TopK(
+      Find('3x3 windows'),
+      k=1,
+      by="count(wire in window) + 4*HasFourExits(window, color==wire)"
+    )
+  }
+  hub_window = ArgMax(
+    ring_candidates,
+    by="NumberOfExitingCorridors(window, color==wire)"
+  )
+  ring = Border(hub_window)
+  center = Center(hub_window)
+
+  // 3) Split wire network into branches excluding the hub ring
+  wire_pixels = Find('pixels', where="color==wire")
+  branches = ConnectedComponents(Subtract(wire_pixels, ring), connectivity=4)
+
+  // 4) Assign branch colors from terminals they touch in the original grid
+  Assign = Lambda("assign(branch)", "
+    tA = Touches(branch, color=A, within=original, connectivity=4)
+    tB = Touches(branch, color=B, within=original, connectivity=4)
+    if tA and not tB -> return A
+    if tB and not tA -> return B
+    if tA and tB -> return DominantAdjacentColor(branch, among=[A,B], within=original)
+    return 'unassigned'
+  ")
+  assignment = { branch: Assign(branch) for branch in branches }
+
+  // 5) Choose a primary palette color for ambiguous/unassigned cases
+  countA = Count(branches, where="assignment[branch]==A")
+  countB = Count(branches, where="assignment[branch]==B")
+  primary = If(countA>countB, A,
+            If(countB>countA, B,
+              ArgMax([A,B], by="AdjacencyLength(Find('pixels', where='color=='+wire), to=color, within=original)")))
+
+  // 6) Recolor branches; preserve hub ring; paint hub center with primary
+  for branch in branches {
+    target = assignment[branch]=='unassigned' ? primary : assignment[branch]
+    Paint(branch, target)
+  }
+  Keep(ring, wire)
+  Paint(center, primary)
+
+  Output(grid)
+}
+
+============================================================
+Phase: train_2_verify
+============================================================
+program {
+  grid = Input()
+  original = Snapshot(grid)
+
+  // 1) Identify roles
+  bg = MostFrequentColor(grid)
+  nonbg = ColorsPresent(grid, exclude=[bg])
+
+  PathLikeScore = Lambda("path_like(color)", "
+    pixels = Find('pixels', where=EqualsColor(color))
+    deg12 = Count(pixels, where=Degree4(p)==1 OR Degree4(p)==2)
+    fat2x2 = Count(Find('2x2 windows', where='all cells color=='+color))
+    score = deg12 - 3*fat2x2
+    return score
+  ")
+  wire = ArgMax(nonbg, by=PathLikeScore(color))
+
+  palette = ColorsPresent(grid, exclude=[bg, wire])
+  A, B = Unpack(palette)
+
+  // 2) Locate the hub as a 3x3 window with wire border (ring or solid)
+  ring_candidates = Find('3x3 windows', where="all 8 border cells color==wire")
+  if IsEmpty(ring_candidates) {
+    // Fallback: pick the 3x3 with the most wire, preferring one with 4 exits
+    ring_candidates = TopK(
+      Find('3x3 windows'),
+      k=1,
+      by="count(wire in window) + 4*HasFourExits(window, color==wire)"
+    )
+  }
+  hub_window = ArgMax(
+    ring_candidates,
+    by="NumberOfExitingCorridors(window, color==wire)"
+  )
+  ring = Border(hub_window)
+  center = Center(hub_window)
+
+  // 3) Split wire network into branches excluding the hub ring
+  wire_pixels = Find('pixels', where="color==wire")
+  branches = ConnectedComponents(Subtract(wire_pixels, ring), connectivity=4)
+
+  // 4) Assign branch colors from terminals they touch in the original grid
+  Assign = Lambda("assign(branch)", "
+    tA = Touches(branch, color=A, within=original, connectivity=4)
+    tB = Touches(branch, color=B, within=original, connectivity=4)
+    if tA and not tB -> return A
+    if tB and not tA -> return B
+    if tA and tB -> return DominantAdjacentColor(branch, among=[A,B], within=original)
+    return 'unassigned'
+  ")
+  assignment = { branch: Assign(branch) for branch in branches }
+
+  // 5) Choose a primary palette color for ambiguous/unassigned cases
+  countA = Count(branches, where="assignment[branch]==A")
+  countB = Count(branches, where="assignment[branch]==B")
+  primary = If(countA>countB, A,
+            If(countB>countA, B,
+              ArgMax([A,B], by="AdjacencyLength(Find('pixels', where='color=='+wire), to=color, within=original)")))
+
+  // 6) Recolor branches; preserve hub ring; paint hub center with primary
+  for branch in branches {
+    target = assignment[branch]=='unassigned' ? primary : assignment[branch]
+    Paint(branch, target)
+  }
+  Keep(ring, wire)
+  Paint(center, primary)
+
+  Output(grid)
+}
+[MESSAGE] program {
+  grid = Input()
+  original = Snapshot(grid)
+
+  // Roles
+  bg = MostFrequentColor(grid)
+  nonbg = ColorsPresent(grid, exclude=[bg])
+
+  PathLikeScore = Lambda("score(color)", "
+    pix = Find('pixels', where=EqualsColor(color))
+    deg12 = Count(pix, where=Degree4(p)==1 OR Degree4(p)==2)
+    fat = Count(Find('2x2 windows', where='all cells color=='+color))
+    return deg12 - 3*fat
+  ")
+  wire = ArgMax(nonbg, by=PathLikeScore(color))
+  palette = ColorsPresent(grid, exclude=[bg, wire])
+  A, B = Unpack(palette)
+
+  // Hub detection: prefer a 3x3 wire ring; else identify junction cores (degree >=3)
+  ring = Find("3x3 ring", where="outer 8 cells color==wire AND center color!=wire")
+  center = If(Exists(ring), Center(ring), None())
+
+  junction_nodes = Find("pixels", where="color==wire AND Degree4(p) >= 3")
+  // Expand a bit so the network splits cleanly into branches
+  junction_core = Dilate(junction_nodes, radius=1)
+
+  // Cut set combines any ring (to preserve) and junction cores (to split branches)
+  cutset = Exists(ring) ? Union(ring, junction_core) : junction_core
+
+  wire_pixels = Find("pixels", where="color==wire")
+  branch_space = Subtract(wire_pixels, cutset)
+  branches = ConnectedComponents(branch_space, connectivity=4)
+
+  // Assign branches by terminals they touch in the original grid
+  Assign = Lambda("assign(branch)", "
+    tA = Touches(branch, color=A, within=original, connectivity=4)
+    tB = Touches(branch, color=B, within=original, connectivity=4)
+    if tA and not tB -> return A
+    if tB and not tA -> return B
+    if tA and tB -> return DominantAdjacentColor(branch, among=[A,B], within=original)
+    return 'unassigned'
+  ")
+  assignment = { branch: Assign(branch) for branch in branches }
+
+  // Primary color for ambiguous pieces: whichever has more assigned branches; tie -> longer adjacency to wire
+  countA = Count(branches, where="assignment[branch]==A")
+  countB = Count(branches, where="assignment[branch]==B")
+  primary = If(countA>countB, A,
+            If(countB>countA, B,
+              ArgMax([A,B], by="AdjacencyLength(wire_pixels, to=color, within=original)")))
+
+  // Recolor branches
+  for branch in branches {
+    target = assignment[branch]=='unassigned' ? primary : assignment[branch]
+    Paint(branch, target)
+  }
+
+  // Preserve any hub ring as wire and color its center with primary
+  if Exists(ring) { Keep(ring, wire) }
+  if center != None() { Paint(center, primary) }
+
+  // Paint junction cores (excluding ring) with primary to form the central hub in this case
+  Paint(Subtract(junction_core, ring), primary)
+
+  Output(grid)
+}
+
+============================================================
+Phase: test_refine
+============================================================
+program {
+  grid = Input()
+  original = Snapshot(grid)
+
+  // Roles
+  bg = MostFrequentColor(grid)
+  nonbg = ColorsPresent(grid, exclude=[bg])
+
+  PathLikeScore = Lambda("score(color)", "
+    pix = Find('pixels', where=EqualsColor(color))
+    deg12 = Count(pix, where=Degree4(p)==1 OR Degree4(p)==2)
+    fat = Count(Find('2x2 windows', where='all cells color=='+color))
+    return deg12 - 3*fat
+  ")
+  wire = ArgMax(nonbg, by=PathLikeScore(color))
+  palette = ColorsPresent(grid, exclude=[bg, wire])
+  A, B = Unpack(palette)
+
+  // Hub detection: prefer a 3x3 wire ring; else identify junction cores (degree >=3)
+  ring = Find("3x3 ring", where="outer 8 cells color==wire AND center color!=wire")
+  center = If(Exists(ring), Center(ring), None())
+
+  junction_nodes = Find("pixels", where="color==wire AND Degree4(p) >= 3")
+  // Expand a bit so the network splits cleanly into branches
+  junction_core = Dilate(junction_nodes, radius=1)
+
+  // Cut set combines any ring (to preserve) and junction cores (to split branches)
+  cutset = Exists(ring) ? Union(ring, junction_core) : junction_core
+
+  wire_pixels = Find("pixels", where="color==wire")
+  branch_space = Subtract(wire_pixels, cutset)
+  branches = ConnectedComponents(branch_space, connectivity=4)
+
+  // Assign branches by terminals they touch in the original grid
+  Assign = Lambda("assign(branch)", "
+    tA = Touches(branch, color=A, within=original, connectivity=4)
+    tB = Touches(branch, color=B, within=original, connectivity=4)
+    if tA and not tB -> return A
+    if tB and not tA -> return B
+    if tA and tB -> return DominantAdjacentColor(branch, among=[A,B], within=original)
+    return 'unassigned'
+  ")
+  assignment = { branch: Assign(branch) for branch in branches }
+
+  // Primary color for ambiguous pieces: whichever has more assigned branches; tie -> longer adjacency to wire
+  countA = Count(branches, where="assignment[branch]==A")
+  countB = Count(branches, where="assignment[branch]==B")
+  primary = If(countA>countB, A,
+            If(countB>countA, B,
+              ArgMax([A,B], by="AdjacencyLength(wire_pixels, to=color, within=original)")))
+
+  // Recolor branches
+  for branch in branches {
+    target = assignment[branch]=='unassigned' ? primary : assignment[branch]
+    Paint(branch, target)
+  }
+
+  // Preserve any hub ring as wire and color its center with primary
+  if Exists(ring) { Keep(ring, wire) }
+  if center != None() { Paint(center, primary) }
+
+  // Paint junction cores (excluding ring) with primary to form the central hub in this case
+  Paint(Subtract(junction_core, ring), primary)
+
+  Output(grid)
+}
+[MESSAGE] [[3, 3, 3, 3, 3, 3, 3, 3, 3, 3, 6, 6, 6, 6, 6, 6, 6, 6, 6, 6, 6, 6, 6, 6, 6, 6, 6, 6, 6, 6],
+ [3, 3, 3, 3, 3, 3, 3, 3, 3, 3, 6, 6, 6, 6, 6, 6, 6, 6, 6, 6, 6, 6, 6, 6, 6, 6, 6, 6, 6, 6],
+ [3, 3, 3, 3, 2, 3, 3, 3, 3, 3, 6, 6, 6, 6, 6, 6, 6, 6, 6, 6, 6, 6, 6, 6, 6, 6, 6, 6, 6, 6],
+ [3, 3, 2, 2, 3, 3, 3, 3, 3, 3, 6, 6, 6, 6, 6, 6, 6, 6, 6, 6, 6, 6, 6, 6, 6, 6, 2, 2, 2, 2],
+ [2, 2, 3, 2, 3, 3, 3, 3, 3, 3, 2, 2, 2, 2, 2, 6, 6, 6, 6, 6, 6, 6, 6, 6, 6, 6, 2, 2, 3, 2],
+ [2, 3, 3, 3, 3, 3, 3, 3, 3, 3, 6, 6, 6, 6, 2, 6, 6, 6, 6, 6, 6, 6, 2, 2, 2, 2, 2, 2, 3, 2],
+ [3, 3, 3, 3, 3, 3, 2, 3, 3, 3, 6, 6, 6, 6, 2, 6, 6, 6, 6, 6, 6, 6, 2, 6, 6, 6, 2, 2, 2, 2],
+ [2, 2, 3, 3, 3, 3, 3, 2, 3, 3, 2, 2, 2, 6, 2, 6, 6, 6, 6, 6, 6, 6, 2, 6, 6, 6, 6, 6, 6, 6],
+ [3, 3, 3, 3, 3, 3, 3, 3, 3, 3, 6, 6, 2, 6, 2, 6, 6, 6, 6, 6, 6, 2, 2, 6, 6, 6, 6, 6, 6, 6],
+ [3, 3, 3, 3, 3, 3, 3, 3, 3, 3, 6, 6, 2, 6, 2, 6, 6, 6, 6, 6, 6, 2, 6, 6, 6, 6, 6, 6, 6, 6],
+ [6, 6, 6, 6, 6, 2, 6, 6, 6, 6, 6, 6, 2, 6, 2, 6, 6, 6, 6, 6, 2, 2, 6, 6, 6, 6, 6, 6, 6, 6],
+ [6, 6, 6, 6, 6, 2, 6, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 6, 6, 6, 6, 6, 6, 6, 6, 6],
+ [6, 6, 6, 6, 6, 2, 2, 2, 6, 6, 6, 6, 2, 2, 2, 6, 6, 6, 6, 6, 6, 6, 6, 6, 6, 6, 6, 6, 6, 6],
+ [6, 6, 6, 6, 6, 6, 6, 6, 6, 2, 2, 2, 2, 2, 2, 6, 6, 6, 6, 6, 6, 6, 6, 6, 6, 6, 6, 6, 6, 6],
+ [6, 6, 6, 6, 6, 6, 6, 6, 6, 2, 6, 6, 2, 6, 2, 6, 6, 6, 6, 6, 6, 6, 6, 6, 6, 6, 6, 6, 6, 6],
+ [6, 6, 6, 6, 6, 6, 6, 6, 6, 2, 6, 6, 2, 6, 2, 2, 2, 6, 6, 6, 6, 6, 6, 6, 6, 6, 6, 6, 6, 6],
+ [6, 6, 6, 6, 6, 6, 2, 2, 2, 2, 6, 6, 2, 6, 6, 6, 2, 6, 6, 6, 6, 6, 6, 6, 6, 6, 6, 6, 6, 6],
+ [6, 6, 6, 6, 6, 6, 2, 6, 6, 6, 6, 6, 2, 6, 6, 6, 2, 6, 6, 6, 6, 6, 6, 6, 6, 6, 6, 6, 6, 6],
+ [6, 6, 6, 6, 6, 6, 2, 6, 6, 6, 6, 6, 2, 6, 6, 6, 2, 6, 6, 6, 6, 6, 6, 6, 6, 6, 6, 6, 6, 6],
+ [6, 6, 6, 6, 6, 6, 2, 6, 6, 6, 6, 6, 2, 6, 6, 6, 2, 6, 6, 6, 6, 6, 6, 6, 6, 6, 6, 6, 6, 6],
+ [6, 6, 6, 6, 6, 6, 2, 6, 6, 6, 6, 6, 2, 6, 6, 6, 2, 6, 6, 6, 6, 6, 6, 6, 6, 6, 6, 6, 6, 6],
+ [6, 6, 6, 6, 6, 6, 2, 6, 6, 6, 6, 6, 2, 6, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2],
+ [2, 2, 2, 6, 6, 6, 2, 6, 6, 6, 6, 6, 2, 6, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2],
+ [3, 3, 2, 2, 2, 2, 2, 6, 6, 6, 6, 6, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2],
+ [3, 2, 2, 6, 6, 6, 6, 6, 6, 6, 6, 6, 6, 6, 2, 2, 2, 2, 2, 2, 2, 3, 2, 2, 2, 2, 2, 2, 3, 2],
+ [3, 2, 2, 6, 6, 6, 6, 6, 6, 6, 6, 6, 6, 6, 2, 2, 2, 2, 2, 3, 2, 2, 2, 2, 2, 2, 2, 3, 3, 2],
+ [2, 2, 2, 6, 6, 6, 6, 6, 6, 6, 6, 6, 6, 6, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 3, 2],
+ [6, 6, 6, 6, 6, 6, 6, 6, 6, 6, 6, 6, 6, 6, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 3, 2, 2, 2, 3, 2],
+ [6, 6, 6, 6, 6, 6, 6, 6, 6, 6, 6, 6, 6, 6, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2],
+ [6, 6, 6, 6, 6, 6, 6, 6, 6, 6, 6, 6, 6, 6, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2],
+ [6, 6, 6, 6, 6, 6, 6, 6, 6, 6, 6, 6, 6, 6, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2]]
+
+============================================================
+Phase: test_predict
+============================================================
+[[3, 3, 3, 3, 3, 3, 3, 3, 3, 3, 6, 6, 6, 6, 6, 6, 6, 6, 6, 6, 6, 6, 6, 6, 6, 6, 6, 6, 6, 6],
+ [3, 3, 3, 3, 3, 3, 3, 3, 3, 3, 6, 6, 6, 6, 6, 6, 6, 6, 6, 6, 6, 6, 6, 6, 6, 6, 6, 6, 6, 6],
+ [3, 3, 3, 3, 2, 3, 3, 3, 3, 3, 6, 6, 6, 6, 6, 6, 6, 6, 6, 6, 6, 6, 6, 6, 6, 6, 6, 6, 6, 6],
+ [3, 3, 2, 2, 3, 3, 3, 3, 3, 3, 6, 6, 6, 6, 6, 6, 6, 6, 6, 6, 6, 6, 6, 6, 6, 6, 2, 2, 2, 2],
+ [2, 2, 3, 2, 3, 3, 3, 3, 3, 3, 2, 2, 2, 2, 2, 6, 6, 6, 6, 6, 6, 6, 6, 6, 6, 6, 2, 2, 3, 2],
+ [2, 3, 3, 3, 3, 3, 3, 3, 3, 3, 6, 6, 6, 6, 2, 6, 6, 6, 6, 6, 6, 6, 2, 2, 2, 2, 2, 2, 3, 2],
+ [3, 3, 3, 3, 3, 3, 2, 3, 3, 3, 6, 6, 6, 6, 2, 6, 6, 6, 6, 6, 6, 6, 2, 6, 6, 6, 2, 2, 2, 2],
+ [2, 2, 3, 3, 3, 3, 3, 2, 3, 3, 2, 2, 2, 6, 2, 6, 6, 6, 6, 6, 6, 6, 2, 6, 6, 6, 6, 6, 6, 6],
+ [3, 3, 3, 3, 3, 3, 3, 3, 3, 3, 6, 6, 2, 6, 2, 6, 6, 6, 6, 6, 6, 2, 2, 6, 6, 6, 6, 6, 6, 6],
+ [3, 3, 3, 3, 3, 3, 3, 3, 3, 3, 6, 6, 2, 6, 2, 6, 6, 6, 6, 6, 6, 2, 6, 6, 6, 6, 6, 6, 6, 6],
+ [6, 6, 6, 6, 6, 2, 6, 6, 6, 6, 6, 6, 2, 6, 2, 6, 6, 6, 6, 6, 2, 2, 6, 6, 6, 6, 6, 6, 6, 6],
+ [6, 6, 6, 6, 6, 2, 6, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 6, 6, 6, 6, 6, 6, 6, 6, 6],
+ [6, 6, 6, 6, 6, 2, 2, 2, 6, 6, 6, 6, 2, 2, 2, 6, 6, 6, 6, 6, 6, 6, 6, 6, 6, 6, 6, 6, 6, 6],
+ [6, 6, 6, 6, 6, 6, 6, 6, 6, 2, 2, 2, 2, 2, 2, 6, 6, 6, 6, 6, 6, 6, 6, 6, 6, 6, 6, 6, 6, 6],
+ [6, 6, 6, 6, 6, 6, 6, 6, 6, 2, 6, 6, 2, 6, 2, 6, 6, 6, 6, 6, 6, 6, 6, 6, 6, 6, 6, 6, 6, 6],
+ [6, 6, 6, 6, 6, 6, 6, 6, 6, 2, 6, 6, 2, 6, 2, 2, 2, 6, 6, 6, 6, 6, 6, 6, 6, 6, 6, 6, 6, 6],
+ [6, 6, 6, 6, 6, 6, 2, 2, 2, 2, 6, 6, 2, 6, 6, 6, 2, 6, 6, 6, 6, 6, 6, 6, 6, 6, 6, 6, 6, 6],
+ [6, 6, 6, 6, 6, 6, 2, 6, 6, 6, 6, 6, 2, 6, 6, 6, 2, 6, 6, 6, 6, 6, 6, 6, 6, 6, 6, 6, 6, 6],
+ [6, 6, 6, 6, 6, 6, 2, 6, 6, 6, 6, 6, 2, 6, 6, 6, 2, 6, 6, 6, 6, 6, 6, 6, 6, 6, 6, 6, 6, 6],
+ [6, 6, 6, 6, 6, 6, 2, 6, 6, 6, 6, 6, 2, 6, 6, 6, 2, 6, 6, 6, 6, 6, 6, 6, 6, 6, 6, 6, 6, 6],
+ [6, 6, 6, 6, 6, 6, 2, 6, 6, 6, 6, 6, 2, 6, 6, 6, 2, 6, 6, 6, 6, 6, 6, 6, 6, 6, 6, 6, 6, 6],
+ [6, 6, 6, 6, 6, 6, 2, 6, 6, 6, 6, 6, 2, 6, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2],
+ [2, 2, 2, 6, 6, 6, 2, 6, 6, 6, 6, 6, 2, 6, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2],
+ [3, 3, 2, 2, 2, 2, 2, 6, 6, 6, 6, 6, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2],
+ [3, 2, 2, 6, 6, 6, 6, 6, 6, 6, 6, 6, 6, 6, 2, 2, 2, 2, 2, 2, 2, 3, 2, 2, 2, 2, 2, 2, 3, 2],
+ [3, 2, 2, 6, 6, 6, 6, 6, 6, 6, 6, 6, 6, 6, 2, 2, 2, 2, 2, 3, 2, 2, 2, 2, 2, 2, 2, 3, 3, 2],
+ [2, 2, 2, 6, 6, 6, 6, 6, 6, 6, 6, 6, 6, 6, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 3, 2],
+ [6, 6, 6, 6, 6, 6, 6, 6, 6, 6, 6, 6, 6, 6, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 3, 2, 2, 2, 3, 2],
+ [6, 6, 6, 6, 6, 6, 6, 6, 6, 6, 6, 6, 6, 6, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2],
+ [6, 6, 6, 6, 6, 6, 6, 6, 6, 6, 6, 6, 6, 6, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2],
+ [6, 6, 6, 6, 6, 6, 6, 6, 6, 6, 6, 6, 6, 6, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2]]

@@ -1,0 +1,92 @@
+[
+  {
+    "task": "aa4ec2a5",
+    "success": false,
+    "time": 1385.150074005127,
+    "prompts": 0,
+    "phases": 0,
+    "solver": "visual",
+    "error": "'ARCSolver' object has no attribute 'create_grid_image'"
+  },
+  {
+    "task": "7c66cb00",
+    "success": false,
+    "time": 1789.4346430301666,
+    "prompts": 0,
+    "phases": 0,
+    "solver": "visual",
+    "error": "'ARCSolver' object has no attribute 'create_grid_image'"
+  },
+  {
+    "task": "88e364bc",
+    "success": false,
+    "time": 1986.772497177124,
+    "prompts": 0,
+    "phases": 0,
+    "solver": "visual",
+    "error": "'ARCSolver' object has no attribute 'create_grid_image'"
+  },
+  {
+    "task": "800d221b",
+    "success": false,
+    "time": 2331.2775781154633,
+    "prompts": 0,
+    "phases": 0,
+    "solver": "visual",
+    "error": "'ARCSolver' object has no attribute 'create_grid_image'"
+  },
+  {
+    "task": "269e22fb",
+    "success": false,
+    "time": 1528.9531109333038,
+    "prompts": 0,
+    "phases": 0,
+    "solver": "visual",
+    "error": "'ARCSolver' object has no attribute 'create_grid_image'"
+  },
+  {
+    "task": "45a5af55",
+    "success": false,
+    "time": 1143.7906470298767,
+    "prompts": 0,
+    "phases": 0,
+    "solver": "visual",
+    "error": "'ARCSolver' object has no attribute 'create_grid_image'"
+  },
+  {
+    "task": "16b78196",
+    "success": false,
+    "time": 1194.219199180603,
+    "prompts": 0,
+    "phases": 0,
+    "solver": "visual",
+    "error": "'ARCSolver' object has no attribute 'create_grid_image'"
+  },
+  {
+    "task": "b6f77b65",
+    "success": false,
+    "time": 2638.6013309955597,
+    "prompts": 0,
+    "phases": 0,
+    "solver": "visual",
+    "error": "'ARCSolver' object has no attribute 'create_grid_image'"
+  },
+  {
+    "task": "35ab12c3",
+    "success": false,
+    "time": 4628.952261209488,
+    "prompts": 0,
+    "phases": 0,
+    "solver": "visual",
+    "error": "'ARCSolver' object has no attribute 'create_grid_image'"
+  },
+  {
+    "task": "291dc1e1",
+    "success": false,
+    "time": 2832.955211162567,
+    "prompts": 0,
+    "phases": 0,
+    "solver": "visual",
+    "error": "'ARCSolver' object has no attribute 'create_grid_image'"
+  }
+]

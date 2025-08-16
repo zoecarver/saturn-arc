@@ -1,0 +1,550 @@
+[MESSAGE] program {
+  grid = Input()
+  orig = Copy(grid)
+
+  FillBetweenRows = Lambda("fill_between_on_rows(color)", "Fill zero runs that are bounded by 'color' on both ends within each row")
+  Apply(FillBetweenRows, to="rows", args=[4])
+  Apply(FillBetweenRows, to="rows", args=[8])
+
+  // vertical 8 fill only where the original grid already had at least two 8 anchors in the same column
+  orig8 = Find("positions", within=orig, where="color == 8")
+  cols_with_two_8 = Filter(Unique(Col(p) for p in orig8), where="Count(rows where (r,c) in orig8 for this c) >= 2")
+  for c in cols_with_two_8 {
+    rmin = Min(Row(p) for p in orig8 if Col(p)==c)
+    rmax = Max(Row(p) for p in orig8 if Col(p)==c)
+    Paint(ColumnSegment(col=c, rows=rmin..rmax), color=8)
+  }
+
+  // green diamond: connect extremes by four diagonal edges
+  G = Find("positions", where="color == 3")
+  top_r = Min(Row(p) for p in G)
+  bot_r = Max(Row(p) for p in G)
+  top_pair = SortBy(Filter(G, where=f"row == {top_r}"), key="col")
+  bot_pair = SortBy(Filter(G, where=f"row == {bot_r}"), key="col")
+  leftmost = ArgMin(G, key="col")
+  rightmost = ArgMax(G, key="col")
+  Paint(Line(top_pair[0], leftmost, mode="diagonal"), color=3)
+  Paint(Line(top_pair[1], rightmost, mode="diagonal"), color=3)
+  Paint(Line(leftmost, bot_pair[0], mode="diagonal"), color=3)
+  Paint(Line(rightmost, bot_pair[1], mode="diagonal"), color=3)
+
+  // 6-diagonal cross (V) and 7-outline on the convex side
+  S = Find("positions", where="color == 6")
+  apex = First(Filter(S, where="exists a in S: r(p)+c(p) == r(a)+c(a) and a!=p AND exists b in S: r(p)-c(p) == r(b)-c(b) and b!=p"))
+  sum_line = Line(ArgMin(Filter(S, where=f"r(p)+c(p) == {Row(apex)+Col(apex)}"), key="row"), ArgMax(Filter(S, where=f"r(p)+c(p) == {Row(apex)+Col(apex)}"), key="row"), mode="diagonal")
+  diff_line = Line(ArgMin(Filter(S, where=f"r(p)-c(p) == {Row(apex)-Col(apex)}"), key="row"), ArgMax(Filter(S, where=f"r(p)-c(p) == {Row(apex)-Col(apex)}"), key="row"), mode="diagonal")
+  spine = Union(sum_line, diff_line)
+  spine_no_ends = Subtract(spine, Endpoints(sum_line)); spine_no_ends = Subtract(spine_no_ends, Endpoints(diff_line))
+  left_outline = Shift(Intersect(spine_no_ends, sum_line), dir="left", steps=1)
+  right_outline = Shift(Intersect(spine_no_ends, diff_line), dir="right", steps=1)
+  cap = Union(Shift(apex, dir="up", steps=1), Shift(apex, dir="left", steps=1), Shift(apex, dir="right", steps=1))
+  Paint(Union(left_outline, right_outline, cap), color=7, paint_on="zeros_only")
+  Paint(spine, color=6)
+
+  // extend the discovered 1-8 rail vertically along the 8 column and mirror it to standalone original-8 columns
+  pair18 = First(Find("adjacent pair", where="left color == 1 and right color == 8"))
+  rows_with_8_at_right = RowsWhere(Cell(row=*, col=Col(pair18.right)) == 8)
+  left_rail = Set((r, Col(pair18.left)) for r in rows_with_8_at_right)
+  Paint(left_rail, color=1)
+
+  unpaired_cols = Filter(Unique(Col(p) for p in orig8), where="not any(Cell(r, col-1) == 1 for r with Cell(r, col)==8)")
+  for c in unpaired_cols {
+    positions = Find("positions", where=f"color == 8 and col == {c}")
+    Paint(Shift(positions, dir="left", steps=1), color=1, paint_on="zeros_only")
+  }
+
+  Output(grid)
+}
+
+============================================================
+Phase: train_0
+============================================================
+program {
+  grid = Input()
+  orig = Copy(grid)
+
+  FillBetweenRows = Lambda("fill_between_on_rows(color)", "Fill zero runs that are bounded by 'color' on both ends within each row")
+  Apply(FillBetweenRows, to="rows", args=[4])
+  Apply(FillBetweenRows, to="rows", args=[8])
+
+  // vertical 8 fill only where the original grid already had at least two 8 anchors in the same column
+  orig8 = Find("positions", within=orig, where="color == 8")
+  cols_with_two_8 = Filter(Unique(Col(p) for p in orig8), where="Count(rows where (r,c) in orig8 for this c) >= 2")
+  for c in cols_with_two_8 {
+    rmin = Min(Row(p) for p in orig8 if Col(p)==c)
+    rmax = Max(Row(p) for p in orig8 if Col(p)==c)
+    Paint(ColumnSegment(col=c, rows=rmin..rmax), color=8)
+  }
+
+  // green diamond: connect extremes by four diagonal edges
+  G = Find("positions", where="color == 3")
+  top_r = Min(Row(p) for p in G)
+  bot_r = Max(Row(p) for p in G)
+  top_pair = SortBy(Filter(G, where=f"row == {top_r}"), key="col")
+  bot_pair = SortBy(Filter(G, where=f"row == {bot_r}"), key="col")
+  leftmost = ArgMin(G, key="col")
+  rightmost = ArgMax(G, key="col")
+  Paint(Line(top_pair[0], leftmost, mode="diagonal"), color=3)
+  Paint(Line(top_pair[1], rightmost, mode="diagonal"), color=3)
+  Paint(Line(leftmost, bot_pair[0], mode="diagonal"), color=3)
+  Paint(Line(rightmost, bot_pair[1], mode="diagonal"), color=3)
+
+  // 6-diagonal cross (V) and 7-outline on the convex side
+  S = Find("positions", where="color == 6")
+  apex = First(Filter(S, where="exists a in S: r(p)+c(p) == r(a)+c(a) and a!=p AND exists b in S: r(p)-c(p) == r(b)-c(b) and b!=p"))
+  sum_line = Line(ArgMin(Filter(S, where=f"r(p)+c(p) == {Row(apex)+Col(apex)}"), key="row"), ArgMax(Filter(S, where=f"r(p)+c(p) == {Row(apex)+Col(apex)}"), key="row"), mode="diagonal")
+  diff_line = Line(ArgMin(Filter(S, where=f"r(p)-c(p) == {Row(apex)-Col(apex)}"), key="row"), ArgMax(Filter(S, where=f"r(p)-c(p) == {Row(apex)-Col(apex)}"), key="row"), mode="diagonal")
+  spine = Union(sum_line, diff_line)
+  spine_no_ends = Subtract(spine, Endpoints(sum_line)); spine_no_ends = Subtract(spine_no_ends, Endpoints(diff_line))
+  left_outline = Shift(Intersect(spine_no_ends, sum_line), dir="left", steps=1)
+  right_outline = Shift(Intersect(spine_no_ends, diff_line), dir="right", steps=1)
+  cap = Union(Shift(apex, dir="up", steps=1), Shift(apex, dir="left", steps=1), Shift(apex, dir="right", steps=1))
+  Paint(Union(left_outline, right_outline, cap), color=7, paint_on="zeros_only")
+  Paint(spine, color=6)
+
+  // extend the discovered 1-8 rail vertically along the 8 column and mirror it to standalone original-8 columns
+  pair18 = First(Find("adjacent pair", where="left color == 1 and right color == 8"))
+  rows_with_8_at_right = RowsWhere(Cell(row=*, col=Col(pair18.right)) == 8)
+  left_rail = Set((r, Col(pair18.left)) for r in rows_with_8_at_right)
+  Paint(left_rail, color=1)
+
+  unpaired_cols = Filter(Unique(Col(p) for p in orig8), where="not any(Cell(r, col-1) == 1 for r with Cell(r, col)==8)")
+  for c in unpaired_cols {
+    positions = Find("positions", where=f"color == 8 and col == {c}")
+    Paint(Shift(positions, dir="left", steps=1), color=1, paint_on="zeros_only")
+  }
+
+  Output(grid)
+}
+[MESSAGE] [[0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0],
+ [0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0],
+ [0, 0, 0, 0, 0, 0, 0, 1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0],
+ [0, 0, 0, 0, 0, 0, 0, 0, 8, 0, 0, 0, 0, 0, 0, 0, 0, 0],
+ [0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 4, 0, 0, 0, 0, 0, 0, 0],
+ [0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 6, 0, 6, 0, 0, 0, 0],
+ [0, 0, 0, 0, 0, 8, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0],
+ [0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0],
+ [0, 0, 0, 0, 0, 0, 0, 8, 0, 0, 0, 0, 0, 0, 0, 0, 6, 0],
+ [0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0],
+ [0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0],
+ [0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0],
+ [0, 0, 3, 0, 0, 0, 0, 0, 0, 0, 0, 6, 0, 0, 0, 0, 0, 0],
+ [0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0],
+ [0, 0, 0, 0, 0, 3, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0],
+ [0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 3, 0, 0, 0, 0, 0, 0, 0],
+ [0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0],
+ [0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0]]
+
+============================================================
+Phase: train_1_predict
+============================================================
+[[0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0],
+ [0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0],
+ [0, 0, 0, 0, 0, 0, 0, 1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0],
+ [0, 0, 0, 0, 0, 0, 0, 0, 8, 0, 0, 0, 0, 0, 0, 0, 0, 0],
+ [0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 4, 0, 0, 0, 0, 0, 0, 0],
+ [0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 6, 0, 6, 0, 0, 0, 0],
+ [0, 0, 0, 0, 0, 8, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0],
+ [0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0],
+ [0, 0, 0, 0, 0, 0, 0, 8, 0, 0, 0, 0, 0, 0, 0, 0, 6, 0],
+ [0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0],
+ [0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0],
+ [0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0],
+ [0, 0, 3, 0, 0, 0, 0, 0, 0, 0, 0, 6, 0, 0, 0, 0, 0, 0],
+ [0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0],
+ [0, 0, 0, 0, 0, 3, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0],
+ [0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 3, 0, 0, 0, 0, 0, 0, 0],
+ [0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0],
+ [0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0]]
+[MESSAGE] program {
+  grid = Input()
+  orig = Copy(grid)
+
+  // Helper to connect identical colors along specific directions
+  FillBetween = Lambda("fill_between(color, dirs)", "Within each specified direction in dirs, fill zero runs that are bounded by 'color' on both ends")
+
+  // Core connections
+  Apply(FillBetween, args=[6, ["row","col","diag_down","diag_up"]])     // connect magentas vertically and diagonally (and any same-row bridges)
+  Apply(FillBetween, args=[8, ["row","diag_down","diag_up"]])            // connect sky-blues horizontally and diagonally
+  // For yellow (4), only connect along rows, and only between original anchors later
+
+  // Row fill for 4 strictly between original 4 anchors
+  rows_with_two4 = RowsWhere(Count(Find("positions", within=orig, where="color == 4 and row == this_row")) >= 2)
+  for r in rows_with_two4 {
+    anchors = SortBy(Find("positions", within=orig, where=f"color == 4 and row == {r}"), key="col")
+    Paint(Segment(row=r, cols=Col(anchors[0])..Col(anchors[-1])), color=4)
+  }
+
+  // Component helper
+  ComponentOf = Lambda("component_of(color, seed)", "Return the connected component (8-neighborhood) of 'color' in current grid that contains 'seed'")
+
+  // Propagate 1 from 8 using observed touching (include diagonals), per 8-component for the paired 8
+  adj18 = Find("pairs", within=orig, where="colors (1,8) are touching (include diagonals)")
+  for (p1,p8) in adj18 {
+    comp8 = Execute(ComponentOf, args=[8, p8])
+    v18 = Vector(p1, p8)              // offset from 8 to 1
+    Paint(Shift(comp8, by=v18), color=1, paint_on="zeros_only")
+  }
+
+  // Propagate 4 from 6 using observed touching (include diagonals), per 6-component
+  adj46 = Find("pairs", within=orig, where="colors (4,6) are touching (include diagonals)")
+  for (p4,p6) in adj46 {
+    comp6 = Execute(ComponentOf, args=[6, p6])
+    v46 = Vector(p4, p6)              // offset from 6 to 4
+    Paint(Shift(comp6, by=v46), color=4, paint_on="zeros_only")
+  }
+
+  // If any original 7 touches a 6, outline both diagonal sides of the 6 backbone
+  if Count(Find("pairs", within=orig, where="colors (7,6) are touching (include diagonals)")) > 0 {
+    all6 = Find("positions", where="color == 6", within=grid)
+    Paint(Shift(all6, by=(-1, +1)), color=7, paint_on="zeros_only")
+    Paint(Shift(all6, by=(+1, -1)), color=7, paint_on="zeros_only")
+  }
+
+  // After propagation, close any remaining horizontal 4 gaps on rows that had at least one original 4
+  rows_with_4 = RowsWhere(Count(Find("positions", within=orig, where="color == 4 and row == this_row")) >= 1)
+  for r in rows_with_4 {
+    Apply(FillBetween, args=[4, ["row"]], within=Row(r))
+  }
+
+  // Green diamond: draw outline when 3s suggest a rotated square (enough seeds and roughly square bounds)
+  G = Find("positions", where="color == 3", within=orig)
+  if Count(G) >= 6 {
+    top = ArgMin(G, key="row"); bot = ArgMax(G, key="row")
+    left = ArgMin(G, key="col"); right = ArgMax(G, key="col")
+    if Abs((Row(bot)-Row(top)) - (Col(right)-Col(left))) <= 2 {
+      Paint(Line(top, right, mode="diagonal"), color=3)
+      Paint(Line(right, bot, mode="diagonal"), color=3)
+      Paint(Line(bot, left, mode="diagonal"), color=3)
+      Paint(Line(left, top, mode="diagonal"), color=3)
+    }
+  }
+
+  Output(grid)
+}
+
+============================================================
+Phase: train_1_verify
+============================================================
+program {
+  grid = Input()
+  orig = Copy(grid)
+
+  // Helper to connect identical colors along specific directions
+  FillBetween = Lambda("fill_between(color, dirs)", "Within each specified direction in dirs, fill zero runs that are bounded by 'color' on both ends")
+
+  // Core connections
+  Apply(FillBetween, args=[6, ["row","col","diag_down","diag_up"]])     // connect magentas vertically and diagonally (and any same-row bridges)
+  Apply(FillBetween, args=[8, ["row","diag_down","diag_up"]])            // connect sky-blues horizontally and diagonally
+  // For yellow (4), only connect along rows, and only between original anchors later
+
+  // Row fill for 4 strictly between original 4 anchors
+  rows_with_two4 = RowsWhere(Count(Find("positions", within=orig, where="color == 4 and row == this_row")) >= 2)
+  for r in rows_with_two4 {
+    anchors = SortBy(Find("positions", within=orig, where=f"color == 4 and row == {r}"), key="col")
+    Paint(Segment(row=r, cols=Col(anchors[0])..Col(anchors[-1])), color=4)
+  }
+
+  // Component helper
+  ComponentOf = Lambda("component_of(color, seed)", "Return the connected component (8-neighborhood) of 'color' in current grid that contains 'seed'")
+
+  // Propagate 1 from 8 using observed touching (include diagonals), per 8-component for the paired 8
+  adj18 = Find("pairs", within=orig, where="colors (1,8) are touching (include diagonals)")
+  for (p1,p8) in adj18 {
+    comp8 = Execute(ComponentOf, args=[8, p8])
+    v18 = Vector(p1, p8)              // offset from 8 to 1
+    Paint(Shift(comp8, by=v18), color=1, paint_on="zeros_only")
+  }
+
+  // Propagate 4 from 6 using observed touching (include diagonals), per 6-component
+  adj46 = Find("pairs", within=orig, where="colors (4,6) are touching (include diagonals)")
+  for (p4,p6) in adj46 {
+    comp6 = Execute(ComponentOf, args=[6, p6])
+    v46 = Vector(p4, p6)              // offset from 6 to 4
+    Paint(Shift(comp6, by=v46), color=4, paint_on="zeros_only")
+  }
+
+  // If any original 7 touches a 6, outline both diagonal sides of the 6 backbone
+  if Count(Find("pairs", within=orig, where="colors (7,6) are touching (include diagonals)")) > 0 {
+    all6 = Find("positions", where="color == 6", within=grid)
+    Paint(Shift(all6, by=(-1, +1)), color=7, paint_on="zeros_only")
+    Paint(Shift(all6, by=(+1, -1)), color=7, paint_on="zeros_only")
+  }
+
+  // After propagation, close any remaining horizontal 4 gaps on rows that had at least one original 4
+  rows_with_4 = RowsWhere(Count(Find("positions", within=orig, where="color == 4 and row == this_row")) >= 1)
+  for r in rows_with_4 {
+    Apply(FillBetween, args=[4, ["row"]], within=Row(r))
+  }
+
+  // Green diamond: draw outline when 3s suggest a rotated square (enough seeds and roughly square bounds)
+  G = Find("positions", where="color == 3", within=orig)
+  if Count(G) >= 6 {
+    top = ArgMin(G, key="row"); bot = ArgMax(G, key="row")
+    left = ArgMin(G, key="col"); right = ArgMax(G, key="col")
+    if Abs((Row(bot)-Row(top)) - (Col(right)-Col(left))) <= 2 {
+      Paint(Line(top, right, mode="diagonal"), color=3)
+      Paint(Line(right, bot, mode="diagonal"), color=3)
+      Paint(Line(bot, left, mode="diagonal"), color=3)
+      Paint(Line(left, top, mode="diagonal"), color=3)
+    }
+  }
+
+  Output(grid)
+}
+[MESSAGE] [[0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0],
+ [0, 8, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0],
+ [0, 0, 1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1, 0],
+ [0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0],
+ [0, 0, 0, 0, 7, 0, 0, 0, 0, 0, 7, 0, 0, 0, 0],
+ [0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 7, 0, 0, 0],
+ [0, 0, 0, 0, 0, 0, 4, 2, 0, 2, 0, 0, 0, 0, 0],
+ [0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0],
+ [0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0],
+ [0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0],
+ [0, 0, 0, 0, 7, 0, 7, 0, 0, 0, 0, 0, 0, 0, 0],
+ [0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0],
+ [0, 0, 1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1, 0],
+ [0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0],
+ [0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0]]
+
+============================================================
+Phase: train_2_predict
+============================================================
+[[0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0],
+ [0, 8, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0],
+ [0, 0, 1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1, 0],
+ [0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0],
+ [0, 0, 0, 0, 7, 0, 0, 0, 0, 0, 7, 0, 0, 0, 0],
+ [0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 7, 0, 0, 0],
+ [0, 0, 0, 0, 0, 0, 4, 2, 0, 2, 0, 0, 0, 0, 0],
+ [0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0],
+ [0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0],
+ [0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0],
+ [0, 0, 0, 0, 7, 0, 7, 0, 0, 0, 0, 0, 0, 0, 0],
+ [0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0],
+ [0, 0, 1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1, 0],
+ [0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0],
+ [0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0]]
+[MESSAGE] program {
+  grid = Input()
+  orig = Copy(grid)
+
+  // Natural helper: fill zero runs on specified line families where the original has at least two anchors of that color
+  FillBetween = Lambda("fill_between(color, lineset, anchors='orig')",
+    "For each line in lineset (rows, columns, diag_down, diag_up), if anchors contain the color at least twice on that line, paint all zero cells between the extreme occurrences with that color")
+
+  // Build structures directly implied by original anchors
+  Apply(FillBetween, args=[1, ['row','col'], 'orig'])           // inner 1 rectangle (only where two 1s exist per row/col)
+  Apply(FillBetween, args=[8, ['col','row'], 'orig'])           // 8 columns/rows where multiple 8s exist
+  Apply(FillBetween, args=[7, ['row','col','diag_down','diag_up'], 'orig']) // connect 7s along all straight/diagonal lines
+  Apply(FillBetween, args=[6, ['row','col','diag_down','diag_up'], 'orig']) // connect 6s similarly
+  Apply(FillBetween, args=[4, ['row'], 'orig'])                 // horizontal 4 bars from multiple anchors
+  Apply(FillBetween, args=[2, ['row','col'], 'orig'])           // connect 2s (e.g., fill small gaps)
+
+  // Rail propagation: copy one color’s component alongside another using the observed offset in the original
+  Rail = Lambda("rail(from_color, to_color)",
+    "Find all touching pairs (to_color, from_color) in the original (8-neighborhood). For each pair, let v = (row_to - row_from, col_to - col_from). Let comp be the connected component of from_color in the current grid that contains the from_color seed from the pair. Paint Shift(comp, by=v) with to_color on zeros only")
+
+  Execute(Rail, args=[8, 1])  // make 1-rails along 8 components
+  Execute(Rail, args=[6, 4])  // make 4-rails along 6 components
+
+  // If the original 1s define a rectangle and 1 touches 8 in the original, create an outer 8 frame by offsetting the 1 rectangle outward by the observed 8→1 vector
+  ones_orig = Find("positions", within=orig, where="color == 1")
+  if Count(ones_orig) >= 4 AND Count(Unique(Row(p) for p in ones_orig)) >= 2 AND Count(Unique(Col(p) for p in ones_orig)) >= 2 AND
+     Count(Find("pairs", within=orig, where="colors (1,8) are touching (include diagonals)")) > 0 {
+    p = First(Find("pairs", within=orig, where="colors (1,8) are touching (include diagonals)"))
+    v = Vector(p.right /*1*/, p.left /*8*/)           // vector from 8 to 1
+    comp1 = ConnectedComponent(grid, color=1, seed=p.right)
+    Paint(Shift(comp1, by=Neg(v)), color=8)           // outer 8 frame as shifted copy of the 1 rectangle
+  }
+
+  // Green diamond: when there are enough 3s to suggest a rotated square, connect extremes diagonally
+  greens = Find("positions", within=orig, where="color == 3")
+  if Count(greens) >= 6 {
+    top = ArgMin(greens, key="row"); bottom = ArgMax(greens, key="row")
+    left = ArgMin(greens, key="col"); right = ArgMax(greens, key="col")
+    Paint(Line(top, right, mode="diagonal"), color=3)
+    Paint(Line(right, bottom, mode="diagonal"), color=3)
+    Paint(Line(bottom, left, mode="diagonal"), color=3)
+    Paint(Line(left, top, mode="diagonal"), color=3)
+  }
+
+  Output(grid)
+}
+
+============================================================
+Phase: train_2_verify
+============================================================
+program {
+  grid = Input()
+  orig = Copy(grid)
+
+  // Natural helper: fill zero runs on specified line families where the original has at least two anchors of that color
+  FillBetween = Lambda("fill_between(color, lineset, anchors='orig')",
+    "For each line in lineset (rows, columns, diag_down, diag_up), if anchors contain the color at least twice on that line, paint all zero cells between the extreme occurrences with that color")
+
+  // Build structures directly implied by original anchors
+  Apply(FillBetween, args=[1, ['row','col'], 'orig'])           // inner 1 rectangle (only where two 1s exist per row/col)
+  Apply(FillBetween, args=[8, ['col','row'], 'orig'])           // 8 columns/rows where multiple 8s exist
+  Apply(FillBetween, args=[7, ['row','col','diag_down','diag_up'], 'orig']) // connect 7s along all straight/diagonal lines
+  Apply(FillBetween, args=[6, ['row','col','diag_down','diag_up'], 'orig']) // connect 6s similarly
+  Apply(FillBetween, args=[4, ['row'], 'orig'])                 // horizontal 4 bars from multiple anchors
+  Apply(FillBetween, args=[2, ['row','col'], 'orig'])           // connect 2s (e.g., fill small gaps)
+
+  // Rail propagation: copy one color’s component alongside another using the observed offset in the original
+  Rail = Lambda("rail(from_color, to_color)",
+    "Find all touching pairs (to_color, from_color) in the original (8-neighborhood). For each pair, let v = (row_to - row_from, col_to - col_from). Let comp be the connected component of from_color in the current grid that contains the from_color seed from the pair. Paint Shift(comp, by=v) with to_color on zeros only")
+
+  Execute(Rail, args=[8, 1])  // make 1-rails along 8 components
+  Execute(Rail, args=[6, 4])  // make 4-rails along 6 components
+
+  // If the original 1s define a rectangle and 1 touches 8 in the original, create an outer 8 frame by offsetting the 1 rectangle outward by the observed 8→1 vector
+  ones_orig = Find("positions", within=orig, where="color == 1")
+  if Count(ones_orig) >= 4 AND Count(Unique(Row(p) for p in ones_orig)) >= 2 AND Count(Unique(Col(p) for p in ones_orig)) >= 2 AND
+     Count(Find("pairs", within=orig, where="colors (1,8) are touching (include diagonals)")) > 0 {
+    p = First(Find("pairs", within=orig, where="colors (1,8) are touching (include diagonals)"))
+    v = Vector(p.right /*1*/, p.left /*8*/)           // vector from 8 to 1
+    comp1 = ConnectedComponent(grid, color=1, seed=p.right)
+    Paint(Shift(comp1, by=Neg(v)), color=8)           // outer 8 frame as shifted copy of the 1 rectangle
+  }
+
+  // Green diamond: when there are enough 3s to suggest a rotated square, connect extremes diagonally
+  greens = Find("positions", within=orig, where="color == 3")
+  if Count(greens) >= 6 {
+    top = ArgMin(greens, key="row"); bottom = ArgMax(greens, key="row")
+    left = ArgMin(greens, key="col"); right = ArgMax(greens, key="col")
+    Paint(Line(top, right, mode="diagonal"), color=3)
+    Paint(Line(right, bottom, mode="diagonal"), color=3)
+    Paint(Line(bottom, left, mode="diagonal"), color=3)
+    Paint(Line(left, top, mode="diagonal"), color=3)
+  }
+
+  Output(grid)
+}
+[MESSAGE] program {
+  grid = Input()
+  orig = Copy(grid)
+
+  // Helper: fill zero runs on specified line families where the original has ≥2 anchors of that color on that same line
+  FillBetween = Lambda("fill_between(color, lineset, anchors='orig')",
+    "For each line in lineset (rows, columns, diag_down, diag_up), if in 'anchors' that line contains the color at least twice, paint all zero cells between the extreme occurrences with that color")
+
+  // Build structures implied by original anchors
+  Apply(FillBetween, args=[1, ['row','col'], 'orig'])     // vertical/horizontal 1 spans (here: the 1 column)
+  Apply(FillBetween, args=[6, ['row','col'], 'orig'])     // connect 6s where there are ≥2 anchors on a line
+  Apply(FillBetween, args=[4, ['row'], 'orig'])           // 4 only fills rows when multiple 4 anchors exist (no-op here)
+  Apply(FillBetween, args=[7, ['row','col'], 'orig'])     // connect 7s if they come in pairs (no-op here)
+  Apply(FillBetween, args=[8, ['row','col'], 'orig'])     // connect 8s if any row/col has ≥2 anchors (no-op here)
+
+  // Rail propagation: copy one color’s component alongside another using the observed offset in the original
+  Rail = Lambda("rail(from_color, to_color)",
+    "Find all touching pairs (to_color, from_color) in the original (8-neighborhood). For each pair, let v = (r_to - r_from, c_to - c_from). Let comp be the connected component of from_color in the current grid that contains the from_color seed from the pair. Paint Shift(comp, by=v) with to_color on zeros only")
+
+  // From the diagonal-touching (4,6) near the top-left, mirror the full 6 backbone into a parallel 4 backbone
+  Execute(Rail, args=[6, 4])
+
+  // Green diamond: connect extremes of 3s by diagonal edges, but do not overwrite nonzero colors
+  greens = Find("positions", within=orig, where="color == 3")
+  if Count(greens) >= 4 {
+    top = ArgMin(greens, key="row"); bottom = ArgMax(greens, key="row")
+    left = ArgMin(greens, key="col"); right = ArgMax(greens, key="col")
+    ring = Union(
+      Line(top, right, mode="diagonal"),
+      Line(right, bottom, mode="diagonal"),
+      Line(bottom, left, mode="diagonal"),
+      Line(left, top, mode="diagonal")
+    )
+    Paint(ring, color=3, paint_on="zeros_only")
+  }
+
+  Output(grid)
+}
+
+============================================================
+Phase: test_refine
+============================================================
+program {
+  grid = Input()
+  orig = Copy(grid)
+
+  // Helper: fill zero runs on specified line families where the original has ≥2 anchors of that color on that same line
+  FillBetween = Lambda("fill_between(color, lineset, anchors='orig')",
+    "For each line in lineset (rows, columns, diag_down, diag_up), if in 'anchors' that line contains the color at least twice, paint all zero cells between the extreme occurrences with that color")
+
+  // Build structures implied by original anchors
+  Apply(FillBetween, args=[1, ['row','col'], 'orig'])     // vertical/horizontal 1 spans (here: the 1 column)
+  Apply(FillBetween, args=[6, ['row','col'], 'orig'])     // connect 6s where there are ≥2 anchors on a line
+  Apply(FillBetween, args=[4, ['row'], 'orig'])           // 4 only fills rows when multiple 4 anchors exist (no-op here)
+  Apply(FillBetween, args=[7, ['row','col'], 'orig'])     // connect 7s if they come in pairs (no-op here)
+  Apply(FillBetween, args=[8, ['row','col'], 'orig'])     // connect 8s if any row/col has ≥2 anchors (no-op here)
+
+  // Rail propagation: copy one color’s component alongside another using the observed offset in the original
+  Rail = Lambda("rail(from_color, to_color)",
+    "Find all touching pairs (to_color, from_color) in the original (8-neighborhood). For each pair, let v = (r_to - r_from, c_to - c_from). Let comp be the connected component of from_color in the current grid that contains the from_color seed from the pair. Paint Shift(comp, by=v) with to_color on zeros only")
+
+  // From the diagonal-touching (4,6) near the top-left, mirror the full 6 backbone into a parallel 4 backbone
+  Execute(Rail, args=[6, 4])
+
+  // Green diamond: connect extremes of 3s by diagonal edges, but do not overwrite nonzero colors
+  greens = Find("positions", within=orig, where="color == 3")
+  if Count(greens) >= 4 {
+    top = ArgMin(greens, key="row"); bottom = ArgMax(greens, key="row")
+    left = ArgMin(greens, key="col"); right = ArgMax(greens, key="col")
+    ring = Union(
+      Line(top, right, mode="diagonal"),
+      Line(right, bottom, mode="diagonal"),
+      Line(bottom, left, mode="diagonal"),
+      Line(left, top, mode="diagonal")
+    )
+    Paint(ring, color=3, paint_on="zeros_only")
+  }
+
+  Output(grid)
+}
+[MESSAGE] [[0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 3, 0, 0, 0, 0, 0, 0],
+ [0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0],
+ [0, 0, 0, 6, 0, 0, 7, 1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0],
+ [0, 0, 4, 6, 0, 0, 0, 1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 3, 0, 0, 0],
+ [0, 0, 4, 6, 0, 0, 0, 1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0],
+ [0, 0, 4, 6, 0, 0, 0, 1, 0, 3, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0],
+ [0, 0, 4, 6, 0, 0, 0, 1, 0, 0, 3, 0, 0, 3, 0, 0, 0, 0, 0, 0, 0],
+ [0, 0, 4, 6, 0, 0, 0, 1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0],
+ [0, 0, 4, 6, 0, 0, 0, 1, 0, 0, 0, 0, 0, 0, 0, 3, 0, 3, 0, 0, 0],
+ [0, 0, 4, 6, 0, 0, 0, 1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0],
+ [0, 0, 4, 6, 0, 0, 0, 1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0],
+ [0, 0, 4, 6, 0, 0, 0, 1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0],
+ [0, 0, 4, 6, 0, 0, 0, 1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0],
+ [0, 0, 4, 6, 0, 0, 0, 1, 0, 0, 8, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0],
+ [0, 0, 4, 6, 0, 0, 0, 1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0],
+ [0, 0, 4, 6, 0, 0, 0, 1, 0, 0, 0, 0, 0, 0, 0, 0, 8, 0, 0, 0, 0],
+ [0, 0, 4, 6, 0, 0, 0, 1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0],
+ [0, 0, 4, 6, 0, 0, 0, 1, 0, 0, 0, 0, 0, 8, 0, 0, 0, 0, 0, 0, 0],
+ [0, 0, 4, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0],
+ [0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0],
+ [0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0]]
+
+============================================================
+Phase: test_predict
+============================================================
+[[0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 3, 0, 0, 0, 0, 0, 0],
+ [0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0],
+ [0, 0, 0, 6, 0, 0, 7, 1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0],
+ [0, 0, 4, 6, 0, 0, 0, 1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 3, 0, 0, 0],
+ [0, 0, 4, 6, 0, 0, 0, 1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0],
+ [0, 0, 4, 6, 0, 0, 0, 1, 0, 3, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0],
+ [0, 0, 4, 6, 0, 0, 0, 1, 0, 0, 3, 0, 0, 3, 0, 0, 0, 0, 0, 0, 0],
+ [0, 0, 4, 6, 0, 0, 0, 1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0],
+ [0, 0, 4, 6, 0, 0, 0, 1, 0, 0, 0, 0, 0, 0, 0, 3, 0, 3, 0, 0, 0],
+ [0, 0, 4, 6, 0, 0, 0, 1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0],
+ [0, 0, 4, 6, 0, 0, 0, 1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0],
+ [0, 0, 4, 6, 0, 0, 0, 1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0],
+ [0, 0, 4, 6, 0, 0, 0, 1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0],
+ [0, 0, 4, 6, 0, 0, 0, 1, 0, 0, 8, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0],
+ [0, 0, 4, 6, 0, 0, 0, 1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0],
+ [0, 0, 4, 6, 0, 0, 0, 1, 0, 0, 0, 0, 0, 0, 0, 0, 8, 0, 0, 0, 0],
+ [0, 0, 4, 6, 0, 0, 0, 1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0],
+ [0, 0, 4, 6, 0, 0, 0, 1, 0, 0, 0, 0, 0, 8, 0, 0, 0, 0, 0, 0, 0],
+ [0, 0, 4, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0],
+ [0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0],
+ [0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0]]

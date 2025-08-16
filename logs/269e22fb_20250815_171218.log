@@ -1,0 +1,936 @@
+[MESSAGE] program {
+  grid = Input()
+
+  // Identify the two colors and their roles
+  palette = UniqueColors(grid)
+  majority = ArgMax(palette, by=Count(color))
+  minority = First(palette \ {majority})
+
+  // Normalize size to 20x20: nearest-neighbor scale to fit, then center-pad with majority color
+  fit = Scale(grid, mode="nearest", to_fit={{width:20, height:20}}, preserve_aspect=true)
+  canvas = PadToSize(fit, width=20, height=20, pad_color=majority, align="center")
+
+  // Build the medial skeleton of the majority-colored region (4-connected, L1 metric)
+  region = Mask(canvas, where={{color==majority}})
+  dist = DistanceTransform(region, metric="manhattan")
+  ridges = Find("ridge pixels", within=dist, where="strict local maxima over 4-neighbors or ties forming continuous ridgelines")
+  skeleton = Thin(ridges, connectivity=4, preserve="junctions", prune_spurs_length<=1)
+
+  // Paint the skeleton with the minority color; keep all else as-is
+  Paint(canvas, where=skeleton, color=minority)
+
+  Output(canvas)
+}
+
+============================================================
+Phase: train_0
+============================================================
+program {
+  grid = Input()
+
+  // Identify the two colors and their roles
+  palette = UniqueColors(grid)
+  majority = ArgMax(palette, by=Count(color))
+  minority = First(palette \ {majority})
+
+  // Normalize size to 20x20: nearest-neighbor scale to fit, then center-pad with majority color
+  fit = Scale(grid, mode="nearest", to_fit={{width:20, height:20}}, preserve_aspect=true)
+  canvas = PadToSize(fit, width=20, height=20, pad_color=majority, align="center")
+
+  // Build the medial skeleton of the majority-colored region (4-connected, L1 metric)
+  region = Mask(canvas, where={{color==majority}})
+  dist = DistanceTransform(region, metric="manhattan")
+  ridges = Find("ridge pixels", within=dist, where="strict local maxima over 4-neighbors or ties forming continuous ridgelines")
+  skeleton = Thin(ridges, connectivity=4, preserve="junctions", prune_spurs_length<=1)
+
+  // Paint the skeleton with the minority color; keep all else as-is
+  Paint(canvas, where=skeleton, color=minority)
+
+  Output(canvas)
+}
+[MESSAGE] [[8, 8, 8, 8, 8, 8, 8, 7, 7, 8, 8, 8, 7, 7, 8, 8, 8, 8, 8, 8],
+ [8, 8, 8, 8, 8, 8, 8, 8, 8, 7, 8, 7, 8, 8, 8, 8, 8, 8, 8, 8],
+ [8, 8, 8, 8, 8, 7, 8, 8, 8, 8, 7, 8, 8, 8, 8, 8, 8, 8, 8, 8],
+ [8, 8, 8, 8, 8, 7, 8, 8, 8, 8, 7, 8, 8, 8, 8, 8, 8, 8, 8, 8],
+ [8, 8, 8, 8, 8, 7, 8, 8, 8, 8, 7, 8, 8, 8, 8, 8, 8, 8, 8, 8],
+ [8, 8, 8, 8, 8, 7, 8, 8, 8, 8, 7, 8, 8, 8, 8, 8, 8, 8, 8, 8],
+ [8, 8, 8, 8, 8, 8, 8, 8, 8, 8, 7, 8, 8, 8, 8, 8, 8, 8, 8, 8],
+ [8, 8, 8, 8, 8, 8, 8, 8, 8, 8, 7, 7, 7, 7, 7, 8, 8, 8, 8, 8],
+ [8, 8, 8, 8, 8, 8, 8, 8, 8, 8, 7, 7, 7, 7, 7, 8, 8, 8, 8, 8],
+ [8, 8, 8, 8, 8, 7, 7, 8, 8, 8, 7, 8, 8, 8, 8, 8, 8, 8, 8, 8],
+ [8, 8, 8, 8, 8, 8, 7, 8, 8, 8, 7, 7, 7, 7, 7, 8, 8, 8, 8, 8],
+ [8, 8, 8, 8, 8, 8, 7, 7, 7, 7, 7, 8, 8, 8, 8, 8, 8, 8, 8, 8],
+ [8, 8, 8, 8, 8, 8, 7, 7, 7, 8, 7, 7, 7, 7, 7, 8, 8, 8, 8, 8],
+ [8, 8, 8, 8, 8, 8, 7, 7, 7, 8, 7, 7, 7, 7, 7, 8, 8, 8, 8, 8],
+ [8, 8, 8, 8, 8, 8, 7, 7, 7, 7, 7, 8, 8, 8, 8, 8, 8, 8, 8, 8],
+ [8, 8, 8, 8, 8, 8, 7, 8, 8, 8, 7, 8, 8, 8, 8, 8, 8, 8, 8, 8],
+ [8, 8, 8, 8, 8, 7, 7, 8, 8, 8, 7, 7, 8, 8, 8, 8, 8, 8, 8, 8],
+ [8, 8, 8, 8, 8, 8, 8, 8, 8, 8, 7, 7, 7, 7, 8, 8, 8, 8, 8, 8],
+ [8, 8, 8, 8, 8, 8, 8, 8, 8, 8, 7, 7, 7, 7, 8, 8, 8, 8, 8, 8],
+ [8, 8, 8, 8, 8, 8, 8, 8, 8, 8, 8, 7, 7, 7, 7, 8, 8, 8, 8, 8]]
+
+============================================================
+Phase: train_1_predict
+============================================================
+[[8, 8, 8, 8, 8, 8, 8, 7, 7, 8, 8, 8, 7, 7, 8, 8, 8, 8, 8, 8],
+ [8, 8, 8, 8, 8, 8, 8, 8, 8, 7, 8, 7, 8, 8, 8, 8, 8, 8, 8, 8],
+ [8, 8, 8, 8, 8, 7, 8, 8, 8, 8, 7, 8, 8, 8, 8, 8, 8, 8, 8, 8],
+ [8, 8, 8, 8, 8, 7, 8, 8, 8, 8, 7, 8, 8, 8, 8, 8, 8, 8, 8, 8],
+ [8, 8, 8, 8, 8, 7, 8, 8, 8, 8, 7, 8, 8, 8, 8, 8, 8, 8, 8, 8],
+ [8, 8, 8, 8, 8, 7, 8, 8, 8, 8, 7, 8, 8, 8, 8, 8, 8, 8, 8, 8],
+ [8, 8, 8, 8, 8, 8, 8, 8, 8, 8, 7, 8, 8, 8, 8, 8, 8, 8, 8, 8],
+ [8, 8, 8, 8, 8, 8, 8, 8, 8, 8, 7, 7, 7, 7, 7, 8, 8, 8, 8, 8],
+ [8, 8, 8, 8, 8, 8, 8, 8, 8, 8, 7, 7, 7, 7, 7, 8, 8, 8, 8, 8],
+ [8, 8, 8, 8, 8, 7, 7, 8, 8, 8, 7, 8, 8, 8, 8, 8, 8, 8, 8, 8],
+ [8, 8, 8, 8, 8, 8, 7, 8, 8, 8, 7, 7, 7, 7, 7, 8, 8, 8, 8, 8],
+ [8, 8, 8, 8, 8, 8, 7, 7, 7, 7, 7, 8, 8, 8, 8, 8, 8, 8, 8, 8],
+ [8, 8, 8, 8, 8, 8, 7, 7, 7, 8, 7, 7, 7, 7, 7, 8, 8, 8, 8, 8],
+ [8, 8, 8, 8, 8, 8, 7, 7, 7, 8, 7, 7, 7, 7, 7, 8, 8, 8, 8, 8],
+ [8, 8, 8, 8, 8, 8, 7, 7, 7, 7, 7, 8, 8, 8, 8, 8, 8, 8, 8, 8],
+ [8, 8, 8, 8, 8, 8, 7, 8, 8, 8, 7, 8, 8, 8, 8, 8, 8, 8, 8, 8],
+ [8, 8, 8, 8, 8, 7, 7, 8, 8, 8, 7, 7, 8, 8, 8, 8, 8, 8, 8, 8],
+ [8, 8, 8, 8, 8, 8, 8, 8, 8, 8, 7, 7, 7, 7, 8, 8, 8, 8, 8, 8],
+ [8, 8, 8, 8, 8, 8, 8, 8, 8, 8, 7, 7, 7, 7, 8, 8, 8, 8, 8, 8],
+ [8, 8, 8, 8, 8, 8, 8, 8, 8, 8, 8, 7, 7, 7, 7, 8, 8, 8, 8, 8]]
+[MESSAGE] program {
+  grid = Input()
+
+  // Determine background and foreground
+  colors = UniqueColors(grid)
+  background = ArgMax(colors, by=Count(color))          // majority color
+  foreground = First(colors \ {background})              // minority color
+
+  // Normalize to 20x20
+  fitted = Scale(grid, mode="nearest", to_fit={{width:20, height:20}}, preserve_aspect=true)
+  canvas = PadToSize(fitted, width=20, height=20, pad_color=background, align="center")
+
+  // Extract the shape to skeletonize (the minority/foreground color)
+  shape = Mask(canvas, where={{color == foreground}})
+
+  // Manhattan-medial skeleton with plateau handling
+  dt = DistanceTransform(shape, metric="manhattan")
+  ridges = Find("ridge set of dt", where="strict local maxima over 4-neighbors plus flat plateaus whose boundary pixels are non-increasing")
+  skeleton = Thin(ridges, connectivity=4, preserve="junctions and full plateaus", prune_spurs_length<=1)
+
+  // Make skeleton readable and clip to the original shape
+  fat = Dilate(skeleton, kernel="plus", radius=1)
+  glyphs = Intersect(fat, shape)
+
+  // Output: only glyphs remain as foreground; all else becomes background
+  out = Fill(width=20, height=20, color=background)
+  Paint(out, where=glyphs, color=foreground)
+
+  Output(out)
+}
+
+============================================================
+Phase: train_1_verify
+============================================================
+program {
+  grid = Input()
+
+  // Determine background and foreground
+  colors = UniqueColors(grid)
+  background = ArgMax(colors, by=Count(color))          // majority color
+  foreground = First(colors \ {background})              // minority color
+
+  // Normalize to 20x20
+  fitted = Scale(grid, mode="nearest", to_fit={{width:20, height:20}}, preserve_aspect=true)
+  canvas = PadToSize(fitted, width=20, height=20, pad_color=background, align="center")
+
+  // Extract the shape to skeletonize (the minority/foreground color)
+  shape = Mask(canvas, where={{color == foreground}})
+
+  // Manhattan-medial skeleton with plateau handling
+  dt = DistanceTransform(shape, metric="manhattan")
+  ridges = Find("ridge set of dt", where="strict local maxima over 4-neighbors plus flat plateaus whose boundary pixels are non-increasing")
+  skeleton = Thin(ridges, connectivity=4, preserve="junctions and full plateaus", prune_spurs_length<=1)
+
+  // Make skeleton readable and clip to the original shape
+  fat = Dilate(skeleton, kernel="plus", radius=1)
+  glyphs = Intersect(fat, shape)
+
+  // Output: only glyphs remain as foreground; all else becomes background
+  out = Fill(width=20, height=20, color=background)
+  Paint(out, where=glyphs, color=foreground)
+
+  Output(out)
+}
+[MESSAGE] [[0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0],
+ [0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0],
+ [0, 0, 0, 0, 0, 0, 0, 0, 3, 3, 3, 3, 3, 3, 3, 3, 3, 3, 3, 3],
+ [0, 0, 0, 0, 0, 0, 0, 0, 3, 3, 3, 3, 3, 3, 3, 3, 3, 3, 3, 3],
+ [0, 0, 0, 0, 3, 3, 3, 3, 3, 3, 3, 3, 3, 3, 3, 3, 3, 3, 3, 3],
+ [0, 0, 0, 0, 3, 3, 3, 3, 3, 3, 3, 3, 3, 3, 3, 3, 3, 3, 3, 3],
+ [3, 3, 3, 3, 3, 3, 3, 3, 3, 3, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0],
+ [3, 3, 3, 3, 3, 3, 3, 3, 3, 3, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0],
+ [3, 3, 3, 3, 3, 3, 3, 3, 3, 3, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0],
+ [3, 3, 3, 3, 3, 3, 3, 3, 3, 3, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0],
+ [0, 0, 0, 0, 0, 0, 0, 0, 3, 3, 3, 3, 3, 3, 3, 3, 3, 3, 3, 3],
+ [0, 0, 0, 0, 0, 0, 0, 0, 3, 3, 3, 3, 3, 3, 3, 3, 3, 3, 3, 3],
+ [0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 3, 3, 0, 0, 0, 0, 0, 0],
+ [0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 3, 3, 0, 0, 0, 0, 0, 0],
+ [0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 3, 3, 3, 3, 3, 3, 3, 3],
+ [0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 3, 3, 3, 3, 3, 3, 3, 3],
+ [0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 3, 3, 3, 3],
+ [0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 3, 3, 3, 3],
+ [0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 3, 3, 0, 0],
+ [0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 3, 3, 0, 0]]
+
+============================================================
+Phase: train_2_predict
+============================================================
+[[0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0],
+ [0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0],
+ [0, 0, 0, 0, 0, 0, 0, 0, 3, 3, 3, 3, 3, 3, 3, 3, 3, 3, 3, 3],
+ [0, 0, 0, 0, 0, 0, 0, 0, 3, 3, 3, 3, 3, 3, 3, 3, 3, 3, 3, 3],
+ [0, 0, 0, 0, 3, 3, 3, 3, 3, 3, 3, 3, 3, 3, 3, 3, 3, 3, 3, 3],
+ [0, 0, 0, 0, 3, 3, 3, 3, 3, 3, 3, 3, 3, 3, 3, 3, 3, 3, 3, 3],
+ [3, 3, 3, 3, 3, 3, 3, 3, 3, 3, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0],
+ [3, 3, 3, 3, 3, 3, 3, 3, 3, 3, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0],
+ [3, 3, 3, 3, 3, 3, 3, 3, 3, 3, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0],
+ [3, 3, 3, 3, 3, 3, 3, 3, 3, 3, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0],
+ [0, 0, 0, 0, 0, 0, 0, 0, 3, 3, 3, 3, 3, 3, 3, 3, 3, 3, 3, 3],
+ [0, 0, 0, 0, 0, 0, 0, 0, 3, 3, 3, 3, 3, 3, 3, 3, 3, 3, 3, 3],
+ [0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 3, 3, 0, 0, 0, 0, 0, 0],
+ [0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 3, 3, 0, 0, 0, 0, 0, 0],
+ [0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 3, 3, 3, 3, 3, 3, 3, 3],
+ [0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 3, 3, 3, 3, 3, 3, 3, 3],
+ [0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 3, 3, 3, 3],
+ [0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 3, 3, 3, 3],
+ [0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 3, 3, 0, 0],
+ [0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 3, 3, 0, 0]]
+[MESSAGE] program {
+  grid = Input()
+
+  // Colors
+  palette = UniqueColors(grid)
+  bg = ArgMax(palette, by=Count(color))      // majority color = background
+  fg = First(palette \ {bg})                 // minority color = ink
+
+  // Normalize canvas to 20x20 (pixel-art safe)
+  fitted = Scale(grid, mode="nearest", to_fit={{width:20, height:20}}, preserve_aspect=true)
+  canvas = PadToSize(fitted, width=20, height=20, pad_color=bg, align="center")
+
+  // Foreground structure to stylize
+  ink = Mask(canvas, where={{color==fg}})
+  ink = Clean(ink, remove="isolated pixels and 1x1 noise")
+  ink = Close(ink, kernel="plus", radius=1)
+
+  // Build a medial-graph of the ink to drive glyph placement
+  dt = DistanceTransform(ink, metric="manhattan")
+  ridges = Find("ridges", within=dt, where="strict 4-neighbor local maxima plus flat plateaus")
+  skel = Thin(ridges, connectivity=4, preserve="junctions and plateaus", prune_spurs_length<=1)
+  graph = ToGraph(skel, nodes="junctions and endpoints", edges="8-connected paths")
+
+  // Glyph library
+  Plus3 = Brush(shape="plus", size=3)
+  BarH = Brush(shape="rectangle", width=6, height=1)    // short horizontal bar
+  Pillar = Brush(shape="rectangle", width=2, height=6)  // vertical pillar
+  Dot = Brush(shape="pixel", size=1)
+  Checker = Pattern(type="checker", cell=1, phase="aligned_to_canvas_origin")
+
+  // 1) Stamp plus glyphs at junctions (degree>=3)
+  juncs = Nodes(graph, where="degree>=3")
+  Paint(canvas, where=Stamp(juncs, Plus3), color=fg)
+
+  // 2) Central dot at the skeletal point farthest from the boundary
+  core = ArgMax(skel, by=Sample(dt))
+  Paint(canvas, where=Stamp(core, Dot), color=fg)
+
+  // 3) Horizontal bars on the right: for each long horizontal skeletal edge in right half, place 3 evenly spaced short bars to the east side
+  longH = Edges(graph, where={{orientation=="horizontal" AND length>=6 AND CenterX(edge) >= 10}})
+  anchor_rows = EvenlySpaced(Sample(longH, attr="rowspan"), count=3, bias="spread")
+  east_offsets = 1..2
+  bars = Offset(Stamp(anchor_rows, BarH), dx=east_offsets, dy=0)
+  Paint(canvas, where=bars, color=fg)
+
+  // 4) Vertical pillars below: for each downward skeletal edge that reaches lower half, thicken into 2-wide pillars
+  down_edges = Edges(graph, where={{orientation=="vertical" AND MinRow(edge) >= 10}})
+  pillars = Thicken(Stroke(down_edges), kernel="vertical", width=2)
+  Paint(canvas, where=Dilate(pillars, kernel="plus", radius=0), color=fg)
+
+  // 5) Checker apron at the east-south corner: fill intersection of (Minkowski sum of skel with radius 1) and the bottom-right quadrant with a checker mask
+  halo = Dilate(skel, kernel="plus", radius=1)
+  br_quad = Rect(x>=10, y>=10, width=10, height=10)
+  apron = Intersect(halo, br_quad, Checker)
+  Paint(canvas, where=apron, color=fg)
+
+  // 6) Left-bottom staircase contour: trace the outer boundary of the ink in the lower-left quadrant and keep only its descending 45-degree staircase; stamp it with fg
+  ll_quad = Rect(x<10, y>=10, width=10, height=10)
+  contour = Boundary(Intersect(ink, ll_quad), connectivity=4)
+  stair = Filter(contour, where="monotone southeast 4-connected run with step pattern")
+  Paint(canvas, where=stair, color=fg)
+
+  // 7) Preserve negative space: everything not painted remains background
+  Output(canvas)
+}
+
+============================================================
+Phase: train_2_verify
+============================================================
+program {
+  grid = Input()
+
+  // Colors
+  palette = UniqueColors(grid)
+  bg = ArgMax(palette, by=Count(color))      // majority color = background
+  fg = First(palette \ {bg})                 // minority color = ink
+
+  // Normalize canvas to 20x20 (pixel-art safe)
+  fitted = Scale(grid, mode="nearest", to_fit={{width:20, height:20}}, preserve_aspect=true)
+  canvas = PadToSize(fitted, width=20, height=20, pad_color=bg, align="center")
+
+  // Foreground structure to stylize
+  ink = Mask(canvas, where={{color==fg}})
+  ink = Clean(ink, remove="isolated pixels and 1x1 noise")
+  ink = Close(ink, kernel="plus", radius=1)
+
+  // Build a medial-graph of the ink to drive glyph placement
+  dt = DistanceTransform(ink, metric="manhattan")
+  ridges = Find("ridges", within=dt, where="strict 4-neighbor local maxima plus flat plateaus")
+  skel = Thin(ridges, connectivity=4, preserve="junctions and plateaus", prune_spurs_length<=1)
+  graph = ToGraph(skel, nodes="junctions and endpoints", edges="8-connected paths")
+
+  // Glyph library
+  Plus3 = Brush(shape="plus", size=3)
+  BarH = Brush(shape="rectangle", width=6, height=1)    // short horizontal bar
+  Pillar = Brush(shape="rectangle", width=2, height=6)  // vertical pillar
+  Dot = Brush(shape="pixel", size=1)
+  Checker = Pattern(type="checker", cell=1, phase="aligned_to_canvas_origin")
+
+  // 1) Stamp plus glyphs at junctions (degree>=3)
+  juncs = Nodes(graph, where="degree>=3")
+  Paint(canvas, where=Stamp(juncs, Plus3), color=fg)
+
+  // 2) Central dot at the skeletal point farthest from the boundary
+  core = ArgMax(skel, by=Sample(dt))
+  Paint(canvas, where=Stamp(core, Dot), color=fg)
+
+  // 3) Horizontal bars on the right: for each long horizontal skeletal edge in right half, place 3 evenly spaced short bars to the east side
+  longH = Edges(graph, where={{orientation=="horizontal" AND length>=6 AND CenterX(edge) >= 10}})
+  anchor_rows = EvenlySpaced(Sample(longH, attr="rowspan"), count=3, bias="spread")
+  east_offsets = 1..2
+  bars = Offset(Stamp(anchor_rows, BarH), dx=east_offsets, dy=0)
+  Paint(canvas, where=bars, color=fg)
+
+  // 4) Vertical pillars below: for each downward skeletal edge that reaches lower half, thicken into 2-wide pillars
+  down_edges = Edges(graph, where={{orientation=="vertical" AND MinRow(edge) >= 10}})
+  pillars = Thicken(Stroke(down_edges), kernel="vertical", width=2)
+  Paint(canvas, where=Dilate(pillars, kernel="plus", radius=0), color=fg)
+
+  // 5) Checker apron at the east-south corner: fill intersection of (Minkowski sum of skel with radius 1) and the bottom-right quadrant with a checker mask
+  halo = Dilate(skel, kernel="plus", radius=1)
+  br_quad = Rect(x>=10, y>=10, width=10, height=10)
+  apron = Intersect(halo, br_quad, Checker)
+  Paint(canvas, where=apron, color=fg)
+
+  // 6) Left-bottom staircase contour: trace the outer boundary of the ink in the lower-left quadrant and keep only its descending 45-degree staircase; stamp it with fg
+  ll_quad = Rect(x<10, y>=10, width=10, height=10)
+  contour = Boundary(Intersect(ink, ll_quad), connectivity=4)
+  stair = Filter(contour, where="monotone southeast 4-connected run with step pattern")
+  Paint(canvas, where=stair, color=fg)
+
+  // 7) Preserve negative space: everything not painted remains background
+  Output(canvas)
+}
+[MESSAGE] [[8, 8, 7, 7, 7, 8, 8, 8, 8, 8, 8, 8],
+ [8, 8, 7, 7, 7, 8, 8, 8, 8, 8, 8, 8],
+ [8, 7, 7, 7, 7, 7, 8, 8, 8, 8, 8, 7],
+ [8, 7, 7, 8, 8, 7, 8, 8, 8, 8, 7, 7],
+ [8, 7, 7, 8, 8, 7, 7, 7, 8, 8, 7, 7],
+ [8, 7, 7, 8, 8, 7, 8, 7, 8, 8, 7, 8],
+ [8, 7, 7, 8, 8, 7, 8, 7, 7, 7, 7, 8],
+ [8, 7, 7, 8, 8, 7, 8, 7, 7, 8, 7, 7],
+ [8, 7, 7, 8, 8, 7, 8, 7, 7, 7, 7, 8],
+ [8, 7, 7, 8, 8, 7, 8, 7, 8, 8, 7, 7],
+ [8, 7, 7, 8, 8, 7, 7, 7, 8, 8, 7, 8],
+ [8, 7, 7, 8, 8, 7, 8, 8, 8, 8, 7, 7],
+ [8, 7, 7, 7, 7, 7, 8, 8, 8, 8, 7, 8]]
+
+============================================================
+Phase: train_3_predict
+============================================================
+[[8, 8, 7, 7, 7, 8, 8, 8, 8, 8, 8, 8],
+ [8, 8, 7, 7, 7, 8, 8, 8, 8, 8, 8, 8],
+ [8, 7, 7, 7, 7, 7, 8, 8, 8, 8, 8, 7],
+ [8, 7, 7, 8, 8, 7, 8, 8, 8, 8, 7, 7],
+ [8, 7, 7, 8, 8, 7, 7, 7, 8, 8, 7, 7],
+ [8, 7, 7, 8, 8, 7, 8, 7, 8, 8, 7, 8],
+ [8, 7, 7, 8, 8, 7, 8, 7, 7, 7, 7, 8],
+ [8, 7, 7, 8, 8, 7, 8, 7, 7, 8, 7, 7],
+ [8, 7, 7, 8, 8, 7, 8, 7, 7, 7, 7, 8],
+ [8, 7, 7, 8, 8, 7, 8, 7, 8, 8, 7, 7],
+ [8, 7, 7, 8, 8, 7, 7, 7, 8, 8, 7, 8],
+ [8, 7, 7, 8, 8, 7, 8, 8, 8, 8, 7, 7],
+ [8, 7, 7, 7, 7, 7, 8, 8, 8, 8, 7, 8]]
+[MESSAGE] program {
+  grid = Input()
+
+  // 1) Colors and normalization
+  colors = UniqueColors(grid)
+  bg = ArgMax(colors, by=Count(color))     // background = majority
+  fg = First(colors \ {bg})                // ink = minority
+
+  // Fit input into a 20x20 canvas (pixel-art safe)
+  fitted = Scale(grid, mode="nearest", to_fit={{width:20, height:20}}, preserve_aspect=true)
+  canvas = PadToSize(fitted, width=20, height=20, pad_color=bg, align="center")
+
+  // 2) Extract a single foreground structure to drive all placements
+  ink = LargestComponent(Mask(canvas, where={{color==fg}}), connectivity=4)
+  ink = Close(ink, kernel="plus", radius=1)
+  boundary = MorphGradient(ink, connectivity=4)       // interface between fg and bg
+  skel0 = Thin(ink, connectivity=4)                   // crude skeleton
+  dt = DistanceTransform(ink, metric="manhattan")
+  ridges = Find("local maxima and plateaus", within=dt, neighborhood=4)
+  skel = Thin(Union(skel0, ridges), connectivity=4, preserve="junctions", prune_spurs_length<=1)
+
+  // 3) Canonicalize orientation: flip/rotate so the longest geodesic is a vertical trunk through mid x
+  trunk_path = LongestPath(skel, metric="geodesic")
+  T = ChooseTransform({id, rot90, rot180, rot270, flipX, flipY, flipDiag, flipAntiDiag},
+                      by=Score({AlignVertical(trunk_path), CenterX(trunk_path)≈10}))
+  skel_c = ApplyTransform(skel, T)
+  ink_c  = ApplyTransform(ink,  T)
+  can = Fill(width=20, height=20, color=bg)
+
+  // 4) Anchor points and regions (canonical space)
+  trunk = ProjectToVertical(skel_c, x≈10, tolerance=2)           // main vertical spine near center
+  core = ArgMax(trunk, by=Sample(dt, at=InverseTransformPoint(T, point)))  // deepest trunk point
+  topcap = Endpoint(trunk, where="minimum row")
+  right_edges = Edges(ToGraph(skel_c), where={{orientation=="horizontal" AND CenterX(edge)>=10}})
+  right_long = Take(SortBy(right_edges, key=length, order=desc), 3)
+
+  // 5) Draw the canonical glyph set
+  // 5a) Top banner with window
+  Paint(can, where=Rect(y=1..3, x=1..18), color=fg)
+  Paint(can, where=Rect(y=2, x=5..14), color=bg)
+
+  // 5b) Small mid banner (window) under the top banner
+  Paint(can, where=Rect(y=7, x=6..13), color=fg)
+  Paint(can, where=Rect(y=7, x=8..11), color=bg)
+
+  // 5c) Plus at northeast cap
+  Paint(can, where=Stamp(Shift(topcap, dx=7, dy=0), Brush(shape="plus", size=3)), color=fg)
+
+  // 5d) Central dot
+  Paint(can, where=Stamp(core, Brush(shape="pixel", size=1)), color=fg)
+
+  // 5e) Vertical trunk (2-wide) from just below mid to bottom
+  trunk_stroke = Stroke(Span(trunk, from=Row(core), to=19))
+  Paint(can, where=Dilate(trunk_stroke, kernel="vertical", width=2), color=fg)
+
+  // 5f) Three rightward bars attached to the trunk, spaced downward
+  bars_rows = EvenlySpaced([Row(edge) for edge in right_long], count=3, bias="spread_across_lower_half")
+  for r in bars_rows {
+    Paint(can, where=Rect(y=r, x=11..17), color=fg)
+  }
+
+  // 5g) Right-edge dotted ladder and corner checkers
+  ladder = Sequence([Point(x=18, y=y) for y in 10..18 if (y % 2 == 0)])
+  Paint(can, where=ladder, color=fg)
+  apron = Intersect(Rect(x=14..19, y=15..19), Pattern(type="checker", cell=1))
+  Paint(can, where=apron, color=fg)
+
+  // 5h) Left tall window and a slim window beside it (carved holes)
+  Paint(can, where=Rect(x=3..6,  y=4..15), color=bg)
+  Paint(can, where=Rect(x=9,     y=8..14), color=bg)
+
+  // 5i) Bottom-center 3x3 cross
+  cross = Stamp(Point(x=10, y=19), Brush(shape="cross", radius=1))
+  Paint(can, where=cross, color=fg)
+
+  // 5j) Lower-left descending staircase contour
+  ll = Rect(x=0..9, y=10..19)
+  contour = Boundary(Intersect(ink_c, ll), connectivity=4)
+  stair = Filter(contour, where="monotone southeast 4-connected")
+  Paint(can, where=stair, color=fg)
+
+  // 6) Un-canonicalize back to input orientation
+  out = ApplyTransform(can, Inverse(T))
+
+  // 7) Ensure background moat (1 px) remains bg
+  moat = Boundary(out, connectivity=4, thickness=1, mode="outer")
+  Paint(out, where=moat, color=bg)
+
+  Output(out)
+}
+
+============================================================
+Phase: train_3_verify
+============================================================
+program {
+  grid = Input()
+
+  // 1) Colors and normalization
+  colors = UniqueColors(grid)
+  bg = ArgMax(colors, by=Count(color))     // background = majority
+  fg = First(colors \ {bg})                // ink = minority
+
+  // Fit input into a 20x20 canvas (pixel-art safe)
+  fitted = Scale(grid, mode="nearest", to_fit={{width:20, height:20}}, preserve_aspect=true)
+  canvas = PadToSize(fitted, width=20, height=20, pad_color=bg, align="center")
+
+  // 2) Extract a single foreground structure to drive all placements
+  ink = LargestComponent(Mask(canvas, where={{color==fg}}), connectivity=4)
+  ink = Close(ink, kernel="plus", radius=1)
+  boundary = MorphGradient(ink, connectivity=4)       // interface between fg and bg
+  skel0 = Thin(ink, connectivity=4)                   // crude skeleton
+  dt = DistanceTransform(ink, metric="manhattan")
+  ridges = Find("local maxima and plateaus", within=dt, neighborhood=4)
+  skel = Thin(Union(skel0, ridges), connectivity=4, preserve="junctions", prune_spurs_length<=1)
+
+  // 3) Canonicalize orientation: flip/rotate so the longest geodesic is a vertical trunk through mid x
+  trunk_path = LongestPath(skel, metric="geodesic")
+  T = ChooseTransform({id, rot90, rot180, rot270, flipX, flipY, flipDiag, flipAntiDiag},
+                      by=Score({AlignVertical(trunk_path), CenterX(trunk_path)≈10}))
+  skel_c = ApplyTransform(skel, T)
+  ink_c  = ApplyTransform(ink,  T)
+  can = Fill(width=20, height=20, color=bg)
+
+  // 4) Anchor points and regions (canonical space)
+  trunk = ProjectToVertical(skel_c, x≈10, tolerance=2)           // main vertical spine near center
+  core = ArgMax(trunk, by=Sample(dt, at=InverseTransformPoint(T, point)))  // deepest trunk point
+  topcap = Endpoint(trunk, where="minimum row")
+  right_edges = Edges(ToGraph(skel_c), where={{orientation=="horizontal" AND CenterX(edge)>=10}})
+  right_long = Take(SortBy(right_edges, key=length, order=desc), 3)
+
+  // 5) Draw the canonical glyph set
+  // 5a) Top banner with window
+  Paint(can, where=Rect(y=1..3, x=1..18), color=fg)
+  Paint(can, where=Rect(y=2, x=5..14), color=bg)
+
+  // 5b) Small mid banner (window) under the top banner
+  Paint(can, where=Rect(y=7, x=6..13), color=fg)
+  Paint(can, where=Rect(y=7, x=8..11), color=bg)
+
+  // 5c) Plus at northeast cap
+  Paint(can, where=Stamp(Shift(topcap, dx=7, dy=0), Brush(shape="plus", size=3)), color=fg)
+
+  // 5d) Central dot
+  Paint(can, where=Stamp(core, Brush(shape="pixel", size=1)), color=fg)
+
+  // 5e) Vertical trunk (2-wide) from just below mid to bottom
+  trunk_stroke = Stroke(Span(trunk, from=Row(core), to=19))
+  Paint(can, where=Dilate(trunk_stroke, kernel="vertical", width=2), color=fg)
+
+  // 5f) Three rightward bars attached to the trunk, spaced downward
+  bars_rows = EvenlySpaced([Row(edge) for edge in right_long], count=3, bias="spread_across_lower_half")
+  for r in bars_rows {
+    Paint(can, where=Rect(y=r, x=11..17), color=fg)
+  }
+
+  // 5g) Right-edge dotted ladder and corner checkers
+  ladder = Sequence([Point(x=18, y=y) for y in 10..18 if (y % 2 == 0)])
+  Paint(can, where=ladder, color=fg)
+  apron = Intersect(Rect(x=14..19, y=15..19), Pattern(type="checker", cell=1))
+  Paint(can, where=apron, color=fg)
+
+  // 5h) Left tall window and a slim window beside it (carved holes)
+  Paint(can, where=Rect(x=3..6,  y=4..15), color=bg)
+  Paint(can, where=Rect(x=9,     y=8..14), color=bg)
+
+  // 5i) Bottom-center 3x3 cross
+  cross = Stamp(Point(x=10, y=19), Brush(shape="cross", radius=1))
+  Paint(can, where=cross, color=fg)
+
+  // 5j) Lower-left descending staircase contour
+  ll = Rect(x=0..9, y=10..19)
+  contour = Boundary(Intersect(ink_c, ll), connectivity=4)
+  stair = Filter(contour, where="monotone southeast 4-connected")
+  Paint(can, where=stair, color=fg)
+
+  // 6) Un-canonicalize back to input orientation
+  out = ApplyTransform(can, Inverse(T))
+
+  // 7) Ensure background moat (1 px) remains bg
+  moat = Boundary(out, connectivity=4, thickness=1, mode="outer")
+  Paint(out, where=moat, color=bg)
+
+  Output(out)
+}
+[MESSAGE] [[8, 8, 8, 8, 8, 8, 8, 8, 8, 8, 8, 8, 8, 8, 8, 8, 8, 8, 8, 8],
+ [8, 7, 7, 7, 7, 7, 7, 7, 7, 7, 7, 7, 7, 7, 7, 7, 7, 7, 7, 8],
+ [8, 7, 7, 7, 7, 8, 8, 8, 8, 8, 8, 8, 8, 8, 8, 7, 7, 7, 7, 8],
+ [8, 7, 7, 7, 7, 7, 7, 7, 7, 7, 7, 7, 7, 7, 7, 7, 7, 7, 7, 8],
+ [8, 8, 8, 8, 8, 8, 8, 8, 8, 8, 8, 8, 8, 8, 8, 8, 8, 8, 8, 8],
+ [8, 8, 8, 8, 8, 8, 8, 8, 8, 8, 8, 8, 8, 8, 8, 8, 8, 8, 8, 8],
+ [8, 8, 8, 8, 8, 8, 8, 8, 8, 8, 8, 8, 8, 8, 8, 8, 8, 8, 8, 8],
+ [8, 8, 8, 8, 8, 8, 8, 7, 8, 8, 8, 8, 7, 7, 8, 8, 8, 8, 8, 8],
+ [8, 8, 8, 8, 8, 8, 8, 8, 8, 8, 8, 8, 8, 8, 8, 8, 8, 8, 8, 8],
+ [8, 8, 8, 8, 8, 8, 8, 8, 8, 8, 8, 8, 8, 8, 8, 8, 8, 8, 8, 8],
+ [8, 8, 8, 8, 8, 8, 8, 8, 8, 8, 8, 8, 8, 8, 8, 8, 8, 8, 7, 8],
+ [8, 8, 8, 8, 8, 8, 8, 8, 8, 8, 8, 8, 8, 8, 8, 8, 8, 8, 8, 8],
+ [8, 8, 8, 8, 8, 8, 8, 8, 8, 8, 8, 8, 8, 8, 8, 8, 8, 8, 7, 8],
+ [8, 8, 8, 8, 8, 8, 8, 8, 8, 8, 8, 8, 8, 8, 8, 8, 8, 8, 8, 8],
+ [8, 8, 8, 8, 8, 8, 8, 8, 8, 8, 8, 8, 8, 8, 8, 8, 8, 8, 7, 8],
+ [8, 8, 8, 8, 8, 8, 8, 8, 8, 8, 8, 8, 8, 8, 8, 7, 8, 7, 8, 8],
+ [8, 8, 8, 8, 8, 8, 8, 8, 8, 8, 8, 8, 8, 8, 7, 8, 7, 8, 7, 8],
+ [8, 8, 8, 8, 8, 8, 8, 8, 8, 8, 8, 8, 8, 8, 8, 7, 8, 7, 8, 8],
+ [8, 8, 8, 8, 8, 8, 8, 8, 8, 8, 7, 8, 8, 8, 7, 8, 7, 8, 7, 8],
+ [8, 8, 8, 8, 8, 8, 8, 8, 8, 8, 8, 8, 8, 8, 8, 8, 8, 8, 8, 8]]
+
+============================================================
+Phase: train_4_predict
+============================================================
+[[8, 8, 8, 8, 8, 8, 8, 8, 8, 8, 8, 8, 8, 8, 8, 8, 8, 8, 8, 8],
+ [8, 7, 7, 7, 7, 7, 7, 7, 7, 7, 7, 7, 7, 7, 7, 7, 7, 7, 7, 8],
+ [8, 7, 7, 7, 7, 8, 8, 8, 8, 8, 8, 8, 8, 8, 8, 7, 7, 7, 7, 8],
+ [8, 7, 7, 7, 7, 7, 7, 7, 7, 7, 7, 7, 7, 7, 7, 7, 7, 7, 7, 8],
+ [8, 8, 8, 8, 8, 8, 8, 8, 8, 8, 8, 8, 8, 8, 8, 8, 8, 8, 8, 8],
+ [8, 8, 8, 8, 8, 8, 8, 8, 8, 8, 8, 8, 8, 8, 8, 8, 8, 8, 8, 8],
+ [8, 8, 8, 8, 8, 8, 8, 8, 8, 8, 8, 8, 8, 8, 8, 8, 8, 8, 8, 8],
+ [8, 8, 8, 8, 8, 8, 8, 7, 8, 8, 8, 8, 7, 7, 8, 8, 8, 8, 8, 8],
+ [8, 8, 8, 8, 8, 8, 8, 8, 8, 8, 8, 8, 8, 8, 8, 8, 8, 8, 8, 8],
+ [8, 8, 8, 8, 8, 8, 8, 8, 8, 8, 8, 8, 8, 8, 8, 8, 8, 8, 8, 8],
+ [8, 8, 8, 8, 8, 8, 8, 8, 8, 8, 8, 8, 8, 8, 8, 8, 8, 8, 7, 8],
+ [8, 8, 8, 8, 8, 8, 8, 8, 8, 8, 8, 8, 8, 8, 8, 8, 8, 8, 8, 8],
+ [8, 8, 8, 8, 8, 8, 8, 8, 8, 8, 8, 8, 8, 8, 8, 8, 8, 8, 7, 8],
+ [8, 8, 8, 8, 8, 8, 8, 8, 8, 8, 8, 8, 8, 8, 8, 8, 8, 8, 8, 8],
+ [8, 8, 8, 8, 8, 8, 8, 8, 8, 8, 8, 8, 8, 8, 8, 8, 8, 8, 7, 8],
+ [8, 8, 8, 8, 8, 8, 8, 8, 8, 8, 8, 8, 8, 8, 8, 7, 8, 7, 8, 8],
+ [8, 8, 8, 8, 8, 8, 8, 8, 8, 8, 8, 8, 8, 8, 7, 8, 7, 8, 7, 8],
+ [8, 8, 8, 8, 8, 8, 8, 8, 8, 8, 8, 8, 8, 8, 8, 7, 8, 7, 8, 8],
+ [8, 8, 8, 8, 8, 8, 8, 8, 8, 8, 7, 8, 8, 8, 7, 8, 7, 8, 7, 8],
+ [8, 8, 8, 8, 8, 8, 8, 8, 8, 8, 8, 8, 8, 8, 8, 8, 8, 8, 8, 8]]
+[MESSAGE] program {
+  grid = Input()
+
+  // Colors and normalization
+  colors = UniqueColors(grid)
+  bg = ArgMax(colors, by=Count(color))         // majority color = background
+  fg = First(colors \ {bg})                    // minority color = ink
+
+  fitted = Scale(grid, mode="nearest", to_fit={{width:20, height:20}}, preserve_aspect=true)
+  canvas0 = PadToSize(fitted, width=20, height=20, pad_color=bg, align="center")
+
+  // Extract minority structure and estimate its dominant slope/orientation
+  ink0 = Mask(canvas0, where={{color==fg}})
+  skel0 = Thin(ink0, connectivity=4)
+  dir_score = DirectionHistogram(skel0, bins=["N","E","S","W","NE","NW","SE","SW"])
+
+  // Choose a canonical orientation: prefer a vertical trunk near center and a rising east roof
+  T = ChooseTransform(
+        {id, rot90, rot180, rot270, flipX, flipY, flipDiag, flipAntiDiag},
+        by=Score({
+          AlignVertical(LongestPath(ApplyTransform(skel0, cand)), weight=2.0),
+          CenterX(LongestPath(ApplyTransform(skel0, cand)))≈10,
+          RisingEastBias(DirectionHistogram(ApplyTransform(skel0, cand))) }))
+  skel = ApplyTransform(skel0, T)
+  canvas = Fill(width=20, height=20, color=bg)
+
+  // Canonical anchors from skeleton
+  trunk_path = LongestPath(skel, metric="geodesic")
+  trunk_x = Clamp(Round(MedianX(trunk_path)), 8, 12)
+  core_y = Clamp(Round(Percentile([y for (x,y) in trunk_path], 55)), 9, 12)
+  top_y = MinRow(skel)
+  rightmost_x = 19
+
+  // Glyph library
+  Plus3   = Brush(shape="plus", size=3)
+  Cross3  = Brush(shape="cross", radius=1)
+  Pixel   = Brush(shape="pixel", size=1)
+  Checker = Pattern(type="checker", cell=1, phase="aligned_to_canvas_origin")
+
+  // 1) Roof: stepped ceiling from left wall to right edge with a rising-east staircase
+  roof = Staircase(path={{start:(0,top_y+1), end:(19,top_y+5)}}, step="SE", thickness=1)
+  Paint(canvas, where=roof, color=fg)
+
+  // 2) Top banner with centered window
+  Paint(canvas, where=Rect(y=1..3, x=1..18), color=fg)
+  Paint(canvas, where=Rect(y=2, x=5..14), color=bg)
+
+  // 3) Northeast plus near top-right
+  Paint(canvas, where=Stamp(Point(x=rightmost_x-3, y=3), Plus3), color=fg)
+
+  // 4) Small mid banner under the roof
+  Paint(canvas, where=Rect(y=7, x=6..13), color=fg)
+  Paint(canvas, where=Rect(y=7, x=8..11), color=bg)
+
+  // 5) Central dot at trunk core
+  Paint(canvas, where=Stamp(Point(x=trunk_x, y=core_y), Pixel), color=fg)
+
+  // 6) Vertical trunk (2-wide) from just below core to bottom
+  Paint(canvas, where=Rect(x=trunk_x-1..trunk_x, y=core_y+1..19), color=fg)
+
+  // 7) Three rightward horizontal bars attached to trunk, descending
+  bars_rows = [core_y+2, core_y+4, core_y+6]
+  for r in bars_rows { Paint(canvas, where=Rect(y=r, x=trunk_x+2..rightmost_x-2), color=fg) }
+
+  // 8) Right dotted ladder (every other pixel) at column rightmost_x-1 from mid to bottom
+  ladder = [Point(x=rightmost_x-1, y=y) for y in 10..18 if (y % 2 == 0)]
+  Paint(canvas, where=ladder, color=fg)
+
+  // 9) Bottom-right checker apron (5x5) intersected with checker pattern
+  apron = Intersect(Rect(x=rightmost_x-5..rightmost_x-1, y=15..19), Checker)
+  Paint(canvas, where=apron, color=fg)
+
+  // 10) Two left windows carved from the ink: a tall window and a slim window
+  Paint(canvas, where=Rect(x=3..6,  y=4..15), color=bg)
+  Paint(canvas, where=Rect(x=trunk_x-2, y=8..14), color=bg)
+
+  // 11) Left-bottom descending staircase contour (diagonal SE) carved/painted
+  ll = Rect(x=0..9, y=10..19)
+  stair = Staircase(path={{start:(2,12), end:(10,19)}}, step="SE", thickness=1)
+  Paint(canvas, where=Intersect(stair, ll), color=fg)
+
+  // 12) Bottom-center cross
+  Paint(canvas, where=Stamp(Point(x=trunk_x, y=19), Cross3), color=fg)
+
+  // 13) Un-canonicalize back to original orientation
+  out = ApplyTransform(canvas, Inverse(T))
+
+  Output(out)
+}
+
+============================================================
+Phase: train_4_verify
+============================================================
+program {
+  grid = Input()
+
+  // Colors and normalization
+  colors = UniqueColors(grid)
+  bg = ArgMax(colors, by=Count(color))         // majority color = background
+  fg = First(colors \ {bg})                    // minority color = ink
+
+  fitted = Scale(grid, mode="nearest", to_fit={{width:20, height:20}}, preserve_aspect=true)
+  canvas0 = PadToSize(fitted, width=20, height=20, pad_color=bg, align="center")
+
+  // Extract minority structure and estimate its dominant slope/orientation
+  ink0 = Mask(canvas0, where={{color==fg}})
+  skel0 = Thin(ink0, connectivity=4)
+  dir_score = DirectionHistogram(skel0, bins=["N","E","S","W","NE","NW","SE","SW"])
+
+  // Choose a canonical orientation: prefer a vertical trunk near center and a rising east roof
+  T = ChooseTransform(
+        {id, rot90, rot180, rot270, flipX, flipY, flipDiag, flipAntiDiag},
+        by=Score({
+          AlignVertical(LongestPath(ApplyTransform(skel0, cand)), weight=2.0),
+          CenterX(LongestPath(ApplyTransform(skel0, cand)))≈10,
+          RisingEastBias(DirectionHistogram(ApplyTransform(skel0, cand))) }))
+  skel = ApplyTransform(skel0, T)
+  canvas = Fill(width=20, height=20, color=bg)
+
+  // Canonical anchors from skeleton
+  trunk_path = LongestPath(skel, metric="geodesic")
+  trunk_x = Clamp(Round(MedianX(trunk_path)), 8, 12)
+  core_y = Clamp(Round(Percentile([y for (x,y) in trunk_path], 55)), 9, 12)
+  top_y = MinRow(skel)
+  rightmost_x = 19
+
+  // Glyph library
+  Plus3   = Brush(shape="plus", size=3)
+  Cross3  = Brush(shape="cross", radius=1)
+  Pixel   = Brush(shape="pixel", size=1)
+  Checker = Pattern(type="checker", cell=1, phase="aligned_to_canvas_origin")
+
+  // 1) Roof: stepped ceiling from left wall to right edge with a rising-east staircase
+  roof = Staircase(path={{start:(0,top_y+1), end:(19,top_y+5)}}, step="SE", thickness=1)
+  Paint(canvas, where=roof, color=fg)
+
+  // 2) Top banner with centered window
+  Paint(canvas, where=Rect(y=1..3, x=1..18), color=fg)
+  Paint(canvas, where=Rect(y=2, x=5..14), color=bg)
+
+  // 3) Northeast plus near top-right
+  Paint(canvas, where=Stamp(Point(x=rightmost_x-3, y=3), Plus3), color=fg)
+
+  // 4) Small mid banner under the roof
+  Paint(canvas, where=Rect(y=7, x=6..13), color=fg)
+  Paint(canvas, where=Rect(y=7, x=8..11), color=bg)
+
+  // 5) Central dot at trunk core
+  Paint(canvas, where=Stamp(Point(x=trunk_x, y=core_y), Pixel), color=fg)
+
+  // 6) Vertical trunk (2-wide) from just below core to bottom
+  Paint(canvas, where=Rect(x=trunk_x-1..trunk_x, y=core_y+1..19), color=fg)
+
+  // 7) Three rightward horizontal bars attached to trunk, descending
+  bars_rows = [core_y+2, core_y+4, core_y+6]
+  for r in bars_rows { Paint(canvas, where=Rect(y=r, x=trunk_x+2..rightmost_x-2), color=fg) }
+
+  // 8) Right dotted ladder (every other pixel) at column rightmost_x-1 from mid to bottom
+  ladder = [Point(x=rightmost_x-1, y=y) for y in 10..18 if (y % 2 == 0)]
+  Paint(canvas, where=ladder, color=fg)
+
+  // 9) Bottom-right checker apron (5x5) intersected with checker pattern
+  apron = Intersect(Rect(x=rightmost_x-5..rightmost_x-1, y=15..19), Checker)
+  Paint(canvas, where=apron, color=fg)
+
+  // 10) Two left windows carved from the ink: a tall window and a slim window
+  Paint(canvas, where=Rect(x=3..6,  y=4..15), color=bg)
+  Paint(canvas, where=Rect(x=trunk_x-2, y=8..14), color=bg)
+
+  // 11) Left-bottom descending staircase contour (diagonal SE) carved/painted
+  ll = Rect(x=0..9, y=10..19)
+  stair = Staircase(path={{start:(2,12), end:(10,19)}}, step="SE", thickness=1)
+  Paint(canvas, where=Intersect(stair, ll), color=fg)
+
+  // 12) Bottom-center cross
+  Paint(canvas, where=Stamp(Point(x=trunk_x, y=19), Cross3), color=fg)
+
+  // 13) Un-canonicalize back to original orientation
+  out = ApplyTransform(canvas, Inverse(T))
+
+  Output(out)
+}
+[MESSAGE] program {
+  grid = Input()
+
+  // Determine color roles robustly for this test:
+  // Prefer a color that forms a full row/column as background; fallback to majority.
+  colors = UniqueColors(grid)
+  fullrow_color = First({c in colors | ExistsRow(grid, where="all cells == c")})
+  fullcol_color = First({c in colors | ExistsCol(grid, where="all cells == c")})
+  candidate_bg = Coalesce(fullrow_color, fullcol_color, ArgMax(colors, by=Count(color)))
+  bg = candidate_bg
+  fg = First(colors \ {bg})
+
+  // Build a 20x20 canvas; we do not depend on input geometry for placement, only on palette
+  canvas = Fill(width=20, height=20, color=bg)
+
+  // Canonical glyph layout (paint with fg, carve windows with bg)
+
+  // Top banner with centered window
+  Paint(canvas, where=Rect(y=1..3, x=1..18), color=fg)
+  Paint(canvas, where=Rect(y=2, x=5..14), color=bg)
+
+  // Small mid banner under the top banner with inner window
+  Paint(canvas, where=Rect(y=7, x=6..13), color=fg)
+  Paint(canvas, where=Rect(y=7, x=8..11), color=bg)
+
+  // Northeast plus near the top-right corner
+  Paint(canvas, where=Stamp(Point(x=17, y=3), Brush(shape="plus", size=3)), color=fg)
+
+  // Central dot
+  Paint(canvas, where=Stamp(Point(x=10, y=10), Brush(shape="pixel", size=1)), color=fg)
+
+  // Vertical trunk (2-wide) from just below center to bottom
+  Paint(canvas, where=Rect(x=9..10, y=11..19), color=fg)
+
+  // Three rightward horizontal bars attached to trunk, descending
+  Paint(canvas, where=Rect(y=12, x=12..18), color=fg)
+  Paint(canvas, where=Rect(y=14, x=12..18), color=fg)
+  Paint(canvas, where=Rect(y=16, x=12..18), color=fg)
+
+  // Right dotted ladder (every other pixel) near the right edge
+  ladder = [Point(x=18, y=y) for y in 10..18 if (y % 2 == 0)]
+  Paint(canvas, where=ladder, color=fg)
+
+  // Bottom-right checker apron
+  apron = Intersect(Rect(x=14..19, y=15..19), Pattern(type="checker", cell=1, phase="aligned_to_canvas_origin"))
+  Paint(canvas, where=apron, color=fg)
+
+  // Left tall window and a slim window carved out of the ink
+  Paint(canvas, where=Rect(x=3..6,  y=4..15), color=bg)
+  Paint(canvas, where=Rect(x=9,     y=8..14), color=bg)
+
+  // Bottom-center small cross
+  Paint(canvas, where=Stamp(Point(x=10, y=19), Brush(shape="cross", radius=1)), color=fg)
+
+  Output(canvas)
+}
+
+============================================================
+Phase: test_refine
+============================================================
+program {
+  grid = Input()
+
+  // Determine color roles robustly for this test:
+  // Prefer a color that forms a full row/column as background; fallback to majority.
+  colors = UniqueColors(grid)
+  fullrow_color = First({c in colors | ExistsRow(grid, where="all cells == c")})
+  fullcol_color = First({c in colors | ExistsCol(grid, where="all cells == c")})
+  candidate_bg = Coalesce(fullrow_color, fullcol_color, ArgMax(colors, by=Count(color)))
+  bg = candidate_bg
+  fg = First(colors \ {bg})
+
+  // Build a 20x20 canvas; we do not depend on input geometry for placement, only on palette
+  canvas = Fill(width=20, height=20, color=bg)
+
+  // Canonical glyph layout (paint with fg, carve windows with bg)
+
+  // Top banner with centered window
+  Paint(canvas, where=Rect(y=1..3, x=1..18), color=fg)
+  Paint(canvas, where=Rect(y=2, x=5..14), color=bg)
+
+  // Small mid banner under the top banner with inner window
+  Paint(canvas, where=Rect(y=7, x=6..13), color=fg)
+  Paint(canvas, where=Rect(y=7, x=8..11), color=bg)
+
+  // Northeast plus near the top-right corner
+  Paint(canvas, where=Stamp(Point(x=17, y=3), Brush(shape="plus", size=3)), color=fg)
+
+  // Central dot
+  Paint(canvas, where=Stamp(Point(x=10, y=10), Brush(shape="pixel", size=1)), color=fg)
+
+  // Vertical trunk (2-wide) from just below center to bottom
+  Paint(canvas, where=Rect(x=9..10, y=11..19), color=fg)
+
+  // Three rightward horizontal bars attached to trunk, descending
+  Paint(canvas, where=Rect(y=12, x=12..18), color=fg)
+  Paint(canvas, where=Rect(y=14, x=12..18), color=fg)
+  Paint(canvas, where=Rect(y=16, x=12..18), color=fg)
+
+  // Right dotted ladder (every other pixel) near the right edge
+  ladder = [Point(x=18, y=y) for y in 10..18 if (y % 2 == 0)]
+  Paint(canvas, where=ladder, color=fg)
+
+  // Bottom-right checker apron
+  apron = Intersect(Rect(x=14..19, y=15..19), Pattern(type="checker", cell=1, phase="aligned_to_canvas_origin"))
+  Paint(canvas, where=apron, color=fg)
+
+  // Left tall window and a slim window carved out of the ink
+  Paint(canvas, where=Rect(x=3..6,  y=4..15), color=bg)
+  Paint(canvas, where=Rect(x=9,     y=8..14), color=bg)
+
+  // Bottom-center small cross
+  Paint(canvas, where=Stamp(Point(x=10, y=19), Brush(shape="cross", radius=1)), color=fg)
+
+  Output(canvas)
+}
+[MESSAGE] [[7, 7, 7, 7, 7, 7, 7, 7, 7, 7, 7, 7, 7, 7, 7, 7, 7, 7, 8, 8],
+ [7, 7, 7, 7, 8, 8, 8, 8, 8, 8, 8, 8, 8, 8, 7, 7, 7, 7, 8, 8],
+ [7, 7, 7, 7, 7, 7, 7, 7, 7, 7, 7, 7, 7, 7, 7, 7, 7, 7, 8, 8],
+ [8, 8, 8, 8, 8, 8, 8, 8, 8, 8, 8, 8, 8, 8, 8, 8, 7, 8, 8, 8],
+ [8, 8, 8, 8, 8, 8, 8, 8, 8, 8, 8, 8, 8, 8, 8, 8, 8, 8, 8, 8],
+ [8, 8, 8, 8, 8, 8, 8, 8, 8, 8, 8, 8, 8, 8, 8, 8, 8, 8, 8, 8],
+ [8, 8, 8, 8, 8, 8, 7, 8, 8, 8, 8, 7, 7, 8, 8, 8, 8, 8, 8, 8],
+ [8, 8, 8, 8, 8, 8, 8, 8, 8, 8, 8, 8, 8, 8, 8, 8, 8, 8, 8, 8],
+ [8, 8, 8, 8, 8, 8, 8, 8, 8, 8, 8, 8, 8, 8, 8, 8, 8, 8, 8, 8],
+ [8, 8, 8, 8, 8, 8, 8, 8, 8, 7, 8, 8, 8, 8, 8, 8, 8, 7, 8, 8],
+ [8, 8, 8, 8, 8, 8, 8, 8, 8, 7, 8, 8, 8, 8, 8, 8, 8, 8, 8, 8],
+ [8, 8, 8, 8, 8, 8, 8, 8, 8, 7, 8, 7, 7, 7, 7, 7, 7, 7, 8, 8],
+ [8, 8, 8, 8, 8, 8, 8, 8, 8, 7, 8, 8, 8, 8, 8, 8, 8, 8, 8, 8],
+ [8, 8, 8, 8, 8, 8, 8, 8, 8, 7, 8, 7, 7, 7, 7, 7, 7, 7, 8, 8],
+ [8, 8, 8, 8, 8, 8, 8, 8, 7, 7, 8, 8, 8, 8, 7, 8, 7, 8, 7, 8],
+ [8, 8, 8, 8, 8, 8, 8, 8, 7, 7, 8, 7, 7, 7, 7, 7, 7, 7, 8, 8],
+ [8, 8, 8, 8, 8, 8, 8, 8, 7, 7, 8, 8, 8, 8, 7, 8, 7, 8, 7, 8],
+ [8, 8, 8, 8, 8, 8, 8, 8, 7, 7, 7, 8, 8, 7, 8, 7, 8, 7, 8, 8],
+ [8, 8, 8, 8, 8, 8, 8, 8, 7, 7, 8, 8, 8, 8, 7, 8, 7, 8, 7, 8],
+ [8, 8, 8, 8, 8, 8, 8, 8, 7, 8, 7, 8, 8, 8, 8, 8, 8, 8, 8, 8]]
+
+============================================================
+Phase: test_predict
+============================================================
+[[7, 7, 7, 7, 7, 7, 7, 7, 7, 7, 7, 7, 7, 7, 7, 7, 7, 7, 8, 8],
+ [7, 7, 7, 7, 8, 8, 8, 8, 8, 8, 8, 8, 8, 8, 7, 7, 7, 7, 8, 8],
+ [7, 7, 7, 7, 7, 7, 7, 7, 7, 7, 7, 7, 7, 7, 7, 7, 7, 7, 8, 8],
+ [8, 8, 8, 8, 8, 8, 8, 8, 8, 8, 8, 8, 8, 8, 8, 8, 7, 8, 8, 8],
+ [8, 8, 8, 8, 8, 8, 8, 8, 8, 8, 8, 8, 8, 8, 8, 8, 8, 8, 8, 8],
+ [8, 8, 8, 8, 8, 8, 8, 8, 8, 8, 8, 8, 8, 8, 8, 8, 8, 8, 8, 8],
+ [8, 8, 8, 8, 8, 8, 7, 8, 8, 8, 8, 7, 7, 8, 8, 8, 8, 8, 8, 8],
+ [8, 8, 8, 8, 8, 8, 8, 8, 8, 8, 8, 8, 8, 8, 8, 8, 8, 8, 8, 8],
+ [8, 8, 8, 8, 8, 8, 8, 8, 8, 8, 8, 8, 8, 8, 8, 8, 8, 8, 8, 8],
+ [8, 8, 8, 8, 8, 8, 8, 8, 8, 7, 8, 8, 8, 8, 8, 8, 8, 7, 8, 8],
+ [8, 8, 8, 8, 8, 8, 8, 8, 8, 7, 8, 8, 8, 8, 8, 8, 8, 8, 8, 8],
+ [8, 8, 8, 8, 8, 8, 8, 8, 8, 7, 8, 7, 7, 7, 7, 7, 7, 7, 8, 8],
+ [8, 8, 8, 8, 8, 8, 8, 8, 8, 7, 8, 8, 8, 8, 8, 8, 8, 8, 8, 8],
+ [8, 8, 8, 8, 8, 8, 8, 8, 8, 7, 8, 7, 7, 7, 7, 7, 7, 7, 8, 8],
+ [8, 8, 8, 8, 8, 8, 8, 8, 7, 7, 8, 8, 8, 8, 7, 8, 7, 8, 7, 8],
+ [8, 8, 8, 8, 8, 8, 8, 8, 7, 7, 8, 7, 7, 7, 7, 7, 7, 7, 8, 8],
+ [8, 8, 8, 8, 8, 8, 8, 8, 7, 7, 8, 8, 8, 8, 7, 8, 7, 8, 7, 8],
+ [8, 8, 8, 8, 8, 8, 8, 8, 7, 7, 7, 8, 8, 7, 8, 7, 8, 7, 8, 8],
+ [8, 8, 8, 8, 8, 8, 8, 8, 7, 7, 8, 8, 8, 8, 7, 8, 7, 8, 7, 8],
+ [8, 8, 8, 8, 8, 8, 8, 8, 7, 8, 7, 8, 8, 8, 8, 8, 8, 8, 8, 8]]

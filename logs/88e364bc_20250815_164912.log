@@ -1,0 +1,516 @@
+[MESSAGE] program {
+  grid = Input()
+
+  cyan_shapes   = Find("connected components", where="color == 7")
+  orange_shapes = Find("connected components", where="color == 5")
+
+  InnerZero = Lambda("InnerZero(shape)", "0-cells that belong to black components fully enclosed by the outline of shape")
+  InnerBoundaryZeros = Lambda("InnerBoundaryZeros(shape)", "0-cells that are in InnerZero(shape) AND 4-neighbor-adjacent to any cell of shape")
+
+  cyan_inner_targets   = Union(Apply(InnerBoundaryZeros, to=cyan_shapes))
+  orange_inner_targets = Union(Apply(InnerBoundaryZeros, to=orange_shapes))
+  candidate_targets = Union(cyan_inner_targets, orange_inner_targets)
+
+  MoveHorizToNearestInnerWall = Lambda("move_yellow", "
+    for each y in Find('cells', where='color == 4') {
+      same_row_targets = Filter(candidate_targets, where='row == row(y)')
+      if Count(same_row_targets) > 0 {
+        target = ArgMin(same_row_targets, key='abs(col - col(y))', tie_break='leftmost')
+        Paint(CellAt(y), 0)
+        Paint(CellAt(target), 4)
+      }
+    }
+  ")
+
+  Apply(MoveHorizToNearestInnerWall)
+  Output(grid)
+}
+
+============================================================
+Phase: train_0
+============================================================
+program {
+  grid = Input()
+
+  cyan_shapes   = Find("connected components", where="color == 7")
+  orange_shapes = Find("connected components", where="color == 5")
+
+  InnerZero = Lambda("InnerZero(shape)", "0-cells that belong to black components fully enclosed by the outline of shape")
+  InnerBoundaryZeros = Lambda("InnerBoundaryZeros(shape)", "0-cells that are in InnerZero(shape) AND 4-neighbor-adjacent to any cell of shape")
+
+  cyan_inner_targets   = Union(Apply(InnerBoundaryZeros, to=cyan_shapes))
+  orange_inner_targets = Union(Apply(InnerBoundaryZeros, to=orange_shapes))
+  candidate_targets = Union(cyan_inner_targets, orange_inner_targets)
+
+  MoveHorizToNearestInnerWall = Lambda("move_yellow", "
+    for each y in Find('cells', where='color == 4') {
+      same_row_targets = Filter(candidate_targets, where='row == row(y)')
+      if Count(same_row_targets) > 0 {
+        target = ArgMin(same_row_targets, key='abs(col - col(y))', tie_break='leftmost')
+        Paint(CellAt(y), 0)
+        Paint(CellAt(target), 4)
+      }
+    }
+  ")
+
+  Apply(MoveHorizToNearestInnerWall)
+  Output(grid)
+}
+[MESSAGE] [[0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 5, 5, 5, 5, 5, 5, 5],
+ [0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 5, 5, 5, 1, 5, 5, 5],
+ [0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 5, 1, 5, 5, 1, 5, 5],
+ [0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 5, 5, 1, 5, 5, 2, 5],
+ [0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 5, 5, 5, 2, 5, 5, 5],
+ [0, 0, 0, 0, 0, 0, 5, 5, 5, 5, 0, 0, 0, 5, 5, 5, 5, 5, 5, 5],
+ [0, 0, 0, 0, 0, 5, 5, 0, 0, 5, 5, 0, 0, 0, 0, 0, 0, 0, 0, 0],
+ [0, 0, 5, 5, 5, 5, 0, 0, 0, 0, 5, 5, 5, 0, 0, 0, 0, 0, 0, 0],
+ [0, 0, 5, 0, 0, 0, 0, 0, 0, 0, 0, 0, 5, 5, 5, 5, 0, 0, 0, 0],
+ [0, 0, 5, 4, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 5, 0, 0, 0, 0],
+ [0, 0, 5, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 5, 0, 0, 0, 0],
+ [0, 0, 5, 0, 0, 0, 5, 5, 0, 0, 0, 0, 0, 0, 0, 5, 0, 0, 0, 0],
+ [0, 0, 5, 0, 0, 0, 5, 5, 0, 0, 0, 0, 0, 0, 0, 5, 0, 0, 0, 0],
+ [0, 5, 5, 0, 0, 0, 5, 5, 0, 0, 0, 0, 0, 0, 0, 5, 0, 0, 0, 0],
+ [0, 5, 0, 0, 0, 0, 5, 5, 0, 0, 0, 0, 0, 0, 0, 5, 0, 0, 0, 0],
+ [0, 5, 0, 0, 0, 0, 5, 5, 5, 0, 0, 0, 0, 4, 5, 5, 0, 0, 0, 0],
+ [0, 5, 5, 0, 5, 5, 5, 0, 5, 0, 0, 0, 0, 5, 5, 0, 0, 0, 0, 0],
+ [0, 0, 5, 5, 5, 0, 0, 0, 5, 0, 0, 0, 5, 5, 0, 0, 0, 0, 0, 0],
+ [0, 0, 0, 0, 0, 0, 0, 0, 5, 5, 5, 5, 5, 0, 0, 0, 0, 0, 0, 0],
+ [0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0]]
+
+============================================================
+Phase: train_1_predict
+============================================================
+[[0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 5, 5, 5, 5, 5, 5, 5],
+ [0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 5, 5, 5, 1, 5, 5, 5],
+ [0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 5, 1, 5, 5, 1, 5, 5],
+ [0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 5, 5, 1, 5, 5, 2, 5],
+ [0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 5, 5, 5, 2, 5, 5, 5],
+ [0, 0, 0, 0, 0, 0, 5, 5, 5, 5, 0, 0, 0, 5, 5, 5, 5, 5, 5, 5],
+ [0, 0, 0, 0, 0, 5, 5, 0, 0, 5, 5, 0, 0, 0, 0, 0, 0, 0, 0, 0],
+ [0, 0, 5, 5, 5, 5, 0, 0, 0, 0, 5, 5, 5, 0, 0, 0, 0, 0, 0, 0],
+ [0, 0, 5, 0, 0, 0, 0, 0, 0, 0, 0, 0, 5, 5, 5, 5, 0, 0, 0, 0],
+ [0, 0, 5, 4, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 5, 0, 0, 0, 0],
+ [0, 0, 5, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 5, 0, 0, 0, 0],
+ [0, 0, 5, 0, 0, 0, 5, 5, 0, 0, 0, 0, 0, 0, 0, 5, 0, 0, 0, 0],
+ [0, 0, 5, 0, 0, 0, 5, 5, 0, 0, 0, 0, 0, 0, 0, 5, 0, 0, 0, 0],
+ [0, 5, 5, 0, 0, 0, 5, 5, 0, 0, 0, 0, 0, 0, 0, 5, 0, 0, 0, 0],
+ [0, 5, 0, 0, 0, 0, 5, 5, 0, 0, 0, 0, 0, 0, 0, 5, 0, 0, 0, 0],
+ [0, 5, 0, 0, 0, 0, 5, 5, 5, 0, 0, 0, 0, 4, 5, 5, 0, 0, 0, 0],
+ [0, 5, 5, 0, 5, 5, 5, 0, 5, 0, 0, 0, 0, 5, 5, 0, 0, 0, 0, 0],
+ [0, 0, 5, 5, 5, 0, 0, 0, 5, 0, 0, 0, 5, 5, 0, 0, 0, 0, 0, 0],
+ [0, 0, 0, 0, 0, 0, 0, 0, 5, 5, 5, 5, 5, 0, 0, 0, 0, 0, 0, 0],
+ [0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0]]
+[MESSAGE] program {
+  grid = Input()
+
+  Colors = {5, 7}
+
+  OuterBackground = Union(Find("connected components", where="color == 0 AND touches frame"))
+  BackgroundDist = DistanceMap(from=OuterBackground, through="0-cells")
+
+  WallCells = Find("cells", where="color in Colors")
+  ExteriorWalls = Filter(WallCells, where="4-neighbor-adjacent to OuterBackground")
+  InteriorWalls = Filter(WallCells, where="NOT 4-neighbor-adjacent to OuterBackground")
+
+  AllBoundaryZeros = Find("cells", where="color == 0 AND 4-neighbor-adjacent to any cell in Colors")
+  DeepBoundaryZeros = Filter(AllBoundaryZeros, where="4-neighbor-adjacent to any cell in InteriorWalls")
+  CornerBoundaryZeros = Filter(AllBoundaryZeros, where="count(4-neighbor-adjacent cells in Colors) >= 2")
+
+  TargetPool = Lambda("targets_for_yellow", "
+    T = DeepBoundaryZeros
+    if Count(T) == 0 { T = AllBoundaryZeros }
+    return T
+  ")
+
+  Score = Lambda("score(y, t)", "
+    d = ManhattanDistance(y, t)
+    corner_bonus = 0 if t in CornerBoundaryZeros else 1   // prefer corners
+    depth_rank = -BackgroundDist[t]                       // prefer deeper inside
+    return (d, corner_bonus, depth_rank, Col(t), Row(t))  // final tie-break: leftmost, then topmost
+  ")
+
+  MoveYellows = Lambda("move_all", "
+    yellows = Find('cells', where='color == 4')
+    for y in yellows {
+      T = TargetPool()
+      T = Remove(T, y)                                    // force a move if y already boundary-adjacent
+      if Count(T) > 0 {
+        t = ArgMin(T, key=Score(y, t))
+        Paint(y, 0)
+        Paint(t, 4)
+      }
+    }
+  ")
+
+  Apply(MoveYellows)
+  Output(grid)
+}
+
+============================================================
+Phase: train_1_verify
+============================================================
+program {
+  grid = Input()
+
+  Colors = {5, 7}
+
+  OuterBackground = Union(Find("connected components", where="color == 0 AND touches frame"))
+  BackgroundDist = DistanceMap(from=OuterBackground, through="0-cells")
+
+  WallCells = Find("cells", where="color in Colors")
+  ExteriorWalls = Filter(WallCells, where="4-neighbor-adjacent to OuterBackground")
+  InteriorWalls = Filter(WallCells, where="NOT 4-neighbor-adjacent to OuterBackground")
+
+  AllBoundaryZeros = Find("cells", where="color == 0 AND 4-neighbor-adjacent to any cell in Colors")
+  DeepBoundaryZeros = Filter(AllBoundaryZeros, where="4-neighbor-adjacent to any cell in InteriorWalls")
+  CornerBoundaryZeros = Filter(AllBoundaryZeros, where="count(4-neighbor-adjacent cells in Colors) >= 2")
+
+  TargetPool = Lambda("targets_for_yellow", "
+    T = DeepBoundaryZeros
+    if Count(T) == 0 { T = AllBoundaryZeros }
+    return T
+  ")
+
+  Score = Lambda("score(y, t)", "
+    d = ManhattanDistance(y, t)
+    corner_bonus = 0 if t in CornerBoundaryZeros else 1   // prefer corners
+    depth_rank = -BackgroundDist[t]                       // prefer deeper inside
+    return (d, corner_bonus, depth_rank, Col(t), Row(t))  // final tie-break: leftmost, then topmost
+  ")
+
+  MoveYellows = Lambda("move_all", "
+    yellows = Find('cells', where='color == 4')
+    for y in yellows {
+      T = TargetPool()
+      T = Remove(T, y)                                    // force a move if y already boundary-adjacent
+      if Count(T) > 0 {
+        t = ArgMin(T, key=Score(y, t))
+        Paint(y, 0)
+        Paint(t, 4)
+      }
+    }
+  ")
+
+  Apply(MoveYellows)
+  Output(grid)
+}
+[MESSAGE] [[0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 5, 5, 5, 5, 5],
+ [0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 5, 1, 5, 1, 5],
+ [0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 5, 1, 5, 1, 5],
+ [0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 5, 2, 5, 2, 5],
+ [0, 0, 0, 0, 5, 5, 5, 5, 5, 0, 0, 0, 0, 0, 0, 5, 5, 5, 5, 5],
+ [0, 0, 0, 0, 5, 4, 0, 0, 5, 5, 5, 0, 0, 0, 0, 0, 0, 0, 0, 0],
+ [0, 0, 0, 0, 5, 0, 0, 0, 0, 0, 5, 5, 5, 0, 0, 0, 0, 0, 0, 0],
+ [0, 0, 0, 0, 5, 0, 0, 0, 0, 0, 0, 0, 5, 0, 0, 0, 0, 0, 0, 0],
+ [0, 0, 5, 5, 5, 0, 0, 0, 0, 0, 0, 0, 5, 5, 0, 0, 0, 0, 0, 0],
+ [0, 0, 5, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 5, 5, 0, 0, 0, 0, 0],
+ [0, 0, 5, 0, 0, 5, 5, 5, 5, 0, 0, 0, 0, 5, 5, 0, 0, 0, 0, 0],
+ [0, 0, 5, 5, 5, 5, 0, 0, 5, 5, 5, 5, 5, 5, 5, 5, 5, 0, 0, 0],
+ [0, 0, 5, 0, 0, 0, 0, 0, 0, 0, 4, 0, 0, 0, 0, 0, 5, 0, 0, 0],
+ [0, 0, 5, 5, 0, 4, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 5, 0, 0, 0],
+ [0, 0, 0, 5, 5, 0, 0, 0, 0, 0, 0, 0, 0, 5, 5, 0, 5, 0, 0, 0],
+ [0, 0, 0, 0, 5, 0, 0, 5, 5, 0, 0, 0, 5, 5, 5, 5, 5, 0, 0, 0],
+ [0, 0, 0, 0, 5, 0, 0, 5, 5, 5, 0, 0, 5, 0, 0, 0, 0, 0, 0, 0],
+ [0, 0, 0, 0, 5, 0, 0, 5, 0, 5, 5, 0, 5, 0, 0, 0, 0, 0, 0, 0],
+ [0, 0, 0, 0, 5, 0, 0, 5, 0, 0, 5, 5, 5, 0, 0, 0, 0, 0, 0, 0],
+ [0, 0, 0, 0, 0, 5, 5, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0]]
+
+============================================================
+Phase: train_2_predict
+============================================================
+[[0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 5, 5, 5, 5, 5],
+ [0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 5, 1, 5, 1, 5],
+ [0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 5, 1, 5, 1, 5],
+ [0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 5, 2, 5, 2, 5],
+ [0, 0, 0, 0, 5, 5, 5, 5, 5, 0, 0, 0, 0, 0, 0, 5, 5, 5, 5, 5],
+ [0, 0, 0, 0, 5, 4, 0, 0, 5, 5, 5, 0, 0, 0, 0, 0, 0, 0, 0, 0],
+ [0, 0, 0, 0, 5, 0, 0, 0, 0, 0, 5, 5, 5, 0, 0, 0, 0, 0, 0, 0],
+ [0, 0, 0, 0, 5, 0, 0, 0, 0, 0, 0, 0, 5, 0, 0, 0, 0, 0, 0, 0],
+ [0, 0, 5, 5, 5, 0, 0, 0, 0, 0, 0, 0, 5, 5, 0, 0, 0, 0, 0, 0],
+ [0, 0, 5, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 5, 5, 0, 0, 0, 0, 0],
+ [0, 0, 5, 0, 0, 5, 5, 5, 5, 0, 0, 0, 0, 5, 5, 0, 0, 0, 0, 0],
+ [0, 0, 5, 5, 5, 5, 0, 0, 5, 5, 5, 5, 5, 5, 5, 5, 5, 0, 0, 0],
+ [0, 0, 5, 0, 0, 0, 0, 0, 0, 0, 4, 0, 0, 0, 0, 0, 5, 0, 0, 0],
+ [0, 0, 5, 5, 0, 4, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 5, 0, 0, 0],
+ [0, 0, 0, 5, 5, 0, 0, 0, 0, 0, 0, 0, 0, 5, 5, 0, 5, 0, 0, 0],
+ [0, 0, 0, 0, 5, 0, 0, 5, 5, 0, 0, 0, 5, 5, 5, 5, 5, 0, 0, 0],
+ [0, 0, 0, 0, 5, 0, 0, 5, 5, 5, 0, 0, 5, 0, 0, 0, 0, 0, 0, 0],
+ [0, 0, 0, 0, 5, 0, 0, 5, 0, 5, 5, 0, 5, 0, 0, 0, 0, 0, 0, 0],
+ [0, 0, 0, 0, 5, 0, 0, 5, 0, 0, 5, 5, 5, 0, 0, 0, 0, 0, 0, 0],
+ [0, 0, 0, 0, 0, 5, 5, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0]]
+[MESSAGE] program {
+  grid = Input()
+  Colors = {5, 7}
+
+  // Background and depth
+  OuterBG = Union(Find("connected components", where="color == 0 AND touches frame"))
+  Depth = DistanceMap(from=OuterBG, through="0-cells")
+
+  // Walls (outlines) and their relation to outside
+  Walls = Find("cells", where="color in Colors")
+  ExteriorWalls = Filter(Walls, where="4-neighbor-adjacent to OuterBG")
+  InteriorWalls = Subtract(Walls, ExteriorWalls)
+
+  // Interior zero regions ("holes") and their boundaries
+  HoleZeros = Union(Find("connected components", where="color == 0 AND NOT touches frame"))
+  AllInnerBoundary = Filter(HoleZeros, where="4-neighbor-adjacent to Walls")
+  DeepBoundary = Filter(HoleZeros, where="4-neighbor-adjacent to InteriorWalls")
+
+  // Prefer deep interior boundary; fallback to any interior boundary
+  Candidates = If(Count(DeepBoundary) > 0, DeepBoundary, AllInnerBoundary)
+  Candidates = Subtract(Candidates, Find("cells", where="color == 4"))   // avoid staying put
+
+  // Scoring: deepest first, then nearest, then leftmost/topmost
+  Score = Lambda("score(y, t)", "
+    return (-Depth[t], ManhattanDistance(y, t), Col(t), Row(t))
+  ")
+
+  // Assign unique targets greedily in row-major order
+  Yellows = Sort(Find("cells", where="color == 4"), by="row_major")
+  Used = {}
+
+  for y in Yellows {
+    avail = Subtract(Candidates, Used)
+    if Count(avail) == 0 { break }
+    t = ArgMin(avail, key=Score(y, t))
+    Paint(y, 0)
+    Paint(t, 4)
+    Used = Union(Used, {t})
+  }
+
+  Output(grid)
+}
+
+============================================================
+Phase: train_2_verify
+============================================================
+program {
+  grid = Input()
+  Colors = {5, 7}
+
+  // Background and depth
+  OuterBG = Union(Find("connected components", where="color == 0 AND touches frame"))
+  Depth = DistanceMap(from=OuterBG, through="0-cells")
+
+  // Walls (outlines) and their relation to outside
+  Walls = Find("cells", where="color in Colors")
+  ExteriorWalls = Filter(Walls, where="4-neighbor-adjacent to OuterBG")
+  InteriorWalls = Subtract(Walls, ExteriorWalls)
+
+  // Interior zero regions ("holes") and their boundaries
+  HoleZeros = Union(Find("connected components", where="color == 0 AND NOT touches frame"))
+  AllInnerBoundary = Filter(HoleZeros, where="4-neighbor-adjacent to Walls")
+  DeepBoundary = Filter(HoleZeros, where="4-neighbor-adjacent to InteriorWalls")
+
+  // Prefer deep interior boundary; fallback to any interior boundary
+  Candidates = If(Count(DeepBoundary) > 0, DeepBoundary, AllInnerBoundary)
+  Candidates = Subtract(Candidates, Find("cells", where="color == 4"))   // avoid staying put
+
+  // Scoring: deepest first, then nearest, then leftmost/topmost
+  Score = Lambda("score(y, t)", "
+    return (-Depth[t], ManhattanDistance(y, t), Col(t), Row(t))
+  ")
+
+  // Assign unique targets greedily in row-major order
+  Yellows = Sort(Find("cells", where="color == 4"), by="row_major")
+  Used = {}
+
+  for y in Yellows {
+    avail = Subtract(Candidates, Used)
+    if Count(avail) == 0 { break }
+    t = ArgMin(avail, key=Score(y, t))
+    Paint(y, 0)
+    Paint(t, 4)
+    Used = Union(Used, {t})
+  }
+
+  Output(grid)
+}
+[MESSAGE] program {
+  grid = Input()
+
+  // Treat outlines as any nonzero, non-yellow color that borders an interior black hole.
+  OuterBG   = Union(Find("connected components", where="color == 0 AND touches frame"))
+  Holes     = Find("connected components", where="color == 0 AND NOT touches frame")
+
+  HoleOutlines = {}
+  for hole in Holes {
+    border = Find("cells", where="color != 0 AND color != 4 AND 4-neighbor-adjacent to hole")
+    HoleOutlines = Union(HoleOutlines, border)
+  }
+
+  // Inner boundary (inside the hole, next to outlines)
+  InnerBoundary = {}
+  for hole in Holes {
+    ib = Filter(hole, where="4-neighbor-adjacent to HoleOutlines")
+    InnerBoundary = Union(InnerBoundary, ib)
+  }
+
+  // Prefer concave interior corner sites: zeros that touch outlines in two orthogonal directions
+  IsCorner = Lambda("is_corner(z)", "
+    dirs = DirectionsOf(Neighbors(z, where='color != 0 AND color != 4'))
+    return Count(dirs) >= 2 AND NOT HasOppositePair(dirs)
+  ")
+  CornerBoundary = Filter(InnerBoundary, where="IsCorner(cell)")
+
+  // Helper: distance within the same hole (stay inside zero area)
+  HoleDist = Lambda("hole_distance(a, b)", "
+    h = ConnectedComponentContaining(Holes, a)
+    return ShortestPathDistance(a, b, through=h)
+  ")
+
+  // Scoring: 
+  // 1) shortest hole-internal path
+  // 2) prefer southeast direction from the yellow (down-right) to mimic training behavior
+  // 3) then prefer deeper (farther from outer background)
+  // 4) tie-break by leftmost, then topmost
+  DepthFromOuter = DistanceMap(from=OuterBG, through="0-cells")
+
+  Score = Lambda("score(y, t)", "
+    d = HoleDist(y, t)
+    se_pref = 0 if (Row(t) >= Row(y) AND Col(t) >= Col(y)) else 1
+    depth = -DepthFromOuter[t]
+    return (d, se_pref, depth, Col(t), Row(t))
+  ")
+
+  // Move yellows independently within their containing hole; assign unique targets
+  Used = {}
+  Yellows = Find("cells", where="color == 4")
+  Yellows = Sort(Yellows, by="row_major")
+
+  for y in Yellows {
+    h = ConnectedComponentContaining(Holes, y)
+    candidates = Intersect(CornerBoundary, h)
+    if Count(candidates) == 0 { candidates = Intersect(InnerBoundary, h) }
+    candidates = Subtract(candidates, Used)
+    // avoid staying put: if y already on a boundary site, prefer a different target unless it's the only choice
+    candidates = If(Count(candidates) > 1, Subtract(candidates, {y}), candidates)
+
+    if Count(candidates) > 0 {
+      t = ArgMin(candidates, key=Score(y, t))
+      Paint(y, 0)
+      Paint(t, 4)
+      Used = Union(Used, {t})
+    }
+  }
+
+  Output(grid)
+}
+
+============================================================
+Phase: test_refine
+============================================================
+program {
+  grid = Input()
+
+  // Treat outlines as any nonzero, non-yellow color that borders an interior black hole.
+  OuterBG   = Union(Find("connected components", where="color == 0 AND touches frame"))
+  Holes     = Find("connected components", where="color == 0 AND NOT touches frame")
+
+  HoleOutlines = {}
+  for hole in Holes {
+    border = Find("cells", where="color != 0 AND color != 4 AND 4-neighbor-adjacent to hole")
+    HoleOutlines = Union(HoleOutlines, border)
+  }
+
+  // Inner boundary (inside the hole, next to outlines)
+  InnerBoundary = {}
+  for hole in Holes {
+    ib = Filter(hole, where="4-neighbor-adjacent to HoleOutlines")
+    InnerBoundary = Union(InnerBoundary, ib)
+  }
+
+  // Prefer concave interior corner sites: zeros that touch outlines in two orthogonal directions
+  IsCorner = Lambda("is_corner(z)", "
+    dirs = DirectionsOf(Neighbors(z, where='color != 0 AND color != 4'))
+    return Count(dirs) >= 2 AND NOT HasOppositePair(dirs)
+  ")
+  CornerBoundary = Filter(InnerBoundary, where="IsCorner(cell)")
+
+  // Helper: distance within the same hole (stay inside zero area)
+  HoleDist = Lambda("hole_distance(a, b)", "
+    h = ConnectedComponentContaining(Holes, a)
+    return ShortestPathDistance(a, b, through=h)
+  ")
+
+  // Scoring: 
+  // 1) shortest hole-internal path
+  // 2) prefer southeast direction from the yellow (down-right) to mimic training behavior
+  // 3) then prefer deeper (farther from outer background)
+  // 4) tie-break by leftmost, then topmost
+  DepthFromOuter = DistanceMap(from=OuterBG, through="0-cells")
+
+  Score = Lambda("score(y, t)", "
+    d = HoleDist(y, t)
+    se_pref = 0 if (Row(t) >= Row(y) AND Col(t) >= Col(y)) else 1
+    depth = -DepthFromOuter[t]
+    return (d, se_pref, depth, Col(t), Row(t))
+  ")
+
+  // Move yellows independently within their containing hole; assign unique targets
+  Used = {}
+  Yellows = Find("cells", where="color == 4")
+  Yellows = Sort(Yellows, by="row_major")
+
+  for y in Yellows {
+    h = ConnectedComponentContaining(Holes, y)
+    candidates = Intersect(CornerBoundary, h)
+    if Count(candidates) == 0 { candidates = Intersect(InnerBoundary, h) }
+    candidates = Subtract(candidates, Used)
+    // avoid staying put: if y already on a boundary site, prefer a different target unless it's the only choice
+    candidates = If(Count(candidates) > 1, Subtract(candidates, {y}), candidates)
+
+    if Count(candidates) > 0 {
+      t = ArgMin(candidates, key=Score(y, t))
+      Paint(y, 0)
+      Paint(t, 4)
+      Used = Union(Used, {t})
+    }
+  }
+
+  Output(grid)
+}
+[MESSAGE] [[5, 5, 5, 5, 5, 5, 5, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0],
+ [5, 5, 5, 1, 5, 5, 5, 0, 0, 5, 5, 5, 0, 0, 0, 0, 0, 0, 0, 0],
+ [5, 1, 5, 5, 1, 5, 5, 0, 0, 5, 0, 5, 5, 5, 0, 0, 0, 0, 0, 0],
+ [5, 5, 1, 5, 5, 2, 5, 0, 0, 5, 0, 0, 4, 5, 0, 0, 5, 5, 0, 0],
+ [5, 5, 5, 2, 5, 5, 5, 0, 0, 5, 0, 0, 0, 5, 5, 5, 5, 5, 5, 0],
+ [5, 5, 5, 5, 5, 5, 5, 0, 0, 5, 0, 0, 0, 0, 0, 0, 0, 0, 5, 0],
+ [0, 0, 0, 0, 0, 0, 0, 0, 0, 5, 4, 0, 0, 0, 0, 0, 0, 0, 5, 0],
+ [0, 0, 0, 0, 0, 0, 0, 0, 0, 5, 5, 0, 0, 0, 0, 0, 0, 0, 5, 0],
+ [0, 0, 0, 0, 0, 1, 1, 1, 1, 1, 5, 0, 0, 0, 0, 0, 0, 0, 5, 0],
+ [0, 0, 0, 0, 0, 1, 0, 0, 0, 1, 5, 5, 5, 0, 0, 5, 5, 5, 5, 0],
+ [0, 0, 0, 0, 0, 1, 0, 0, 0, 1, 1, 1, 5, 5, 5, 5, 0, 0, 0, 0],
+ [0, 0, 0, 0, 0, 1, 1, 0, 0, 0, 0, 1, 0, 0, 0, 0, 0, 0, 0, 0],
+ [0, 0, 0, 0, 0, 0, 1, 1, 0, 4, 0, 1, 1, 1, 1, 1, 1, 0, 0, 0],
+ [0, 0, 0, 0, 0, 0, 0, 0, 1, 0, 0, 0, 0, 1, 0, 0, 1, 1, 0, 0],
+ [0, 0, 0, 0, 0, 0, 0, 0, 1, 1, 0, 0, 0, 1, 0, 0, 0, 1, 1, 0],
+ [1, 1, 1, 1, 1, 0, 0, 0, 0, 1, 1, 1, 1, 1, 0, 0, 0, 0, 1, 0],
+ [1, 2, 1, 2, 1, 0, 0, 0, 0, 1, 0, 0, 0, 0, 0, 0, 0, 0, 1, 0],
+ [1, 5, 1, 5, 1, 0, 0, 0, 0, 1, 0, 0, 0, 0, 0, 0, 4, 0, 1, 0],
+ [1, 5, 1, 5, 1, 0, 0, 0, 0, 1, 1, 4, 1, 1, 1, 1, 1, 1, 1, 0],
+ [1, 1, 1, 1, 1, 0, 0, 0, 0, 0, 1, 1, 1, 0, 0, 0, 0, 0, 0, 0]]
+
+============================================================
+Phase: test_predict
+============================================================
+[[5, 5, 5, 5, 5, 5, 5, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0],
+ [5, 5, 5, 1, 5, 5, 5, 0, 0, 5, 5, 5, 0, 0, 0, 0, 0, 0, 0, 0],
+ [5, 1, 5, 5, 1, 5, 5, 0, 0, 5, 0, 5, 5, 5, 0, 0, 0, 0, 0, 0],
+ [5, 5, 1, 5, 5, 2, 5, 0, 0, 5, 0, 0, 4, 5, 0, 0, 5, 5, 0, 0],
+ [5, 5, 5, 2, 5, 5, 5, 0, 0, 5, 0, 0, 0, 5, 5, 5, 5, 5, 5, 0],
+ [5, 5, 5, 5, 5, 5, 5, 0, 0, 5, 0, 0, 0, 0, 0, 0, 0, 0, 5, 0],
+ [0, 0, 0, 0, 0, 0, 0, 0, 0, 5, 4, 0, 0, 0, 0, 0, 0, 0, 5, 0],
+ [0, 0, 0, 0, 0, 0, 0, 0, 0, 5, 5, 0, 0, 0, 0, 0, 0, 0, 5, 0],
+ [0, 0, 0, 0, 0, 1, 1, 1, 1, 1, 5, 0, 0, 0, 0, 0, 0, 0, 5, 0],
+ [0, 0, 0, 0, 0, 1, 0, 0, 0, 1, 5, 5, 5, 0, 0, 5, 5, 5, 5, 0],
+ [0, 0, 0, 0, 0, 1, 0, 0, 0, 1, 1, 1, 5, 5, 5, 5, 0, 0, 0, 0],
+ [0, 0, 0, 0, 0, 1, 1, 0, 0, 0, 0, 1, 0, 0, 0, 0, 0, 0, 0, 0],
+ [0, 0, 0, 0, 0, 0, 1, 1, 0, 4, 0, 1, 1, 1, 1, 1, 1, 0, 0, 0],
+ [0, 0, 0, 0, 0, 0, 0, 0, 1, 0, 0, 0, 0, 1, 0, 0, 1, 1, 0, 0],
+ [0, 0, 0, 0, 0, 0, 0, 0, 1, 1, 0, 0, 0, 1, 0, 0, 0, 1, 1, 0],
+ [1, 1, 1, 1, 1, 0, 0, 0, 0, 1, 1, 1, 1, 1, 0, 0, 0, 0, 1, 0],
+ [1, 2, 1, 2, 1, 0, 0, 0, 0, 1, 0, 0, 0, 0, 0, 0, 0, 0, 1, 0],
+ [1, 5, 1, 5, 1, 0, 0, 0, 0, 1, 0, 0, 0, 0, 0, 0, 4, 0, 1, 0],
+ [1, 5, 1, 5, 1, 0, 0, 0, 0, 1, 1, 4, 1, 1, 1, 1, 1, 1, 1, 0],
+ [1, 1, 1, 1, 1, 0, 0, 0, 0, 0, 1, 1, 1, 0, 0, 0, 0, 0, 0, 0]]

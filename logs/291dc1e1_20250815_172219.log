@@ -1,0 +1,820 @@
+[MESSAGE] program {
+  grid = Input()
+
+  // 1) Remove the framing bars to expose the interior workspace
+  top_bar = Find("row", where="row_index==0 AND is_solid_color")
+  left_bar = Find("column", where="col_index==0 AND is_solid_color")
+  interior = Crop(grid, exclude=[top_bar, left_bar])
+  bg = ModeColor(interior)  // background (maroon)
+
+  // 2) Extract non-background components
+  shapes = Find("connected components", within=interior, where="color != bg")
+
+  // Helper: ensure horizontal orientation and reduce to a 2-row signature
+  Horizontalize = Lambda("rotate_to_horizontal") {
+    s -> If(Height(s) > Width(s), Rotate(s, 90), s)
+  }
+  Signature2Rows = Lambda("top_two_rows_trimmed") {
+    s -> Trim(TopRows(s, 2), remove="bg-only columns")
+  }
+
+  // 3) Build 2-row strips for each shape, preserving identity and original placement info
+  strips = []
+  for s in shapes {
+    hs = Apply(Horizontalize, s)
+    sig = Apply(Signature2Rows, hs)
+    meta = { "min_col": MinCol(s), "min_row": MinRow(s) }  // from original (pre-rotation)
+    Append(strips, { "sig": sig, "meta": meta })
+  }
+
+  // 4) Order by original leftmost position, tie by topmost
+  ordered = Sort(strips, by=["meta.min_col ASC", "meta.min_row ASC"])
+
+  // 5) Determine target canvas width from active interior column-pairs
+  //    Group interior columns into consecutive pairs and keep only those touching any non-bg
+  col_pairs = GroupColumns(interior, size=2)
+  active_pairs = Filter(col_pairs, where="any cell != bg")
+  target_width = 2 * Len(active_pairs)
+  target_height = 2 * Len(ordered)
+
+  canvas = NewGrid(height=target_height, width=target_width, fill=bg)
+
+  // 6) Paste strips stacked vertically, horizontally centered
+  y = 0
+  for item in ordered {
+    s = item.sig
+    x = Center("h", container=canvas, subject=s)
+    Paste(canvas, s, at=[y, x], mode="overwrite")
+    y = y + 2
+  }
+
+  Output(canvas)
+}
+
+============================================================
+Phase: train_0
+============================================================
+program {
+  grid = Input()
+
+  // 1) Remove the framing bars to expose the interior workspace
+  top_bar = Find("row", where="row_index==0 AND is_solid_color")
+  left_bar = Find("column", where="col_index==0 AND is_solid_color")
+  interior = Crop(grid, exclude=[top_bar, left_bar])
+  bg = ModeColor(interior)  // background (maroon)
+
+  // 2) Extract non-background components
+  shapes = Find("connected components", within=interior, where="color != bg")
+
+  // Helper: ensure horizontal orientation and reduce to a 2-row signature
+  Horizontalize = Lambda("rotate_to_horizontal") {
+    s -> If(Height(s) > Width(s), Rotate(s, 90), s)
+  }
+  Signature2Rows = Lambda("top_two_rows_trimmed") {
+    s -> Trim(TopRows(s, 2), remove="bg-only columns")
+  }
+
+  // 3) Build 2-row strips for each shape, preserving identity and original placement info
+  strips = []
+  for s in shapes {
+    hs = Apply(Horizontalize, s)
+    sig = Apply(Signature2Rows, hs)
+    meta = { "min_col": MinCol(s), "min_row": MinRow(s) }  // from original (pre-rotation)
+    Append(strips, { "sig": sig, "meta": meta })
+  }
+
+  // 4) Order by original leftmost position, tie by topmost
+  ordered = Sort(strips, by=["meta.min_col ASC", "meta.min_row ASC"])
+
+  // 5) Determine target canvas width from active interior column-pairs
+  //    Group interior columns into consecutive pairs and keep only those touching any non-bg
+  col_pairs = GroupColumns(interior, size=2)
+  active_pairs = Filter(col_pairs, where="any cell != bg")
+  target_width = 2 * Len(active_pairs)
+  target_height = 2 * Len(ordered)
+
+  canvas = NewGrid(height=target_height, width=target_width, fill=bg)
+
+  // 6) Paste strips stacked vertically, horizontally centered
+  y = 0
+  for item in ordered {
+    s = item.sig
+    x = Center("h", container=canvas, subject=s)
+    Paste(canvas, s, at=[y, x], mode="overwrite")
+    y = y + 2
+  }
+
+  Output(canvas)
+}
+[MESSAGE] [[1, 1, 1, 1, 1, 1, 1, 1, 1, 1],
+ [8, 8, 8, 8, 8, 8, 8, 8, 8, 8],
+ [8, 8, 8, 8, 3, 3, 8, 8, 8, 8],
+ [8, 8, 8, 8, 3, 3, 8, 8, 8, 8],
+ [8, 8, 8, 8, 6, 6, 8, 8, 8, 8],
+ [8, 8, 8, 8, 6, 6, 8, 8, 8, 8],
+ [8, 8, 8, 4, 4, 4, 4, 8, 8, 8],
+ [8, 8, 8, 4, 4, 4, 4, 8, 8, 8],
+ [8, 8, 8, 8, 9, 9, 8, 8, 8, 8],
+ [8, 8, 8, 8, 9, 9, 8, 8, 8, 8]]
+
+============================================================
+Phase: train_1_predict
+============================================================
+[[1, 1, 1, 1, 1, 1, 1, 1, 1, 1],
+ [8, 8, 8, 8, 8, 8, 8, 8, 8, 8],
+ [8, 8, 8, 8, 3, 3, 8, 8, 8, 8],
+ [8, 8, 8, 8, 3, 3, 8, 8, 8, 8],
+ [8, 8, 8, 8, 6, 6, 8, 8, 8, 8],
+ [8, 8, 8, 8, 6, 6, 8, 8, 8, 8],
+ [8, 8, 8, 4, 4, 4, 4, 8, 8, 8],
+ [8, 8, 8, 4, 4, 4, 4, 8, 8, 8],
+ [8, 8, 8, 8, 9, 9, 8, 8, 8, 8],
+ [8, 8, 8, 8, 9, 9, 8, 8, 8, 8]]
+[MESSAGE] program {
+  grid = Input()
+  bg = ModeColor(grid)
+
+  // 1) Locate the enclosed workspace: the largest background component not touching outer border
+  bg_comps = Find("connected components", where="color == bg")
+  interior_bg = Max(Filter(bg_comps, where="NOT TouchesBorder(component)"), by="area")
+  interior = Extract(grid, BoundingBox(interior_bg))
+
+  // 2) Collect non-background components inside the workspace
+  comps = Find("connected components", within=interior, where="color != bg")
+
+  // Helper: take top two rows of a component's bbox and trim away empty columns
+  TwoRowSignature = Lambda("two_rows_signature") {
+    s -> {
+      block = Extract(interior, BoundingBox(s))
+      sig = (Height(block) >= 2) ? TopRows(block, 2) : Stack(block, block)
+      cols = Columns(sig, where="any cell != bg")
+      KeepColumns(sig, cols)
+    }
+  }
+
+  // 3) Build stripes with reading-order metadata
+  stripes = []
+  for c in comps {
+    sig = Apply(TwoRowSignature, c)
+    meta = { "row": MinRow(c), "col": MinCol(c) }
+    Append(stripes, { "sig": sig, "meta": meta })
+  }
+
+  // 4) Sort by top-to-bottom, then left-to-right; compute target width
+  ordered = Sort(stripes, by=["meta.row ASC", "meta.col ASC"])
+  W = Max(Width(item.sig) for item in ordered)
+
+  CenterPad = Lambda("center_pad") { s, W ->
+    Pad(s,
+        left=floor((W-Width(s))/2),
+        right=ceil((W-Width(s))/2),
+        fill=bg)
+  }
+
+  // 5) Stack the centered stripes vertically
+  H = Sum(Height(item.sig) for item in ordered)
+  canvas = NewGrid(height=H, width=W, fill=bg)
+  y = 0
+  for item in ordered {
+    s = CenterPad(item.sig, W)
+    Paste(canvas, s, at=[y, 0], mode="overwrite")
+    y = y + Height(s)
+  }
+
+  Output(canvas)
+}
+
+============================================================
+Phase: train_1_verify
+============================================================
+program {
+  grid = Input()
+  bg = ModeColor(grid)
+
+  // 1) Locate the enclosed workspace: the largest background component not touching outer border
+  bg_comps = Find("connected components", where="color == bg")
+  interior_bg = Max(Filter(bg_comps, where="NOT TouchesBorder(component)"), by="area")
+  interior = Extract(grid, BoundingBox(interior_bg))
+
+  // 2) Collect non-background components inside the workspace
+  comps = Find("connected components", within=interior, where="color != bg")
+
+  // Helper: take top two rows of a component's bbox and trim away empty columns
+  TwoRowSignature = Lambda("two_rows_signature") {
+    s -> {
+      block = Extract(interior, BoundingBox(s))
+      sig = (Height(block) >= 2) ? TopRows(block, 2) : Stack(block, block)
+      cols = Columns(sig, where="any cell != bg")
+      KeepColumns(sig, cols)
+    }
+  }
+
+  // 3) Build stripes with reading-order metadata
+  stripes = []
+  for c in comps {
+    sig = Apply(TwoRowSignature, c)
+    meta = { "row": MinRow(c), "col": MinCol(c) }
+    Append(stripes, { "sig": sig, "meta": meta })
+  }
+
+  // 4) Sort by top-to-bottom, then left-to-right; compute target width
+  ordered = Sort(stripes, by=["meta.row ASC", "meta.col ASC"])
+  W = Max(Width(item.sig) for item in ordered)
+
+  CenterPad = Lambda("center_pad") { s, W ->
+    Pad(s,
+        left=floor((W-Width(s))/2),
+        right=ceil((W-Width(s))/2),
+        fill=bg)
+  }
+
+  // 5) Stack the centered stripes vertically
+  H = Sum(Height(item.sig) for item in ordered)
+  canvas = NewGrid(height=H, width=W, fill=bg)
+  y = 0
+  for item in ordered {
+    s = CenterPad(item.sig, W)
+    Paste(canvas, s, at=[y, 0], mode="overwrite")
+    y = y + Height(s)
+  }
+
+  Output(canvas)
+}
+[MESSAGE] program {
+  grid = Input()
+
+  // 1) Remove the framing bars (solid top row and solid left column)
+  top_bar  = Find("row", where="row_index==0 AND is_solid_color")
+  left_bar = Find("column", where="col_index==0 AND is_solid_color")
+  interior = Crop(grid, exclude=[top_bar, left_bar])
+  bg = ModeColor(interior)
+
+  // 2) Collect non-background connected components inside the interior
+  comps = Find("connected components", within=interior, where="color != bg")
+
+  // Helper: take the first two rows of the component’s full bounding box (no trimming)
+  TwoRowsFullBBox = Lambda("two_rows_full_bbox") {
+    c -> {
+      box   = BoundingBox(c)
+      block = Extract(interior, box)
+      sig   = If(Height(block) >= 2, TopRows(block, 2), Stack(block, block))
+      Return(sig)
+    }
+  }
+
+  // 3) Build signatures and reading-order metadata
+  stripes = []
+  for c in comps {
+    sig  = Apply(TwoRowsFullBBox, c)
+    bbox = BoundingBox(c)
+    meta = { "top": bbox.top, "left": bbox.left, "width": bbox.width }
+    Append(stripes, { "sig": sig, "meta": meta })
+  }
+
+  // 4) Sort by top-to-bottom, then left-to-right
+  ordered = Sort(stripes, by=["meta.top ASC", "meta.left ASC"])
+
+  // 5) Determine target width = maximum component bounding-box width
+  W = Max(item.meta.width for item in ordered)
+
+  // Center-pad each signature horizontally to width W with background color
+  CenterPad = Lambda("center_pad_to_W") {
+    s, W -> Pad(s,
+                left=floor((W-Width(s))/2),
+                right=ceil((W-Width(s))/2),
+                fill=bg)
+  }
+  padded = [ CenterPad(item.sig, W) for item in ordered ]
+
+  // 6) Stack the padded two-row signatures vertically in order
+  H = Sum(Height(s) for s in padded)
+  canvas = NewGrid(height=H, width=W, fill=bg)
+  y = 0
+  for s in padded {
+    Paste(canvas, s, at=[y, 0], mode="overwrite")
+    y = y + Height(s)
+  }
+
+  Output(canvas)
+}
+
+============================================================
+Phase: train_2_predict
+============================================================
+program {
+  grid = Input()
+
+  // 1) Remove the framing bars (solid top row and solid left column)
+  top_bar  = Find("row", where="row_index==0 AND is_solid_color")
+  left_bar = Find("column", where="col_index==0 AND is_solid_color")
+  interior = Crop(grid, exclude=[top_bar, left_bar])
+  bg = ModeColor(interior)
+
+  // 2) Collect non-background connected components inside the interior
+  comps = Find("connected components", within=interior, where="color != bg")
+
+  // Helper: take the first two rows of the component’s full bounding box (no trimming)
+  TwoRowsFullBBox = Lambda("two_rows_full_bbox") {
+    c -> {
+      box   = BoundingBox(c)
+      block = Extract(interior, box)
+      sig   = If(Height(block) >= 2, TopRows(block, 2), Stack(block, block))
+      Return(sig)
+    }
+  }
+
+  // 3) Build signatures and reading-order metadata
+  stripes = []
+  for c in comps {
+    sig  = Apply(TwoRowsFullBBox, c)
+    bbox = BoundingBox(c)
+    meta = { "top": bbox.top, "left": bbox.left, "width": bbox.width }
+    Append(stripes, { "sig": sig, "meta": meta })
+  }
+
+  // 4) Sort by top-to-bottom, then left-to-right
+  ordered = Sort(stripes, by=["meta.top ASC", "meta.left ASC"])
+
+  // 5) Determine target width = maximum component bounding-box width
+  W = Max(item.meta.width for item in ordered)
+
+  // Center-pad each signature horizontally to width W with background color
+  CenterPad = Lambda("center_pad_to_W") {
+    s, W -> Pad(s,
+                left=floor((W-Width(s))/2),
+                right=ceil((W-Width(s))/2),
+                fill=bg)
+  }
+  padded = [ CenterPad(item.sig, W) for item in ordered ]
+
+  // 6) Stack the padded two-row signatures vertically in order
+  H = Sum(Height(s) for s in padded)
+  canvas = NewGrid(height=H, width=W, fill=bg)
+  y = 0
+  for s in padded {
+    Paste(canvas, s, at=[y, 0], mode="overwrite")
+    y = y + Height(s)
+  }
+
+  Output(canvas)
+}
+[MESSAGE] program {
+  grid = Input()
+
+  // Background and interior (remove the framing bars)
+  bg = ModeColor(grid)
+  bg_comps = Find("connected components", where="color == bg")
+  interior_bg = Max(Filter(bg_comps, where="NOT TouchesBorder(component)"), by="area")
+  interior = Extract(grid, BoundingBox(interior_bg))
+
+  // Objects = connected components of non-background, ignoring color differences
+  objects = Find("connected components", within=interior, where="color != bg", connectivity="4", merge_colors="true")
+
+  // Reading order: top-to-bottom, then left-to-right
+  ordered = Sort(objects, by=["MinRow(component) ASC", "MinCol(component) ASC"])
+
+  // Convert each object to a 2-row horizontal signature taken from its (possibly rotated) full bbox
+  ToStrip = Lambda("component_to_2row_signature") {
+    o -> {
+      box = BoundingBox(o)
+      block = Extract(interior, box)  // retain all colors within the bbox, not just the object's color
+      hblock = If(Height(block) > Width(block), Rotate(block, 90), block)
+      sig = TopRows(hblock, min(2, Height(hblock)))
+      sig = If(Height(sig) == 1, Stack(sig, sig), sig)
+      // trim away columns that are entirely background in these two rows
+      sig = TrimColumns(sig, where="all cells == bg", sides="both")
+      Return(sig)
+    }
+  }
+
+  strips = [ ToStrip(o) for o in ordered ]
+
+  // Target width = max strip width; center-pad others with background
+  W = Max(Width(s) for s in strips)
+  CenterPad = Lambda("center_pad") { s ->
+    Pad(s,
+        left=floor((W - Width(s))/2),
+        right=ceil((W - Width(s))/2),
+        fill=bg)
+  }
+  padded = [ CenterPad(s) for s in strips ]
+
+  // Stack vertically
+  H = Sum(Height(s) for s in padded)
+  canvas = NewGrid(height=H, width=W, fill=bg)
+  y = 0
+  for s in padded {
+    Paste(canvas, s, at=[y, 0], mode="overwrite")
+    y = y + Height(s)
+  }
+
+  Output(canvas)
+}
+
+============================================================
+Phase: train_2_verify
+============================================================
+program {
+  grid = Input()
+
+  // Background and interior (remove the framing bars)
+  bg = ModeColor(grid)
+  bg_comps = Find("connected components", where="color == bg")
+  interior_bg = Max(Filter(bg_comps, where="NOT TouchesBorder(component)"), by="area")
+  interior = Extract(grid, BoundingBox(interior_bg))
+
+  // Objects = connected components of non-background, ignoring color differences
+  objects = Find("connected components", within=interior, where="color != bg", connectivity="4", merge_colors="true")
+
+  // Reading order: top-to-bottom, then left-to-right
+  ordered = Sort(objects, by=["MinRow(component) ASC", "MinCol(component) ASC"])
+
+  // Convert each object to a 2-row horizontal signature taken from its (possibly rotated) full bbox
+  ToStrip = Lambda("component_to_2row_signature") {
+    o -> {
+      box = BoundingBox(o)
+      block = Extract(interior, box)  // retain all colors within the bbox, not just the object's color
+      hblock = If(Height(block) > Width(block), Rotate(block, 90), block)
+      sig = TopRows(hblock, min(2, Height(hblock)))
+      sig = If(Height(sig) == 1, Stack(sig, sig), sig)
+      // trim away columns that are entirely background in these two rows
+      sig = TrimColumns(sig, where="all cells == bg", sides="both")
+      Return(sig)
+    }
+  }
+
+  strips = [ ToStrip(o) for o in ordered ]
+
+  // Target width = max strip width; center-pad others with background
+  W = Max(Width(s) for s in strips)
+  CenterPad = Lambda("center_pad") { s ->
+    Pad(s,
+        left=floor((W - Width(s))/2),
+        right=ceil((W - Width(s))/2),
+        fill=bg)
+  }
+  padded = [ CenterPad(s) for s in strips ]
+
+  // Stack vertically
+  H = Sum(Height(s) for s in padded)
+  canvas = NewGrid(height=H, width=W, fill=bg)
+  y = 0
+  for s in padded {
+    Paste(canvas, s, at=[y, 0], mode="overwrite")
+    y = y + Height(s)
+  }
+
+  Output(canvas)
+}
+[MESSAGE] [[3, 3, 3, 3, 3, 3],
+ [3, 3, 3, 3, 3, 3],
+ [8, 8, 7, 7, 8, 8],
+ [8, 8, 7, 7, 8, 8],
+ [8, 8, 3, 3, 8, 8],
+ [8, 8, 3, 3, 8, 8],
+ [8, 4, 4, 4, 4, 8],
+ [8, 4, 4, 4, 4, 8],
+ [8, 3, 3, 3, 3, 8],
+ [8, 3, 3, 3, 3, 8],
+ [6, 6, 6, 6, 6, 6],
+ [6, 6, 6, 6, 6, 6],
+ [8, 8, 9, 9, 8, 8],
+ [8, 8, 9, 9, 8, 8]]
+
+============================================================
+Phase: train_3_predict
+============================================================
+[[3, 3, 3, 3, 3, 3],
+ [3, 3, 3, 3, 3, 3],
+ [8, 8, 7, 7, 8, 8],
+ [8, 8, 7, 7, 8, 8],
+ [8, 8, 3, 3, 8, 8],
+ [8, 8, 3, 3, 8, 8],
+ [8, 4, 4, 4, 4, 8],
+ [8, 4, 4, 4, 4, 8],
+ [8, 3, 3, 3, 3, 8],
+ [8, 3, 3, 3, 3, 8],
+ [6, 6, 6, 6, 6, 6],
+ [6, 6, 6, 6, 6, 6],
+ [8, 8, 9, 9, 8, 8],
+ [8, 8, 9, 9, 8, 8]]
+[MESSAGE] program {
+  grid = Input()
+  bg = ModeColor(grid)
+
+  // Strip 1-thick uniform non-background borders on any side
+  top_is_frame    = AllEqual(Row(grid, 0))    AND Color(Row(grid, 0))    != bg
+  bottom_is_frame = AllEqual(Row(grid, -1))   AND Color(Row(grid, -1))   != bg
+  left_is_frame   = AllEqual(Column(grid, 0)) AND Color(Column(grid, 0)) != bg
+  right_is_frame  = AllEqual(Column(grid, -1))AND Color(Column(grid, -1))!= bg
+
+  interior = Crop(grid,
+                  top=top_is_frame ? 1 : 0,
+                  bottom=bottom_is_frame ? 1 : 0,
+                  left=left_is_frame ? 1 : 0,
+                  right=right_is_frame ? 1 : 0)
+
+  // Reading direction determined by which vertical frame exists
+  direction = (right_is_frame AND NOT left_is_frame) ? "rtl" : "ltr"
+
+  // Treat every non-background cell as the same label to merge multicolored clusters
+  objects = Find("connected components",
+                 within=interior,
+                 where="color != bg",
+                 connectivity="4",
+                 merge_colors="true")
+
+  // Convert each object to a 2-row horizontal signature
+  ToStrip = Lambda("object -> centered two-row signature") {
+    o -> {
+      box   = BoundingBox(o)
+      block = Extract(interior, box)           // preserve all colors inside bbox
+      hblk  = (Height(block) > Width(block)) ? Rotate(block, 90) : block
+      sig   = (Height(hblk) >= 2) ? TopRows(hblk, 2) : Stack(hblk, hblk)
+      sig   = TrimColumns(sig, where="both rows are bg", sides="both")
+      return { "sig": sig, "top": box.top, "left": box.left }
+    }
+  }
+
+  items = Map(objects, ToStrip)
+  W = Max(Width(it.sig) for it in items)
+
+  CenterPad = Lambda("center to W with bg") {
+    s -> Pad(s,
+             left=floor((W-Width(s))/2),
+             right=ceil((W-Width(s))/2),
+             fill=bg)
+  }
+
+  ordered = (direction == "ltr")
+            ? Sort(items, by=["top ASC", "left ASC"])
+            : Sort(items, by=["top ASC", "left DESC"])
+
+  strips = [ CenterPad(it.sig) for it in ordered ]
+  H = Sum(Height(s) for s in strips)
+
+  canvas = NewGrid(height=H, width=W, fill=bg)
+  y = 0
+  for s in strips {
+    Paste(canvas, s, at=[y, 0], mode="overwrite")
+    y = y + Height(s)
+  }
+
+  Output(canvas)
+}
+
+============================================================
+Phase: train_3_verify
+============================================================
+program {
+  grid = Input()
+  bg = ModeColor(grid)
+
+  // Strip 1-thick uniform non-background borders on any side
+  top_is_frame    = AllEqual(Row(grid, 0))    AND Color(Row(grid, 0))    != bg
+  bottom_is_frame = AllEqual(Row(grid, -1))   AND Color(Row(grid, -1))   != bg
+  left_is_frame   = AllEqual(Column(grid, 0)) AND Color(Column(grid, 0)) != bg
+  right_is_frame  = AllEqual(Column(grid, -1))AND Color(Column(grid, -1))!= bg
+
+  interior = Crop(grid,
+                  top=top_is_frame ? 1 : 0,
+                  bottom=bottom_is_frame ? 1 : 0,
+                  left=left_is_frame ? 1 : 0,
+                  right=right_is_frame ? 1 : 0)
+
+  // Reading direction determined by which vertical frame exists
+  direction = (right_is_frame AND NOT left_is_frame) ? "rtl" : "ltr"
+
+  // Treat every non-background cell as the same label to merge multicolored clusters
+  objects = Find("connected components",
+                 within=interior,
+                 where="color != bg",
+                 connectivity="4",
+                 merge_colors="true")
+
+  // Convert each object to a 2-row horizontal signature
+  ToStrip = Lambda("object -> centered two-row signature") {
+    o -> {
+      box   = BoundingBox(o)
+      block = Extract(interior, box)           // preserve all colors inside bbox
+      hblk  = (Height(block) > Width(block)) ? Rotate(block, 90) : block
+      sig   = (Height(hblk) >= 2) ? TopRows(hblk, 2) : Stack(hblk, hblk)
+      sig   = TrimColumns(sig, where="both rows are bg", sides="both")
+      return { "sig": sig, "top": box.top, "left": box.left }
+    }
+  }
+
+  items = Map(objects, ToStrip)
+  W = Max(Width(it.sig) for it in items)
+
+  CenterPad = Lambda("center to W with bg") {
+    s -> Pad(s,
+             left=floor((W-Width(s))/2),
+             right=ceil((W-Width(s))/2),
+             fill=bg)
+  }
+
+  ordered = (direction == "ltr")
+            ? Sort(items, by=["top ASC", "left ASC"])
+            : Sort(items, by=["top ASC", "left DESC"])
+
+  strips = [ CenterPad(it.sig) for it in ordered ]
+  H = Sum(Height(s) for s in strips)
+
+  canvas = NewGrid(height=H, width=W, fill=bg)
+  y = 0
+  for s in strips {
+    Paste(canvas, s, at=[y, 0], mode="overwrite")
+    y = y + Height(s)
+  }
+
+  Output(canvas)
+}
+[MESSAGE] program {
+  grid = Input()
+  bg = ModeColor(grid)
+
+  // Detect one-thick border frames even if a single corner cell differs (overlap of bars)
+  IsFrame = Lambda("is_border_frame") { line ->
+    col = MajorityColor(line)
+    Return(col != bg AND Count(color==col, in=line) >= Len(line) - 1)
+  }
+  top_is_frame    = IsFrame(Row(grid, 0))
+  bottom_is_frame = IsFrame(Row(grid, -1))
+  left_is_frame   = IsFrame(Column(grid, 0))
+  right_is_frame  = IsFrame(Column(grid, -1))
+
+  // Remove detected frames (1-thick) to expose interior workspace
+  interior = Crop(grid,
+                  top    = top_is_frame    ? 1 : 0,
+                  bottom = bottom_is_frame ? 1 : 0,
+                  left   = left_is_frame   ? 1 : 0,
+                  right  = right_is_frame  ? 1 : 0)
+
+  // Determine horizontal reading direction from vertical frame placement
+  direction = (right_is_frame AND NOT left_is_frame) ? "rtl" : "ltr"
+
+  // Merge multicolored pieces into single objects; connectivity-4
+  objects = Find("connected components", within=interior, where="color != bg", merge_colors="true", connectivity="4")
+
+  // Convert each object to a 2-row horizontal signature preserving internal colors
+  Horizontalize = Lambda("rotate_to_horizontal") { block ->
+    (Height(block) > Width(block)) ? Rotate(block, 90) : block
+  }
+  TwoRowSignature = Lambda("component_to_2row_signature") { obj ->
+    box   = BoundingBox(obj)
+    block = Extract(interior, box)                 // keep all colors inside bbox
+    hblk  = Horizontalize(block)
+    sig   = (Height(hblk) >= 2) ? TopRows(hblk, 2) : Stack(hblk, hblk)
+    sig   = TrimColumns(sig, where="both rows == bg", sides="both")
+    Return(sig)
+  }
+
+  items = []
+  for obj in objects {
+    sig  = TwoRowSignature(obj)
+    meta = { "top": MinRow(obj), "left": MinCol(obj) }
+    Append(items, { "sig": sig, "meta": meta })
+  }
+
+  // Sort by scanning order: top-to-bottom; within each band, left-to-right or right-to-left
+  ordered = (direction == "rtl")
+            ? Sort(items, by=["meta.top ASC", "meta.left DESC"])
+            : Sort(items, by=["meta.top ASC", "meta.left ASC"])
+
+  // Center-pad each signature to the max width and stack vertically
+  W = Max(Width(it.sig) for it in ordered)
+  CenterPad = Lambda("center_pad_to_W") { s ->
+    Pad(s,
+        left  = floor((W - Width(s)) / 2),
+        right = ceil((W - Width(s)) / 2),
+        fill  = bg)
+  }
+  strips = [ CenterPad(it.sig) for it in ordered ]
+  H = Sum(Height(s) for s in strips)
+
+  canvas = NewGrid(height=H, width=W, fill=bg)
+  y = 0
+  for s in strips {
+    Paste(canvas, s, at=[y, 0], mode="overwrite")
+    y = y + Height(s)
+  }
+
+  Output(canvas)
+}
+
+============================================================
+Phase: test_refine
+============================================================
+program {
+  grid = Input()
+  bg = ModeColor(grid)
+
+  // Detect one-thick border frames even if a single corner cell differs (overlap of bars)
+  IsFrame = Lambda("is_border_frame") { line ->
+    col = MajorityColor(line)
+    Return(col != bg AND Count(color==col, in=line) >= Len(line) - 1)
+  }
+  top_is_frame    = IsFrame(Row(grid, 0))
+  bottom_is_frame = IsFrame(Row(grid, -1))
+  left_is_frame   = IsFrame(Column(grid, 0))
+  right_is_frame  = IsFrame(Column(grid, -1))
+
+  // Remove detected frames (1-thick) to expose interior workspace
+  interior = Crop(grid,
+                  top    = top_is_frame    ? 1 : 0,
+                  bottom = bottom_is_frame ? 1 : 0,
+                  left   = left_is_frame   ? 1 : 0,
+                  right  = right_is_frame  ? 1 : 0)
+
+  // Determine horizontal reading direction from vertical frame placement
+  direction = (right_is_frame AND NOT left_is_frame) ? "rtl" : "ltr"
+
+  // Merge multicolored pieces into single objects; connectivity-4
+  objects = Find("connected components", within=interior, where="color != bg", merge_colors="true", connectivity="4")
+
+  // Convert each object to a 2-row horizontal signature preserving internal colors
+  Horizontalize = Lambda("rotate_to_horizontal") { block ->
+    (Height(block) > Width(block)) ? Rotate(block, 90) : block
+  }
+  TwoRowSignature = Lambda("component_to_2row_signature") { obj ->
+    box   = BoundingBox(obj)
+    block = Extract(interior, box)                 // keep all colors inside bbox
+    hblk  = Horizontalize(block)
+    sig   = (Height(hblk) >= 2) ? TopRows(hblk, 2) : Stack(hblk, hblk)
+    sig   = TrimColumns(sig, where="both rows == bg", sides="both")
+    Return(sig)
+  }
+
+  items = []
+  for obj in objects {
+    sig  = TwoRowSignature(obj)
+    meta = { "top": MinRow(obj), "left": MinCol(obj) }
+    Append(items, { "sig": sig, "meta": meta })
+  }
+
+  // Sort by scanning order: top-to-bottom; within each band, left-to-right or right-to-left
+  ordered = (direction == "rtl")
+            ? Sort(items, by=["meta.top ASC", "meta.left DESC"])
+            : Sort(items, by=["meta.top ASC", "meta.left ASC"])
+
+  // Center-pad each signature to the max width and stack vertically
+  W = Max(Width(it.sig) for it in ordered)
+  CenterPad = Lambda("center_pad_to_W") { s ->
+    Pad(s,
+        left  = floor((W - Width(s)) / 2),
+        right = ceil((W - Width(s)) / 2),
+        fill  = bg)
+  }
+  strips = [ CenterPad(it.sig) for it in ordered ]
+  H = Sum(Height(s) for s in strips)
+
+  canvas = NewGrid(height=H, width=W, fill=bg)
+  y = 0
+  for s in strips {
+    Paste(canvas, s, at=[y, 0], mode="overwrite")
+    y = y + Height(s)
+  }
+
+  Output(canvas)
+}
+[MESSAGE] [[8, 8, 8, 4, 4, 8, 8, 8],
+ [8, 8, 8, 4, 4, 8, 8, 8],
+ [7, 7, 3, 3, 3, 3, 3, 3],
+ [3, 3, 7, 3, 3, 3, 3, 3],
+ [8, 8, 3, 3, 6, 6, 8, 8],
+ [8, 8, 3, 3, 3, 3, 8, 8],
+ [8, 6, 6, 6, 6, 6, 6, 8],
+ [8, 6, 6, 6, 6, 6, 6, 8],
+ [8, 8, 8, 5, 5, 8, 8, 8],
+ [8, 8, 8, 5, 5, 8, 8, 8],
+ [8, 8, 7, 9, 7, 7, 8, 8],
+ [8, 8, 7, 7, 9, 7, 8, 8],
+ [8, 8, 8, 9, 9, 8, 8, 8],
+ [8, 8, 8, 9, 9, 8, 8, 8],
+ [8, 8, 9, 9, 9, 9, 8, 8],
+ [8, 8, 9, 9, 9, 9, 8, 8],
+ [8, 8, 8, 4, 4, 8, 8, 8],
+ [8, 8, 8, 4, 4, 8, 8, 8]]
+
+============================================================
+Phase: test_predict
+============================================================
+[[8, 8, 8, 4, 4, 8, 8, 8],
+ [8, 8, 8, 4, 4, 8, 8, 8],
+ [7, 7, 3, 3, 3, 3, 3, 3],
+ [3, 3, 7, 3, 3, 3, 3, 3],
+ [8, 8, 3, 3, 6, 6, 8, 8],
+ [8, 8, 3, 3, 3, 3, 8, 8],
+ [8, 6, 6, 6, 6, 6, 6, 8],
+ [8, 6, 6, 6, 6, 6, 6, 8],
+ [8, 8, 8, 5, 5, 8, 8, 8],
+ [8, 8, 8, 5, 5, 8, 8, 8],
+ [8, 8, 7, 9, 7, 7, 8, 8],
+ [8, 8, 7, 7, 9, 7, 8, 8],
+ [8, 8, 8, 9, 9, 8, 8, 8],
+ [8, 8, 8, 9, 9, 8, 8, 8],
+ [8, 8, 9, 9, 9, 9, 8, 8],
+ [8, 8, 9, 9, 9, 9, 8, 8],
+ [8, 8, 8, 4, 4, 8, 8, 8],
+ [8, 8, 8, 4, 4, 8, 8, 8]]

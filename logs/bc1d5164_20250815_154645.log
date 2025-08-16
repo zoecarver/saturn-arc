@@ -86,3 +86,417 @@ Phase: train_1_predict
 [[2, 2, 2],
  [0, 2, 2],
  [2, 0, 2]]
+[MESSAGE] program {
+  grid = Input()
+
+  nz = Find("cells", where="color != 0", within=grid)
+  fg = If(Count(UniqueColors(nz))==1, Then=First(UniqueColors(nz)), Else=MostFrequentColor(nz))
+
+  box = BoundingBox(nz)
+
+  row_bands = {
+    top:    Rows(box.top .. box.top),
+    mid:    Rows(box.top+1 .. box.bottom-1),
+    bot:    Rows(box.bottom .. box.bottom)
+  }
+  col_bands = {
+    left:   Cols(box.left .. box.left),
+    mid:    Cols(box.left+1 .. box.right-1),
+    right:  Cols(box.right .. box.right)
+  }
+
+  out = NewGrid(height=3, width=3, fill=0)
+
+  idx = {
+    rows: {"top":1, "mid":2, "bot":3},
+    cols: {"left":1, "mid":2, "right":3}
+  }
+
+  Lambda("presence_to_3x3",
+    "For each r in ['top','mid','bot'] and c in ['left','mid','right']:
+       region = Select(grid, rows=row_bands[r], cols=col_bands[c])
+       if Any(region, where='color != 0'):
+           out[ idx.rows[r], idx.cols[c] ] = fg"
+  )
+
+  Apply("presence_to_3x3")
+
+  Output(out)
+}
+
+============================================================
+Phase: train_1_verify
+============================================================
+program {
+  grid = Input()
+
+  nz = Find("cells", where="color != 0", within=grid)
+  fg = If(Count(UniqueColors(nz))==1, Then=First(UniqueColors(nz)), Else=MostFrequentColor(nz))
+
+  box = BoundingBox(nz)
+
+  row_bands = {
+    top:    Rows(box.top .. box.top),
+    mid:    Rows(box.top+1 .. box.bottom-1),
+    bot:    Rows(box.bottom .. box.bottom)
+  }
+  col_bands = {
+    left:   Cols(box.left .. box.left),
+    mid:    Cols(box.left+1 .. box.right-1),
+    right:  Cols(box.right .. box.right)
+  }
+
+  out = NewGrid(height=3, width=3, fill=0)
+
+  idx = {
+    rows: {"top":1, "mid":2, "bot":3},
+    cols: {"left":1, "mid":2, "right":3}
+  }
+
+  Lambda("presence_to_3x3",
+    "For each r in ['top','mid','bot'] and c in ['left','mid','right']:
+       region = Select(grid, rows=row_bands[r], cols=col_bands[c])
+       if Any(region, where='color != 0'):
+           out[ idx.rows[r], idx.cols[c] ] = fg"
+  )
+
+  Apply("presence_to_3x3")
+
+  Output(out)
+}
+[MESSAGE] [[4, 4, 0],
+ [0, 4, 4],
+ [4, 0, 4]]
+
+============================================================
+Phase: train_2_predict
+============================================================
+[[4, 4, 0],
+ [0, 4, 4],
+ [4, 0, 4]]
+[MESSAGE] program {
+  grid = Input()
+
+  nz = Find("cells", where="color != 0", within=grid)
+  fg = If(Count(UniqueColors(nz))==1, Then=First(UniqueColors(nz)), Else=MostFrequentColor(nz))
+
+  box = BoundingBox(nz)
+
+  row_bands = {
+    top: Rows(box.top .. box.top),
+    mid: Rows(box.top+1 .. box.bottom-1),
+    bot: Rows(box.bottom .. box.bottom)
+  }
+  col_bands = {
+    left:  Cols(box.left .. box.left),
+    mid:   Cols(box.left+1 .. box.right-1),
+    right: Cols(box.right .. box.right)
+  }
+
+  out = NewGrid(height=3, width=3, fill=0)
+
+  idx = {
+    rows: {"top":1, "mid":2, "bot":3},
+    cols: {"left":1, "mid":2, "right":3}
+  }
+
+  Lambda("presence_to_3x3",
+    "For each r in ['top','mid','bot'] and c in ['left','mid','right']:
+       region = Select(grid, rows=row_bands[r], cols=col_bands[c])
+       if Any(region, where='color != 0'):
+           out[ idx.rows[r], idx.cols[c] ] = fg"
+  )
+
+  Apply("presence_to_3x3")
+
+  Output(out)
+}
+
+============================================================
+Phase: train_2_verify
+============================================================
+program {
+  grid = Input()
+
+  nz = Find("cells", where="color != 0", within=grid)
+  fg = If(Count(UniqueColors(nz))==1, Then=First(UniqueColors(nz)), Else=MostFrequentColor(nz))
+
+  box = BoundingBox(nz)
+
+  row_bands = {
+    top: Rows(box.top .. box.top),
+    mid: Rows(box.top+1 .. box.bottom-1),
+    bot: Rows(box.bottom .. box.bottom)
+  }
+  col_bands = {
+    left:  Cols(box.left .. box.left),
+    mid:   Cols(box.left+1 .. box.right-1),
+    right: Cols(box.right .. box.right)
+  }
+
+  out = NewGrid(height=3, width=3, fill=0)
+
+  idx = {
+    rows: {"top":1, "mid":2, "bot":3},
+    cols: {"left":1, "mid":2, "right":3}
+  }
+
+  Lambda("presence_to_3x3",
+    "For each r in ['top','mid','bot'] and c in ['left','mid','right']:
+       region = Select(grid, rows=row_bands[r], cols=col_bands[c])
+       if Any(region, where='color != 0'):
+           out[ idx.rows[r], idx.cols[c] ] = fg"
+  )
+
+  Apply("presence_to_3x3")
+
+  Output(out)
+}
+[MESSAGE] [[0, 3, 0],
+ [3, 0, 3],
+ [0, 0, 3]]
+
+============================================================
+Phase: train_3_predict
+============================================================
+[[0, 3, 0],
+ [3, 0, 3],
+ [0, 0, 3]]
+[MESSAGE] program {
+  grid = Input()
+
+  nz = Find("cells", where="color != 0", within=grid)
+  fg = If(Count(UniqueColors(nz))==1, Then=First(UniqueColors(nz)), Else=MostFrequentColor(nz))
+
+  box = BoundingBox(nz)
+
+  row_segments = {
+    "top": Rows(box.top .. box.top),
+    "mid": Rows(box.top+1 .. box.bottom-1),
+    "bot": Rows(box.bottom .. box.bottom)
+  }
+  col_segments = {
+    "left": Cols(box.left .. box.left),
+    "mid": Cols(box.left+1 .. box.right-1),
+    "right": Cols(box.right .. box.right)
+  }
+
+  out = NewGrid(height=3, width=3, fill=0)
+
+  index = { rows: {"top":1, "mid":2, "bot":3}, cols: {"left":1, "mid":2, "right":3} }
+
+  Lambda("presence_to_out_cell",
+    "For each r in ['top','mid','bot'] and c in ['left','mid','right']:
+       region = Select(grid, rows=row_segments[r], cols=col_segments[c])
+       if Any(region, where='color != 0'):
+           out[ index.rows[r], index.cols[c] ] = fg"
+  )
+
+  Apply("presence_to_out_cell")
+
+  Output(out)
+}
+
+============================================================
+Phase: train_3_verify
+============================================================
+program {
+  grid = Input()
+
+  nz = Find("cells", where="color != 0", within=grid)
+  fg = If(Count(UniqueColors(nz))==1, Then=First(UniqueColors(nz)), Else=MostFrequentColor(nz))
+
+  box = BoundingBox(nz)
+
+  row_segments = {
+    "top": Rows(box.top .. box.top),
+    "mid": Rows(box.top+1 .. box.bottom-1),
+    "bot": Rows(box.bottom .. box.bottom)
+  }
+  col_segments = {
+    "left": Cols(box.left .. box.left),
+    "mid": Cols(box.left+1 .. box.right-1),
+    "right": Cols(box.right .. box.right)
+  }
+
+  out = NewGrid(height=3, width=3, fill=0)
+
+  index = { rows: {"top":1, "mid":2, "bot":3}, cols: {"left":1, "mid":2, "right":3} }
+
+  Lambda("presence_to_out_cell",
+    "For each r in ['top','mid','bot'] and c in ['left','mid','right']:
+       region = Select(grid, rows=row_segments[r], cols=col_segments[c])
+       if Any(region, where='color != 0'):
+           out[ index.rows[r], index.cols[c] ] = fg"
+  )
+
+  Apply("presence_to_out_cell")
+
+  Output(out)
+}
+[MESSAGE] [[0, 8, 0],
+ [8, 8, 8],
+ [0, 8, 0]]
+
+============================================================
+Phase: train_4_predict
+============================================================
+[[0, 8, 0],
+ [8, 8, 8],
+ [0, 8, 0]]
+[MESSAGE] program {
+  grid = Input()
+
+  nz = Find("cells", where="color != 0", within=grid)
+  fg = If(Count(UniqueColors(nz))==1, Then=First(UniqueColors(nz)), Else=MostFrequentColor(nz))
+
+  box = BoundingBox(nz)
+
+  row_bands = {
+    "top": Rows(box.top .. box.top),
+    "mid": Rows(box.top+1 .. box.bottom-1),
+    "bot": Rows(box.bottom .. box.bottom)
+  }
+  col_bands = {
+    "left":  Cols(box.left .. box.left),
+    "mid":   Cols(box.left+1 .. box.right-1),
+    "right": Cols(box.right .. box.right)
+  }
+
+  out = NewGrid(height=3, width=3, fill=0)
+
+  idx = { rows: {"top":1, "mid":2, "bot":3}, cols: {"left":1, "mid":2, "right":3} }
+
+  Lambda("presence_to_3x3",
+    "For each r in ['top','mid','bot'] and c in ['left','mid','right']:
+       region = Select(grid, rows=row_bands[r], cols=col_bands[c])
+       if Any(region, where='color != 0'):
+           out[ idx.rows[r], idx.cols[c] ] = fg"
+  )
+
+  Apply("presence_to_3x3")
+
+  Output(out)
+}
+
+============================================================
+Phase: train_4_verify
+============================================================
+program {
+  grid = Input()
+
+  nz = Find("cells", where="color != 0", within=grid)
+  fg = If(Count(UniqueColors(nz))==1, Then=First(UniqueColors(nz)), Else=MostFrequentColor(nz))
+
+  box = BoundingBox(nz)
+
+  row_bands = {
+    "top": Rows(box.top .. box.top),
+    "mid": Rows(box.top+1 .. box.bottom-1),
+    "bot": Rows(box.bottom .. box.bottom)
+  }
+  col_bands = {
+    "left":  Cols(box.left .. box.left),
+    "mid":   Cols(box.left+1 .. box.right-1),
+    "right": Cols(box.right .. box.right)
+  }
+
+  out = NewGrid(height=3, width=3, fill=0)
+
+  idx = { rows: {"top":1, "mid":2, "bot":3}, cols: {"left":1, "mid":2, "right":3} }
+
+  Lambda("presence_to_3x3",
+    "For each r in ['top','mid','bot'] and c in ['left','mid','right']:
+       region = Select(grid, rows=row_bands[r], cols=col_bands[c])
+       if Any(region, where='color != 0'):
+           out[ idx.rows[r], idx.cols[c] ] = fg"
+  )
+
+  Apply("presence_to_3x3")
+
+  Output(out)
+}
+[MESSAGE] program {
+  grid = Input()
+
+  nz = Find("cells", where="color != 0", within=grid)
+  fg = If(Count(UniqueColors(nz)) == 1, Then=First(UniqueColors(nz)), Else=MostFrequentColor(nz))
+
+  box = BoundingBox(nz)
+
+  RowBand = Lambda("row_band", "name",
+    If(name == "top", Rows(box.top .. box.top),
+      If(name == "mid", Rows(box.top+1 .. box.bottom-1),
+        Rows(box.bottom .. box.bottom)))
+  )
+  ColBand = Lambda("col_band", "name",
+    If(name == "left", Cols(box.left .. box.left),
+      If(name == "mid", Cols(box.left+1 .. box.right-1),
+        Cols(box.right .. box.right)))
+  )
+
+  out = NewGrid(height=3, width=3, fill=0)
+
+  index = { rows: {"top":1, "mid":2, "bot":3}, cols: {"left":1, "mid":2, "right":3} }
+
+  Lambda("presence_to_out_cell",
+    "For each r in ['top','mid','bot']:
+       for each c in ['left','mid','right']:
+         region = Select(grid, rows=RowBand(r), cols=ColBand(c))
+         if Any(region, where='color != 0'):
+            out[ index.rows[r], index.cols[c] ] = fg"
+  )
+
+  Apply("presence_to_out_cell")
+
+  Output(out)
+}
+
+============================================================
+Phase: test_refine
+============================================================
+program {
+  grid = Input()
+
+  nz = Find("cells", where="color != 0", within=grid)
+  fg = If(Count(UniqueColors(nz)) == 1, Then=First(UniqueColors(nz)), Else=MostFrequentColor(nz))
+
+  box = BoundingBox(nz)
+
+  RowBand = Lambda("row_band", "name",
+    If(name == "top", Rows(box.top .. box.top),
+      If(name == "mid", Rows(box.top+1 .. box.bottom-1),
+        Rows(box.bottom .. box.bottom)))
+  )
+  ColBand = Lambda("col_band", "name",
+    If(name == "left", Cols(box.left .. box.left),
+      If(name == "mid", Cols(box.left+1 .. box.right-1),
+        Cols(box.right .. box.right)))
+  )
+
+  out = NewGrid(height=3, width=3, fill=0)
+
+  index = { rows: {"top":1, "mid":2, "bot":3}, cols: {"left":1, "mid":2, "right":3} }
+
+  Lambda("presence_to_out_cell",
+    "For each r in ['top','mid','bot']:
+       for each c in ['left','mid','right']:
+         region = Select(grid, rows=RowBand(r), cols=ColBand(c))
+         if Any(region, where='color != 0'):
+            out[ index.rows[r], index.cols[c] ] = fg"
+  )
+
+  Apply("presence_to_out_cell")
+
+  Output(out)
+}
+[MESSAGE] [[0, 1, 1],
+ [1, 0, 0],
+ [0, 1, 1]]
+
+============================================================
+Phase: test_predict
+============================================================
+[[0, 1, 1],
+ [1, 0, 0],
+ [0, 1, 1]]

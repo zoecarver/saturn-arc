@@ -1,0 +1,640 @@
+[MESSAGE] program { Output(Input()) }
+
+============================================================
+Phase: train_0
+============================================================
+program { Output(Input()) }
+[MESSAGE] [[4, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0],
+ [0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0],
+ [0, 0, 0, 0, 0, 2, 5, 5, 5, 8, 0, 0],
+ [0, 0, 0, 0, 0, 2, 0, 0, 0, 8, 0, 0],
+ [0, 0, 0, 0, 0, 2, 0, 0, 0, 8, 0, 0],
+ [0, 0, 0, 0, 0, 2, 0, 0, 0, 8, 0, 0],
+ [0, 0, 9, 4, 4, 4, 7, 0, 2, 3, 3, 0],
+ [0, 0, 9, 0, 0, 0, 7, 0, 2, 0, 3, 0],
+ [0, 0, 9, 0, 0, 0, 7, 0, 2, 0, 3, 0],
+ [0, 6, 5, 5, 0, 1, 7, 7, 7, 7, 4, 0],
+ [0, 6, 0, 5, 0, 1, 0, 0, 0, 0, 4, 0],
+ [0, 6, 0, 5, 0, 1, 0, 0, 0, 0, 4, 0]]
+
+============================================================
+Phase: train_1_predict
+============================================================
+[[4, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0],
+ [0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0],
+ [0, 0, 0, 0, 0, 2, 5, 5, 5, 8, 0, 0],
+ [0, 0, 0, 0, 0, 2, 0, 0, 0, 8, 0, 0],
+ [0, 0, 0, 0, 0, 2, 0, 0, 0, 8, 0, 0],
+ [0, 0, 0, 0, 0, 2, 0, 0, 0, 8, 0, 0],
+ [0, 0, 9, 4, 4, 4, 7, 0, 2, 3, 3, 0],
+ [0, 0, 9, 0, 0, 0, 7, 0, 2, 0, 3, 0],
+ [0, 0, 9, 0, 0, 0, 7, 0, 2, 0, 3, 0],
+ [0, 6, 5, 5, 0, 1, 7, 7, 7, 7, 4, 0],
+ [0, 6, 0, 5, 0, 1, 0, 0, 0, 0, 4, 0],
+ [0, 6, 0, 5, 0, 1, 0, 0, 0, 0, 4, 0]]
+[MESSAGE] program {
+  grid = Input()
+
+  Lambda("u_frame", "
+    Find a single open rectangular frame near the top:
+      - two vertical monocolor bars (any colors), equal height h>=2,
+      - separated by at least one column (width w>=2 between their inner faces),
+      - connected by a single monocolor top bar that spans exactly from the inner face of the left bar to the inner face of the right bar,
+      - interior strictly zeros at and below the top bar until the bottoms of the vertical bars,
+      - choose the one whose top bar is highest in the grid.
+  ")
+
+  U = Find("u_frame", where="topmost")
+
+  Lambda("push_chain_down", "
+    Move a shape S downward by k rows using vertical push rays:
+      - For every cell p in S, define its vertical ray below p.
+      - Build the set of obstructing components intersected by these rays (excluding S).
+      - Attempt to move all obstructing components downward by the same k (recursively),
+        using the same ray-restricted rule.
+      - Components that cannot be moved fully because they would exit the grid are overwritten (clipped) by the movers (priority to movers).
+      - Components not intersected by any ray remain unchanged.
+  ")
+
+  Lambda("max_drop_with_push", "
+    Given shape S, compute the largest nonnegative integer k for which push_chain_down(S, k) is feasible:
+      - Feasible means every obstruction on every ray can either be pushed by k within the grid,
+        or, if the push would cross the bottom, it is allowed to be overwritten.
+  ")
+
+  if Exists(U) {
+    k = Evaluate("max_drop_with_push", on=U)
+    Apply("push_chain_down", to=U, args=[k])
+  }
+
+  Output(grid)
+}
+
+============================================================
+Phase: train_1_verify
+============================================================
+program {
+  grid = Input()
+
+  Lambda("u_frame", "
+    Find a single open rectangular frame near the top:
+      - two vertical monocolor bars (any colors), equal height h>=2,
+      - separated by at least one column (width w>=2 between their inner faces),
+      - connected by a single monocolor top bar that spans exactly from the inner face of the left bar to the inner face of the right bar,
+      - interior strictly zeros at and below the top bar until the bottoms of the vertical bars,
+      - choose the one whose top bar is highest in the grid.
+  ")
+
+  U = Find("u_frame", where="topmost")
+
+  Lambda("push_chain_down", "
+    Move a shape S downward by k rows using vertical push rays:
+      - For every cell p in S, define its vertical ray below p.
+      - Build the set of obstructing components intersected by these rays (excluding S).
+      - Attempt to move all obstructing components downward by the same k (recursively),
+        using the same ray-restricted rule.
+      - Components that cannot be moved fully because they would exit the grid are overwritten (clipped) by the movers (priority to movers).
+      - Components not intersected by any ray remain unchanged.
+  ")
+
+  Lambda("max_drop_with_push", "
+    Given shape S, compute the largest nonnegative integer k for which push_chain_down(S, k) is feasible:
+      - Feasible means every obstruction on every ray can either be pushed by k within the grid,
+        or, if the push would cross the bottom, it is allowed to be overwritten.
+  ")
+
+  if Exists(U) {
+    k = Evaluate("max_drop_with_push", on=U)
+    Apply("push_chain_down", to=U, args=[k])
+  }
+
+  Output(grid)
+}
+[MESSAGE] [[6, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0],
+ [0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0],
+ [0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0],
+ [0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0],
+ [0, 0, 0, 0, 0, 2, 0, 0, 0, 0, 0, 0],
+ [0, 0, 0, 0, 0, 2, 5, 5, 5, 8, 0, 0],
+ [0, 0, 9, 0, 0, 2, 0, 0, 0, 8, 0, 0],
+ [0, 0, 9, 0, 0, 2, 0, 0, 0, 8, 0, 0],
+ [0, 0, 9, 0, 0, 2, 7, 0, 2, 8, 0, 0],
+ [0, 6, 5, 5, 0, 1, 7, 0, 2, 3, 3, 0],
+ [0, 6, 0, 5, 0, 1, 7, 0, 2, 0, 3, 0],
+ [0, 6, 0, 5, 0, 1, 7, 7, 7, 7, 3, 0]]
+
+============================================================
+Phase: train_2_predict
+============================================================
+[[6, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0],
+ [0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0],
+ [0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0],
+ [0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0],
+ [0, 0, 0, 0, 0, 2, 0, 0, 0, 0, 0, 0],
+ [0, 0, 0, 0, 0, 2, 5, 5, 5, 8, 0, 0],
+ [0, 0, 9, 0, 0, 2, 0, 0, 0, 8, 0, 0],
+ [0, 0, 9, 0, 0, 2, 0, 0, 0, 8, 0, 0],
+ [0, 0, 9, 0, 0, 2, 7, 0, 2, 8, 0, 0],
+ [0, 6, 5, 5, 0, 1, 7, 0, 2, 3, 3, 0],
+ [0, 6, 0, 5, 0, 1, 7, 0, 2, 0, 3, 0],
+ [0, 6, 0, 5, 0, 1, 7, 7, 7, 7, 3, 0]]
+[MESSAGE] program {
+  grid = Input()
+  marker = GetColor(Cell(0,0))
+
+  // If the marker color does not appear elsewhere, do nothing
+  if Count(Find("cells", where=("color == marker" AND "not at (0,0)"))) == 0 {
+    Output(grid)
+    return
+  }
+
+  // Make the marker color transparent by erasing all of it except the top-left pixel
+  Paint(Find("cells", where=("color == marker" AND "not at (0,0)")), 0)
+
+  // Detect the highest open rectangular arch (inverted U):
+  // two vertical mono-color posts connected by a mono-color top bar,
+  // interior below the top bar is black (0) down to the bottoms of both posts.
+  Lambda("u_frame", "
+    Find connected triplets (left_post, top_bar, right_post) such that:
+      - left_post and right_post are vertical segments (height >= 2), single color each, parallel columns
+      - top_bar is a horizontal segment connecting the inner faces of the posts
+      - the region directly beneath the top_bar between the posts is all 0 down to the bottoms of both posts
+      - choose the one whose top_bar has the smallest row index (highest in the grid)
+  ")
+
+  U = Find("u_frame", where="topmost")
+
+  // Push model: move S downward with maximal drop, pushing any obstructing components along its vertical rays.
+  // Transparent rule: cells of the marker color are treated as empty (already erased).
+  Lambda("max_drop_with_push", "
+    For shape S:
+      - Consider vertical rays from every cell of S down to the bottom
+      - Obstacles are nonzero cells not in S (marker color already erased)
+      - Feasible drop by k means: every obstacle intersected by a ray can be moved down by k
+        using the same rule recursively; components that would exit the grid may be overwritten by movers
+      - Choose the largest k >= 0 that is feasible
+  ")
+
+  if Exists(U) {
+    k = Evaluate("max_drop_with_push", on=U)
+    Move(U, direction="down", by=k, with="recursive push; overwrite on bottom exit")
+  }
+
+  Output(grid)
+}
+
+============================================================
+Phase: train_2_verify
+============================================================
+program {
+  grid = Input()
+  marker = GetColor(Cell(0,0))
+
+  // If the marker color does not appear elsewhere, do nothing
+  if Count(Find("cells", where=("color == marker" AND "not at (0,0)"))) == 0 {
+    Output(grid)
+    return
+  }
+
+  // Make the marker color transparent by erasing all of it except the top-left pixel
+  Paint(Find("cells", where=("color == marker" AND "not at (0,0)")), 0)
+
+  // Detect the highest open rectangular arch (inverted U):
+  // two vertical mono-color posts connected by a mono-color top bar,
+  // interior below the top bar is black (0) down to the bottoms of both posts.
+  Lambda("u_frame", "
+    Find connected triplets (left_post, top_bar, right_post) such that:
+      - left_post and right_post are vertical segments (height >= 2), single color each, parallel columns
+      - top_bar is a horizontal segment connecting the inner faces of the posts
+      - the region directly beneath the top_bar between the posts is all 0 down to the bottoms of both posts
+      - choose the one whose top_bar has the smallest row index (highest in the grid)
+  ")
+
+  U = Find("u_frame", where="topmost")
+
+  // Push model: move S downward with maximal drop, pushing any obstructing components along its vertical rays.
+  // Transparent rule: cells of the marker color are treated as empty (already erased).
+  Lambda("max_drop_with_push", "
+    For shape S:
+      - Consider vertical rays from every cell of S down to the bottom
+      - Obstacles are nonzero cells not in S (marker color already erased)
+      - Feasible drop by k means: every obstacle intersected by a ray can be moved down by k
+        using the same rule recursively; components that would exit the grid may be overwritten by movers
+      - Choose the largest k >= 0 that is feasible
+  ")
+
+  if Exists(U) {
+    k = Evaluate("max_drop_with_push", on=U)
+    Move(U, direction="down", by=k, with="recursive push; overwrite on bottom exit")
+  }
+
+  Output(grid)
+}
+[MESSAGE] [[4, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0],
+ [0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0],
+ [0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0],
+ [0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0],
+ [0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0],
+ [0, 0, 6, 0, 5, 1, 1, 1, 1, 7, 0, 0],
+ [0, 0, 6, 0, 5, 0, 0, 0, 1, 7, 0, 0],
+ [0, 0, 6, 0, 5, 0, 0, 0, 1, 7, 0, 0],
+ [0, 0, 0, 3, 3, 3, 0, 0, 5, 0, 7, 0],
+ [0, 0, 0, 0, 0, 3, 0, 5, 0, 7, 7, 0],
+ [0, 0, 0, 0, 0, 3, 0, 5, 0, 0, 7, 0],
+ [0, 0, 2, 2, 2, 2, 2, 2, 2, 2, 7, 0]]
+
+============================================================
+Phase: train_3_predict
+============================================================
+[[4, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0],
+ [0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0],
+ [0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0],
+ [0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0],
+ [0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0],
+ [0, 0, 6, 0, 5, 1, 1, 1, 1, 7, 0, 0],
+ [0, 0, 6, 0, 5, 0, 0, 0, 1, 7, 0, 0],
+ [0, 0, 6, 0, 5, 0, 0, 0, 1, 7, 0, 0],
+ [0, 0, 0, 3, 3, 3, 0, 0, 5, 0, 7, 0],
+ [0, 0, 0, 0, 0, 3, 0, 5, 0, 7, 7, 0],
+ [0, 0, 0, 0, 0, 3, 0, 5, 0, 0, 7, 0],
+ [0, 0, 2, 2, 2, 2, 2, 2, 2, 2, 7, 0]]
+[MESSAGE] program {
+  grid = Input()
+  marker = GetColor(Cell(0,0))
+
+  // Detect the single topmost inverted-U frame
+  U = Find("inverted U-frame", where="
+      - exactly two vertical mono-color posts,
+      - a single mono-color horizontal top bar connecting their inner faces,
+      - the region strictly below the top bar and between posts is all 0
+      - choose the one with the smallest top-bar row (highest)")
+
+  // Measurements used by both modes
+  post_cols = { left: Col(U.left_post), right: Col(U.right_post) }
+  top_row = Row(U.top_bar)
+  DropDistance = Measure("min k>=0 such that either cell at (bottom_of_left_post + k + 1, post_cols.left) or (bottom_of_right_post + k + 1, post_cols.right) is nonzero or bottom boundary reached; return k before collision", no_push=true)
+
+  GrowUpRight = Measure("number of consecutive 0s above the top bar in the right post column", column=post_cols.right, up_from=top_row-1)
+
+  Gravity = Lambda("columnwise settle", "
+    For each column independently, slide every nonzero component downward until it rests on the first nonzero below or the bottom boundary; preserve intra-component order; do not move cells that belong to U")
+
+  if marker == 9 {
+    // Identity
+    Output(grid)
+    return
+  }
+
+  if marker == 4 {
+    // Lower the U until first contact directly under either post; do not push through obstacles
+    Move(U, direction="down", by=DropDistance, stop_on_contact=true, push="none")
+
+    // After lowering, re-pack anything inside the corridor spanned by the posts
+    Apply(Gravity, to=Columns(range=Between(post_cols.left, post_cols.right)))
+  }
+
+  if marker == 6 {
+    // Keep the top bar fixed; grow the right post upward into available empty space
+    Paint(Cells(column=post_cols.right, rows=[top_row-GrowUpRight .. top_row-1]), color=Color(U.right_post))
+
+    // Then settle everything else by gravity (excluding the U-frame we just edited)
+    Apply(Gravity, to=AllColumns(), exclude=Cells(of=U))
+  }
+
+  Output(grid)
+}
+
+============================================================
+Phase: train_3_verify
+============================================================
+program {
+  grid = Input()
+  marker = GetColor(Cell(0,0))
+
+  // Detect the single topmost inverted-U frame
+  U = Find("inverted U-frame", where="
+      - exactly two vertical mono-color posts,
+      - a single mono-color horizontal top bar connecting their inner faces,
+      - the region strictly below the top bar and between posts is all 0
+      - choose the one with the smallest top-bar row (highest)")
+
+  // Measurements used by both modes
+  post_cols = { left: Col(U.left_post), right: Col(U.right_post) }
+  top_row = Row(U.top_bar)
+  DropDistance = Measure("min k>=0 such that either cell at (bottom_of_left_post + k + 1, post_cols.left) or (bottom_of_right_post + k + 1, post_cols.right) is nonzero or bottom boundary reached; return k before collision", no_push=true)
+
+  GrowUpRight = Measure("number of consecutive 0s above the top bar in the right post column", column=post_cols.right, up_from=top_row-1)
+
+  Gravity = Lambda("columnwise settle", "
+    For each column independently, slide every nonzero component downward until it rests on the first nonzero below or the bottom boundary; preserve intra-component order; do not move cells that belong to U")
+
+  if marker == 9 {
+    // Identity
+    Output(grid)
+    return
+  }
+
+  if marker == 4 {
+    // Lower the U until first contact directly under either post; do not push through obstacles
+    Move(U, direction="down", by=DropDistance, stop_on_contact=true, push="none")
+
+    // After lowering, re-pack anything inside the corridor spanned by the posts
+    Apply(Gravity, to=Columns(range=Between(post_cols.left, post_cols.right)))
+  }
+
+  if marker == 6 {
+    // Keep the top bar fixed; grow the right post upward into available empty space
+    Paint(Cells(column=post_cols.right, rows=[top_row-GrowUpRight .. top_row-1]), color=Color(U.right_post))
+
+    // Then settle everything else by gravity (excluding the U-frame we just edited)
+    Apply(Gravity, to=AllColumns(), exclude=Cells(of=U))
+  }
+
+  Output(grid)
+}
+[MESSAGE] [[7, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0],
+ [0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0],
+ [0, 0, 0, 0, 0, 0, 0, 5, 1, 1, 1, 1],
+ [0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 5, 1],
+ [0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 5, 1],
+ [0, 0, 0, 0, 0, 6, 3, 3, 3, 5, 5, 7],
+ [0, 0, 0, 0, 0, 0, 0, 0, 6, 3, 5, 7],
+ [0, 0, 0, 0, 0, 0, 0, 0, 6, 3, 5, 7],
+ [0, 4, 2, 2, 2, 2, 2, 2, 2, 2, 2, 7],
+ [0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 4, 7],
+ [0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 4, 7],
+ [0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 4, 7]]
+
+============================================================
+Phase: train_4_predict
+============================================================
+[[7, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0],
+ [0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0],
+ [0, 0, 0, 0, 0, 0, 0, 5, 1, 1, 1, 1],
+ [0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 5, 1],
+ [0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 5, 1],
+ [0, 0, 0, 0, 0, 6, 3, 3, 3, 5, 5, 7],
+ [0, 0, 0, 0, 0, 0, 0, 0, 6, 3, 5, 7],
+ [0, 0, 0, 0, 0, 0, 0, 0, 6, 3, 5, 7],
+ [0, 4, 2, 2, 2, 2, 2, 2, 2, 2, 2, 7],
+ [0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 4, 7],
+ [0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 4, 7],
+ [0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 4, 7]]
+[MESSAGE] program {
+  grid = Input()
+  marker = GetColor(Cell(0,0))
+
+  // Primitive notions
+  Lambda("pipes", "maximal 4-connected nonzero components that are 1-cell thick everywhere")
+  Lambda("arch_u", "
+    composite made of three pipes:
+      - two vertical posts (heights >=2) at distinct columns
+      - one horizontal top bar connecting the inner faces of the posts
+      - interior below the top bar between post columns is all 0 down to the bottoms of the posts
+      - choose the arch whose top bar is highest
+  ")
+  Lambda("gravity", "for each column independently, slide all nonzero cells downward until resting on the first nonzero below or the bottom; preserve column-internal order")
+  Lambda("push_chain_down", "
+    Move a shape S downward by k using vertical push on intersected components:
+      - consider vertical rays under every cell of S
+      - any obstructing component along a ray is moved by the same k (recursively)
+      - if a pushed component would exit the grid at the bottom, it is clipped/overwritten by the movers
+  ")
+  Lambda("max_drop_with_push", "
+    largest nonnegative k such that push_chain_down(S, k) is feasible for all rays of S
+  ")
+  Lambda("longest_hbar", "the pipe with the maximum horizontal run-length; if tie pick the lowest")
+  Lambda("between_cols", "all columns strictly between two given post columns")
+
+  // Detect key pieces
+  U = Find("arch_u")
+  H = Find("longest_hbar")
+  posts = {left: Col(U.left_post), right: Col(U.right_post)}
+  top_r = Row(U.top_bar)
+
+  // Mode selection by marker at (0,0)
+  if marker == 9 {
+    // No-op
+    Output(grid)
+    return
+  }
+
+  if marker == 4 {
+    // Drop the inverted-U as a rigid body with pushing; park it at the first contact
+    k = Evaluate("max_drop_with_push", on=U)
+    Apply("push_chain_down", to=U, args=[k])
+
+    // Then compact anything in the corridor between the posts
+    Apply("gravity", to=Columns(range=Between(posts.left, posts.right)))
+    Output(grid)
+    return
+  }
+
+  if marker == 6 {
+    // Keep the top bar position stable relative to the interior, but lift the right post upward if there is empty space above it.
+    grow = Count(Find("0-cells", where=("column == posts.right" AND "rows in [0..top_r-1]" AND "contiguous to top_r-1 going upward")))
+    if grow > 0 {
+      Paint(Cells(column=posts.right, rows=[top_r - grow .. top_r - 1]), Color(U.right_post))
+    }
+    // After editing the post, settle everything else by gravity except the edited U
+    Apply("gravity", to=AllColumns(), exclude=Cells(of=U))
+    Output(grid)
+    return
+  }
+
+  if marker == 7 {
+    // Build a floor: move the longest horizontal bar to the bottom and freeze it
+    DropTo = LastRow()
+    Move(H, direction="down", by=(DropTo - Max(Row(c) for c in Cells(of=H))), with="no push; stop on contact")
+
+    // With the floor fixed, allow everything above to settle by gravity
+    Apply("gravity", to=AllColumns(), exclude=Cells(of=H))
+
+    // Re-open the central arch interior if any cells leaked inside after settling
+    interior = Rect(rows=[top_r+1 .. Max(Row(c) for c in Cells(of=U.left_post))], cols=[posts.left+1 .. posts.right-1])
+    Paint(Find("nonzero", within=interior), 0)
+
+    Output(grid)
+    return
+  }
+
+  // Fallback: gravity-only
+  Apply("gravity", to=AllColumns())
+  Output(grid)
+}
+
+============================================================
+Phase: train_4_verify
+============================================================
+program {
+  grid = Input()
+  marker = GetColor(Cell(0,0))
+
+  // Primitive notions
+  Lambda("pipes", "maximal 4-connected nonzero components that are 1-cell thick everywhere")
+  Lambda("arch_u", "
+    composite made of three pipes:
+      - two vertical posts (heights >=2) at distinct columns
+      - one horizontal top bar connecting the inner faces of the posts
+      - interior below the top bar between post columns is all 0 down to the bottoms of the posts
+      - choose the arch whose top bar is highest
+  ")
+  Lambda("gravity", "for each column independently, slide all nonzero cells downward until resting on the first nonzero below or the bottom; preserve column-internal order")
+  Lambda("push_chain_down", "
+    Move a shape S downward by k using vertical push on intersected components:
+      - consider vertical rays under every cell of S
+      - any obstructing component along a ray is moved by the same k (recursively)
+      - if a pushed component would exit the grid at the bottom, it is clipped/overwritten by the movers
+  ")
+  Lambda("max_drop_with_push", "
+    largest nonnegative k such that push_chain_down(S, k) is feasible for all rays of S
+  ")
+  Lambda("longest_hbar", "the pipe with the maximum horizontal run-length; if tie pick the lowest")
+  Lambda("between_cols", "all columns strictly between two given post columns")
+
+  // Detect key pieces
+  U = Find("arch_u")
+  H = Find("longest_hbar")
+  posts = {left: Col(U.left_post), right: Col(U.right_post)}
+  top_r = Row(U.top_bar)
+
+  // Mode selection by marker at (0,0)
+  if marker == 9 {
+    // No-op
+    Output(grid)
+    return
+  }
+
+  if marker == 4 {
+    // Drop the inverted-U as a rigid body with pushing; park it at the first contact
+    k = Evaluate("max_drop_with_push", on=U)
+    Apply("push_chain_down", to=U, args=[k])
+
+    // Then compact anything in the corridor between the posts
+    Apply("gravity", to=Columns(range=Between(posts.left, posts.right)))
+    Output(grid)
+    return
+  }
+
+  if marker == 6 {
+    // Keep the top bar position stable relative to the interior, but lift the right post upward if there is empty space above it.
+    grow = Count(Find("0-cells", where=("column == posts.right" AND "rows in [0..top_r-1]" AND "contiguous to top_r-1 going upward")))
+    if grow > 0 {
+      Paint(Cells(column=posts.right, rows=[top_r - grow .. top_r - 1]), Color(U.right_post))
+    }
+    // After editing the post, settle everything else by gravity except the edited U
+    Apply("gravity", to=AllColumns(), exclude=Cells(of=U))
+    Output(grid)
+    return
+  }
+
+  if marker == 7 {
+    // Build a floor: move the longest horizontal bar to the bottom and freeze it
+    DropTo = LastRow()
+    Move(H, direction="down", by=(DropTo - Max(Row(c) for c in Cells(of=H))), with="no push; stop on contact")
+
+    // With the floor fixed, allow everything above to settle by gravity
+    Apply("gravity", to=AllColumns(), exclude=Cells(of=H))
+
+    // Re-open the central arch interior if any cells leaked inside after settling
+    interior = Rect(rows=[top_r+1 .. Max(Row(c) for c in Cells(of=U.left_post))], cols=[posts.left+1 .. posts.right-1])
+    Paint(Find("nonzero", within=interior), 0)
+
+    Output(grid)
+    return
+  }
+
+  // Fallback: gravity-only
+  Apply("gravity", to=AllColumns())
+  Output(grid)
+}
+[MESSAGE] program {
+  grid = Input()
+  marker = GetColor(Cell(0,0))
+
+  // Only the '7' mode is relevant for this test: build a floor from the longest horizontal bar
+  if marker != 7 { Output(grid); return }
+
+  Lambda("pipes", "maximal 4-connected mono-color components that are 1-cell thick everywhere")
+  Lambda("horizontal_runs", "maximal contiguous nonzero segments within a single row")
+  runs = Find("horizontal_runs", within=Find("pipes"))
+  H = ArgMax(runs, by=["length desc", "row asc", "col asc"])   // choose longest; if tie: lowest on screen (largest row index), then leftmost
+
+  hcolor = Color(H)
+  cmin = Min(Col(H)); cmax = Max(Col(H))
+  brow = LastRow()
+
+  // Detach the chosen bar from its original place
+  Paint(H, 0)
+
+  // Lay the bar as a floor on the bottom row across the same column span, overwriting anything there
+  floor = Cells(row=brow, cols=[cmin..cmax])
+  Paint(floor, hcolor)
+
+  // Gravity: settle all remaining non-floor cells downward; keep order; floor cells are fixed obstacles
+  Lambda("gravity_except", "for each column, slide all nonzero cells downward until resting on the first nonzero below or the bottom; exclude a provided set from moving and treat it as solid")
+  Apply("gravity_except", to=AllColumns(), args=[exclude=floor])
+
+  Output(grid)
+}
+
+============================================================
+Phase: test_refine
+============================================================
+program {
+  grid = Input()
+  marker = GetColor(Cell(0,0))
+
+  // Only the '7' mode is relevant for this test: build a floor from the longest horizontal bar
+  if marker != 7 { Output(grid); return }
+
+  Lambda("pipes", "maximal 4-connected mono-color components that are 1-cell thick everywhere")
+  Lambda("horizontal_runs", "maximal contiguous nonzero segments within a single row")
+  runs = Find("horizontal_runs", within=Find("pipes"))
+  H = ArgMax(runs, by=["length desc", "row asc", "col asc"])   // choose longest; if tie: lowest on screen (largest row index), then leftmost
+
+  hcolor = Color(H)
+  cmin = Min(Col(H)); cmax = Max(Col(H))
+  brow = LastRow()
+
+  // Detach the chosen bar from its original place
+  Paint(H, 0)
+
+  // Lay the bar as a floor on the bottom row across the same column span, overwriting anything there
+  floor = Cells(row=brow, cols=[cmin..cmax])
+  Paint(floor, hcolor)
+
+  // Gravity: settle all remaining non-floor cells downward; keep order; floor cells are fixed obstacles
+  Lambda("gravity_except", "for each column, slide all nonzero cells downward until resting on the first nonzero below or the bottom; exclude a provided set from moving and treat it as solid")
+  Apply("gravity_except", to=AllColumns(), args=[exclude=floor])
+
+  Output(grid)
+}
+[MESSAGE] [[7, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0],
+ [0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0],
+ [0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0],
+ [0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0],
+ [0, 0, 4, 0, 0, 0, 0, 0, 0, 0, 0, 0],
+ [0, 0, 4, 0, 3, 0, 0, 0, 0, 7, 0, 0],
+ [0, 0, 4, 0, 3, 0, 8, 0, 0, 7, 0, 0],
+ [0, 0, 4, 0, 3, 0, 8, 7, 0, 7, 0, 0],
+ [0, 0, 6, 0, 3, 0, 8, 5, 0, 7, 0, 0],
+ [0, 3, 6, 3, 1, 0, 2, 5, 0, 7, 9, 0],
+ [0, 3, 6, 1, 1, 0, 2, 2, 7, 7, 9, 0],
+ [0, 3, 1, 5, 5, 5, 5, 5, 2, 2, 9, 0]]
+
+============================================================
+Phase: test_predict
+============================================================
+[[7, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0],
+ [0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0],
+ [0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0],
+ [0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0],
+ [0, 0, 4, 0, 0, 0, 0, 0, 0, 0, 0, 0],
+ [0, 0, 4, 0, 3, 0, 0, 0, 0, 7, 0, 0],
+ [0, 0, 4, 0, 3, 0, 8, 0, 0, 7, 0, 0],
+ [0, 0, 4, 0, 3, 0, 8, 7, 0, 7, 0, 0],
+ [0, 0, 6, 0, 3, 0, 8, 5, 0, 7, 0, 0],
+ [0, 3, 6, 3, 1, 0, 2, 5, 0, 7, 9, 0],
+ [0, 3, 6, 1, 1, 0, 2, 2, 7, 7, 9, 0],
+ [0, 3, 1, 5, 5, 5, 5, 5, 2, 2, 9, 0]]

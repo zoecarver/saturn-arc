@@ -14,7 +14,7 @@ from contextlib import redirect_stdout
 from pathlib import Path
 from concurrent.futures import ThreadPoolExecutor, as_completed
 # from arc_solver import ARCSolver
-from arc_visual_solver import ARCVisualSolver
+from arc_streaming_solver import ARCSolver as ARCVisualSolver
 
 def solve_single_task(task_file, task_number, total_tasks, use_visual=False):
     """Implementation of solve_single_task"""

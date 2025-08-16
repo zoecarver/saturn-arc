@@ -1,0 +1,434 @@
+[MESSAGE] program:
+  grid = Input()
+
+  bg = MostFrequentColor(grid)  # yellow (4)
+  exterior_bg = FloodFill(from="frame", where=f"color == {bg}")
+
+  shapes = Find("connected_components", where=f"color != {bg}")
+
+  Lambda("holes_inside", "background components fully enclosed by a shape (no contact with exterior_bg)")
+  Lambda("outer_outline", "cells in exterior_bg that are 4-adjacent to the shape")
+
+  all_outlines = Union([ outer_outline(s) for s in shapes ])
+
+  for s in shapes:
+    h = holes_inside(s)
+    if Count(h) > 0:
+      Paint(s, 8)          # recolor shapes that contain holes to dark red
+      Paint(Union(h), 6)   # fill their enclosed holes with magenta
+    else:
+      Keep(s)              # shapes without holes stay their original color
+
+  Paint(all_outlines, 2)   # draw 1px outline only against the exterior background
+
+  Output(grid)
+
+============================================================
+Phase: train_0
+============================================================
+program:
+  grid = Input()
+
+  bg = MostFrequentColor(grid)  # yellow (4)
+  exterior_bg = FloodFill(from="frame", where=f"color == {bg}")
+
+  shapes = Find("connected_components", where=f"color != {bg}")
+
+  Lambda("holes_inside", "background components fully enclosed by a shape (no contact with exterior_bg)")
+  Lambda("outer_outline", "cells in exterior_bg that are 4-adjacent to the shape")
+
+  all_outlines = Union([ outer_outline(s) for s in shapes ])
+
+  for s in shapes:
+    h = holes_inside(s)
+    if Count(h) > 0:
+      Paint(s, 8)          # recolor shapes that contain holes to dark red
+      Paint(Union(h), 6)   # fill their enclosed holes with magenta
+    else:
+      Keep(s)              # shapes without holes stay their original color
+
+  Paint(all_outlines, 2)   # draw 1px outline only against the exterior background
+
+  Output(grid)
+[MESSAGE] [[4, 4, 4, 4, 4, 4, 4, 4, 4, 4, 2, 4, 4, 4, 2, 2, 2, 2, 2, 2, 2, 4, 4],
+ [4, 2, 2, 2, 2, 2, 2, 2, 4, 2, 1, 2, 4, 4, 1, 1, 1, 1, 1, 1, 1, 2, 4],
+ [2, 1, 1, 1, 1, 1, 1, 1, 2, 2, 1, 2, 2, 2, 1, 2, 2, 2, 2, 1, 1, 2, 4],
+ [2, 1, 1, 1, 1, 1, 1, 1, 2, 2, 1, 1, 1, 1, 1, 2, 4, 4, 4, 1, 1, 2, 4],
+ [2, 1, 1, 1, 1, 1, 1, 1, 2, 2, 1, 1, 1, 1, 1, 2, 4, 4, 4, 1, 1, 2, 4],
+ [2, 1, 1, 1, 1, 1, 1, 1, 2, 2, 1, 1, 1, 1, 1, 2, 4, 4, 4, 1, 1, 2, 4],
+ [2, 1, 1, 1, 1, 2, 2, 2, 4, 2, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 2, 4],
+ [2, 1, 1, 1, 1, 2, 4, 4, 4, 4, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 4, 4],
+ [4, 2, 2, 2, 2, 4, 4, 4, 4, 4, 4, 4, 4, 4, 4, 4, 4, 4, 4, 4, 4, 4, 4],
+ [4, 4, 4, 4, 2, 2, 2, 2, 2, 2, 4, 4, 4, 2, 2, 2, 2, 2, 4, 4, 4, 4, 4],
+ [4, 4, 4, 2, 1, 1, 1, 1, 1, 1, 2, 2, 2, 1, 1, 1, 1, 1, 2, 4, 4, 4, 4],
+ [4, 4, 4, 2, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 2, 4, 4, 4, 4],
+ [4, 4, 4, 2, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 2, 4, 4, 4, 4],
+ [4, 4, 4, 2, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 2, 4, 4, 4, 4],
+ [4, 4, 4, 2, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 2, 4, 4, 4, 4],
+ [4, 4, 4, 2, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 2, 4, 4, 4, 4],
+ [4, 4, 4, 2, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 2, 4, 4, 4, 4],
+ [4, 4, 4, 4, 2, 2, 2, 2, 2, 2, 2, 2, 1, 1, 1, 1, 1, 1, 2, 4, 4, 4, 4],
+ [4, 4, 4, 4, 4, 4, 4, 4, 4, 4, 4, 2, 1, 1, 1, 1, 1, 1, 2, 4, 4, 4, 4],
+ [4, 4, 4, 4, 4, 4, 4, 4, 4, 4, 4, 2, 1, 1, 1, 1, 1, 1, 2, 4, 4, 4, 4],
+ [4, 4, 4, 4, 4, 4, 4, 4, 4, 4, 4, 2, 1, 1, 1, 1, 1, 1, 2, 4, 4, 4, 4],
+ [4, 4, 4, 4, 4, 4, 4, 4, 4, 4, 4, 2, 1, 1, 1, 1, 1, 1, 2, 4, 4, 4, 4],
+ [4, 4, 4, 2, 1, 2, 4, 4, 4, 4, 4, 4, 4, 4, 4, 4, 4, 4, 4, 4, 4, 4, 4],
+ [4, 4, 2, 1, 1, 2, 4, 4, 4, 4, 4, 4, 4, 4, 4, 4, 4, 4, 4, 4, 4, 4, 4],
+ [4, 4, 4, 2, 2, 4, 4, 4, 4, 4, 4, 4, 4, 4, 4, 4, 4, 4, 4, 4, 4, 4, 4],
+ [4, 4, 4, 4, 4, 4, 4, 4, 4, 4, 4, 4, 4, 4, 4, 4, 4, 4, 4, 4, 4, 4, 4],
+ [4, 4, 4, 4, 4, 4, 4, 4, 4, 4, 4, 4, 4, 4, 4, 4, 4, 4, 4, 4, 4, 4, 4]]
+
+============================================================
+Phase: train_1_predict
+============================================================
+[[4, 4, 4, 4, 4, 4, 4, 4, 4, 4, 2, 4, 4, 4, 2, 2, 2, 2, 2, 2, 2, 4, 4],
+ [4, 2, 2, 2, 2, 2, 2, 2, 4, 2, 1, 2, 4, 4, 1, 1, 1, 1, 1, 1, 1, 2, 4],
+ [2, 1, 1, 1, 1, 1, 1, 1, 2, 2, 1, 2, 2, 2, 1, 2, 2, 2, 2, 1, 1, 2, 4],
+ [2, 1, 1, 1, 1, 1, 1, 1, 2, 2, 1, 1, 1, 1, 1, 2, 4, 4, 4, 1, 1, 2, 4],
+ [2, 1, 1, 1, 1, 1, 1, 1, 2, 2, 1, 1, 1, 1, 1, 2, 4, 4, 4, 1, 1, 2, 4],
+ [2, 1, 1, 1, 1, 1, 1, 1, 2, 2, 1, 1, 1, 1, 1, 2, 4, 4, 4, 1, 1, 2, 4],
+ [2, 1, 1, 1, 1, 2, 2, 2, 4, 2, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 2, 4],
+ [2, 1, 1, 1, 1, 2, 4, 4, 4, 4, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 4, 4],
+ [4, 2, 2, 2, 2, 4, 4, 4, 4, 4, 4, 4, 4, 4, 4, 4, 4, 4, 4, 4, 4, 4, 4],
+ [4, 4, 4, 4, 2, 2, 2, 2, 2, 2, 4, 4, 4, 2, 2, 2, 2, 2, 4, 4, 4, 4, 4],
+ [4, 4, 4, 2, 1, 1, 1, 1, 1, 1, 2, 2, 2, 1, 1, 1, 1, 1, 2, 4, 4, 4, 4],
+ [4, 4, 4, 2, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 2, 4, 4, 4, 4],
+ [4, 4, 4, 2, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 2, 4, 4, 4, 4],
+ [4, 4, 4, 2, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 2, 4, 4, 4, 4],
+ [4, 4, 4, 2, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 2, 4, 4, 4, 4],
+ [4, 4, 4, 2, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 2, 4, 4, 4, 4],
+ [4, 4, 4, 2, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 2, 4, 4, 4, 4],
+ [4, 4, 4, 4, 2, 2, 2, 2, 2, 2, 2, 2, 1, 1, 1, 1, 1, 1, 2, 4, 4, 4, 4],
+ [4, 4, 4, 4, 4, 4, 4, 4, 4, 4, 4, 2, 1, 1, 1, 1, 1, 1, 2, 4, 4, 4, 4],
+ [4, 4, 4, 4, 4, 4, 4, 4, 4, 4, 4, 2, 1, 1, 1, 1, 1, 1, 2, 4, 4, 4, 4],
+ [4, 4, 4, 4, 4, 4, 4, 4, 4, 4, 4, 2, 1, 1, 1, 1, 1, 1, 2, 4, 4, 4, 4],
+ [4, 4, 4, 4, 4, 4, 4, 4, 4, 4, 4, 2, 1, 1, 1, 1, 1, 1, 2, 4, 4, 4, 4],
+ [4, 4, 4, 2, 1, 2, 4, 4, 4, 4, 4, 4, 4, 4, 4, 4, 4, 4, 4, 4, 4, 4, 4],
+ [4, 4, 2, 1, 1, 2, 4, 4, 4, 4, 4, 4, 4, 4, 4, 4, 4, 4, 4, 4, 4, 4, 4],
+ [4, 4, 4, 2, 2, 4, 4, 4, 4, 4, 4, 4, 4, 4, 4, 4, 4, 4, 4, 4, 4, 4, 4],
+ [4, 4, 4, 4, 4, 4, 4, 4, 4, 4, 4, 4, 4, 4, 4, 4, 4, 4, 4, 4, 4, 4, 4],
+ [4, 4, 4, 4, 4, 4, 4, 4, 4, 4, 4, 4, 4, 4, 4, 4, 4, 4, 4, 4, 4, 4, 4]]
+[MESSAGE] program:
+  grid = Input()
+
+  bg = MostFrequentColor(grid)  # background
+  exterior = FloodFill(from="frame", where=f"color == {bg}")
+
+  shapes = Find("connected_components", where=f"color != {bg}")
+
+  HolesOf = Lambda("holes_of(shape)", "background regions fully enclosed by shape (no contact with exterior)") {{
+    inner_bg = Find("connected_components", where=f"color == {bg}", within=BoundingBox(shape))
+    enclosed = Filter(inner_bg, where="NOT Intersects(component, exterior) AND All(Neighbors(component, connectivity=4) subset_of (shape ∪ component))")
+    return enclosed
+  }}
+
+  OuterOutline = Lambda("outer_outline(shape)", "1px outline in exterior background") {{
+    return Neighbors(shape, in=exterior, connectivity=4)
+  }}
+
+  outlines = Union(Map(shapes, OuterOutline))
+
+  with_holes = Filter(shapes, where="Count(HolesOf(shape)) > 0")
+  without_holes = Filter(shapes, where="Count(HolesOf(shape)) == 0")
+
+  # recolor shapes that contain holes and fill those holes
+  Paint(with_holes, 8)
+  Paint(Union(Flatten(Map(with_holes, HolesOf))), 6)
+
+  # keep shapes without holes unchanged
+  Keep(without_holes)
+
+  # draw exterior outline around all shapes
+  Paint(outlines, 2)
+
+  Output(grid)
+
+============================================================
+Phase: train_1_verify
+============================================================
+program:
+  grid = Input()
+
+  bg = MostFrequentColor(grid)  # background
+  exterior = FloodFill(from="frame", where=f"color == {bg}")
+
+  shapes = Find("connected_components", where=f"color != {bg}")
+
+  HolesOf = Lambda("holes_of(shape)", "background regions fully enclosed by shape (no contact with exterior)") {{
+    inner_bg = Find("connected_components", where=f"color == {bg}", within=BoundingBox(shape))
+    enclosed = Filter(inner_bg, where="NOT Intersects(component, exterior) AND All(Neighbors(component, connectivity=4) subset_of (shape ∪ component))")
+    return enclosed
+  }}
+
+  OuterOutline = Lambda("outer_outline(shape)", "1px outline in exterior background") {{
+    return Neighbors(shape, in=exterior, connectivity=4)
+  }}
+
+  outlines = Union(Map(shapes, OuterOutline))
+
+  with_holes = Filter(shapes, where="Count(HolesOf(shape)) > 0")
+  without_holes = Filter(shapes, where="Count(HolesOf(shape)) == 0")
+
+  # recolor shapes that contain holes and fill those holes
+  Paint(with_holes, 8)
+  Paint(Union(Flatten(Map(with_holes, HolesOf))), 6)
+
+  # keep shapes without holes unchanged
+  Keep(without_holes)
+
+  # draw exterior outline around all shapes
+  Paint(outlines, 2)
+
+  Output(grid)
+[MESSAGE] [[4, 4, 4, 4, 4, 4, 4, 4, 4, 4, 4, 4, 4, 4, 4],
+ [4, 4, 4, 4, 4, 4, 4, 4, 4, 4, 4, 4, 4, 4, 4],
+ [4, 4, 4, 2, 2, 2, 4, 4, 4, 4, 4, 4, 4, 4, 4],
+ [4, 4, 2, 1, 1, 1, 2, 4, 4, 4, 4, 4, 4, 4, 4],
+ [4, 4, 2, 1, 1, 1, 2, 4, 4, 4, 4, 4, 4, 4, 4],
+ [4, 4, 2, 1, 1, 1, 2, 4, 4, 4, 4, 4, 2, 4, 4],
+ [4, 4, 4, 2, 2, 2, 4, 4, 4, 4, 4, 2, 1, 2, 4],
+ [4, 4, 4, 4, 4, 4, 4, 4, 4, 4, 4, 4, 2, 4, 4],
+ [4, 4, 4, 4, 4, 4, 4, 4, 4, 4, 4, 4, 4, 4, 4],
+ [4, 4, 4, 4, 4, 4, 4, 4, 4, 4, 4, 4, 4, 4, 4],
+ [4, 4, 4, 4, 4, 4, 4, 4, 4, 4, 4, 4, 4, 4, 4],
+ [4, 4, 4, 4, 2, 2, 2, 2, 2, 4, 4, 4, 4, 4, 4],
+ [4, 4, 4, 2, 8, 8, 8, 8, 8, 2, 2, 4, 4, 4, 4],
+ [4, 4, 4, 2, 8, 6, 6, 8, 8, 8, 8, 2, 4, 4, 4],
+ [4, 4, 4, 2, 8, 8, 8, 8, 8, 8, 8, 2, 4, 4, 4],
+ [4, 4, 4, 2, 8, 8, 8, 8, 8, 8, 8, 2, 4, 4, 4],
+ [4, 4, 4, 4, 2, 2, 2, 2, 2, 2, 2, 4, 4, 4, 4],
+ [4, 4, 4, 4, 4, 4, 4, 4, 4, 4, 4, 4, 4, 4, 4],
+ [4, 4, 4, 4, 4, 4, 4, 4, 4, 4, 4, 4, 4, 4, 4],
+ [4, 4, 4, 4, 4, 4, 4, 4, 4, 4, 4, 4, 4, 4, 4]]
+
+============================================================
+Phase: train_2_predict
+============================================================
+[[4, 4, 4, 4, 4, 4, 4, 4, 4, 4, 4, 4, 4, 4, 4],
+ [4, 4, 4, 4, 4, 4, 4, 4, 4, 4, 4, 4, 4, 4, 4],
+ [4, 4, 4, 2, 2, 2, 4, 4, 4, 4, 4, 4, 4, 4, 4],
+ [4, 4, 2, 1, 1, 1, 2, 4, 4, 4, 4, 4, 4, 4, 4],
+ [4, 4, 2, 1, 1, 1, 2, 4, 4, 4, 4, 4, 4, 4, 4],
+ [4, 4, 2, 1, 1, 1, 2, 4, 4, 4, 4, 4, 2, 4, 4],
+ [4, 4, 4, 2, 2, 2, 4, 4, 4, 4, 4, 2, 1, 2, 4],
+ [4, 4, 4, 4, 4, 4, 4, 4, 4, 4, 4, 4, 2, 4, 4],
+ [4, 4, 4, 4, 4, 4, 4, 4, 4, 4, 4, 4, 4, 4, 4],
+ [4, 4, 4, 4, 4, 4, 4, 4, 4, 4, 4, 4, 4, 4, 4],
+ [4, 4, 4, 4, 4, 4, 4, 4, 4, 4, 4, 4, 4, 4, 4],
+ [4, 4, 4, 4, 2, 2, 2, 2, 2, 4, 4, 4, 4, 4, 4],
+ [4, 4, 4, 2, 8, 8, 8, 8, 8, 2, 2, 4, 4, 4, 4],
+ [4, 4, 4, 2, 8, 6, 6, 8, 8, 8, 8, 2, 4, 4, 4],
+ [4, 4, 4, 2, 8, 8, 8, 8, 8, 8, 8, 2, 4, 4, 4],
+ [4, 4, 4, 2, 8, 8, 8, 8, 8, 8, 8, 2, 4, 4, 4],
+ [4, 4, 4, 4, 2, 2, 2, 2, 2, 2, 2, 4, 4, 4, 4],
+ [4, 4, 4, 4, 4, 4, 4, 4, 4, 4, 4, 4, 4, 4, 4],
+ [4, 4, 4, 4, 4, 4, 4, 4, 4, 4, 4, 4, 4, 4, 4],
+ [4, 4, 4, 4, 4, 4, 4, 4, 4, 4, 4, 4, 4, 4, 4]]
+[MESSAGE] program:
+  grid = Input()
+
+  bg = MostFrequentColor(grid)
+  exterior = FloodFill(from="frame", where=f"color == {bg}")
+
+  shapes = Find("connected_components", where=f"color != {bg}")
+
+  Holes = Lambda("holes(shape)", "background regions fully enclosed by the shape") {{
+    inner_bg = Find("connected_components", where=f"color == {bg}")
+    non_exterior = Filter(inner_bg, where="NOT Intersects(component, exterior)")
+    enclosed = Filter(non_exterior, where="All(Neighbors(component, connectivity=4) subset_of (shape ∪ component))")
+    return enclosed
+  }}
+
+  OuterOutline = Lambda("outer_outline(shape)", "cells in exterior that are 4-adjacent to the shape") {{
+    return Intersect(Neighbors(shape, connectivity=4), exterior)
+  }}
+
+  outlines = Union(Map(shapes, OuterOutline))
+
+  with_holes = Filter(shapes, where="Count(Holes(shape)) > 0")
+  without_holes = Filter(shapes, where="Count(Holes(shape)) == 0")
+
+  Paint(with_holes, 8)
+  Paint(Union(Flatten(Map(with_holes, Holes))), 6)
+  Keep(without_holes)
+
+  Paint(outlines, 2)
+
+  Output(grid)
+
+============================================================
+Phase: train_2_verify
+============================================================
+program:
+  grid = Input()
+
+  bg = MostFrequentColor(grid)
+  exterior = FloodFill(from="frame", where=f"color == {bg}")
+
+  shapes = Find("connected_components", where=f"color != {bg}")
+
+  Holes = Lambda("holes(shape)", "background regions fully enclosed by the shape") {{
+    inner_bg = Find("connected_components", where=f"color == {bg}")
+    non_exterior = Filter(inner_bg, where="NOT Intersects(component, exterior)")
+    enclosed = Filter(non_exterior, where="All(Neighbors(component, connectivity=4) subset_of (shape ∪ component))")
+    return enclosed
+  }}
+
+  OuterOutline = Lambda("outer_outline(shape)", "cells in exterior that are 4-adjacent to the shape") {{
+    return Intersect(Neighbors(shape, connectivity=4), exterior)
+  }}
+
+  outlines = Union(Map(shapes, OuterOutline))
+
+  with_holes = Filter(shapes, where="Count(Holes(shape)) > 0")
+  without_holes = Filter(shapes, where="Count(Holes(shape)) == 0")
+
+  Paint(with_holes, 8)
+  Paint(Union(Flatten(Map(with_holes, Holes))), 6)
+  Keep(without_holes)
+
+  Paint(outlines, 2)
+
+  Output(grid)
+[MESSAGE] program:
+  grid = Input()
+
+  # Identify background and exterior background
+  bg = MostFrequentColor(grid)
+  exterior = FloodFill(from="frame", where=f"color == {bg}")
+
+  # All non-background components are shapes
+  shapes = Find("connected_components", where=f"color != {bg}")
+
+  # Enclosed background regions = holes (background components not connected to exterior)
+  enclosed_bg = Find("connected_components", where=f"color == {bg} AND NOT Intersects(self, exterior)")
+
+  # Assign each enclosed background component to the single surrounding shape it touches
+  AssignHolesToShapes = Lambda("assign_holes") {{
+    hole_map = {{}}
+    for h in enclosed_bg {{
+      border = Neighbors(h, connectivity=4, where="color != bg")
+      owner = Unique(Find("components", within=shapes, where="Intersects(self, border)"))
+      hole_map[owner] = hole_map.get(owner, []) + [h]
+    }}
+    return hole_map
+  }}
+
+  hole_map = AssignHolesToShapes()
+
+  with_holes = Keys(hole_map)
+  without_holes = Difference(shapes, with_holes)
+
+  # Recolor shapes with holes and fill their holes
+  Paint(with_holes, 8)
+  Paint(Union(Flatten(Values(hole_map))), 6)
+
+  # Keep shapes without holes as-is
+  Keep(without_holes)
+
+  # Draw a 1px outline only where shapes touch exterior background
+  outer_outline = Neighbors(Union(shapes), in=exterior, connectivity=4)
+  Paint(outer_outline, 2)
+
+  Output(grid)
+
+============================================================
+Phase: test_refine
+============================================================
+program:
+  grid = Input()
+
+  # Identify background and exterior background
+  bg = MostFrequentColor(grid)
+  exterior = FloodFill(from="frame", where=f"color == {bg}")
+
+  # All non-background components are shapes
+  shapes = Find("connected_components", where=f"color != {bg}")
+
+  # Enclosed background regions = holes (background components not connected to exterior)
+  enclosed_bg = Find("connected_components", where=f"color == {bg} AND NOT Intersects(self, exterior)")
+
+  # Assign each enclosed background component to the single surrounding shape it touches
+  AssignHolesToShapes = Lambda("assign_holes") {{
+    hole_map = {{}}
+    for h in enclosed_bg {{
+      border = Neighbors(h, connectivity=4, where="color != bg")
+      owner = Unique(Find("components", within=shapes, where="Intersects(self, border)"))
+      hole_map[owner] = hole_map.get(owner, []) + [h]
+    }}
+    return hole_map
+  }}
+
+  hole_map = AssignHolesToShapes()
+
+  with_holes = Keys(hole_map)
+  without_holes = Difference(shapes, with_holes)
+
+  # Recolor shapes with holes and fill their holes
+  Paint(with_holes, 8)
+  Paint(Union(Flatten(Values(hole_map))), 6)
+
+  # Keep shapes without holes as-is
+  Keep(without_holes)
+
+  # Draw a 1px outline only where shapes touch exterior background
+  outer_outline = Neighbors(Union(shapes), in=exterior, connectivity=4)
+  Paint(outer_outline, 2)
+
+  Output(grid)
+[MESSAGE] [[4, 4, 4, 4, 4, 4, 4, 4, 4, 4, 4, 4, 4, 4, 4, 4, 4, 4, 4, 4, 4, 4, 4, 4, 4, 4, 4],
+ [4, 4, 4, 4, 4, 4, 4, 4, 4, 4, 4, 4, 4, 4, 4, 4, 4, 4, 4, 4, 4, 4, 4, 4, 4, 4, 4],
+ [4, 4, 4, 4, 4, 4, 4, 2, 1, 1, 1, 1, 1, 1, 1, 1, 1, 2, 4, 4, 4, 4, 4, 4, 4, 4, 4],
+ [4, 4, 4, 4, 4, 4, 4, 2, 1, 1, 1, 1, 1, 4, 4, 2, 1, 2, 4, 4, 4, 4, 4, 4, 4, 4, 4],
+ [4, 4, 4, 4, 4, 4, 4, 2, 1, 1, 1, 1, 1, 4, 4, 2, 1, 2, 4, 4, 4, 4, 4, 4, 4, 4, 4],
+ [4, 4, 4, 4, 4, 2, 1, 1, 1, 1, 1, 1, 1, 2, 4, 2, 1, 2, 4, 4, 4, 4, 4, 4, 4, 4, 4],
+ [4, 4, 4, 2, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 2, 4, 4, 4, 4, 4, 4, 4, 4, 4],
+ [4, 4, 4, 2, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 2, 4, 4, 4, 4, 4, 4, 4, 4, 4],
+ [4, 4, 4, 2, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 2, 4, 4, 4, 4, 4, 4, 4, 4, 4],
+ [4, 4, 4, 2, 1, 1, 1, 1, 1, 1, 1, 1, 1, 2, 4, 4, 4, 4, 4, 4, 4, 4, 4, 4, 4, 4, 4],
+ [4, 4, 4, 2, 1, 1, 1, 1, 1, 1, 1, 1, 1, 2, 4, 4, 4, 4, 4, 2, 1, 1, 1, 1, 2, 4, 4],
+ [4, 4, 4, 2, 1, 1, 1, 1, 1, 1, 1, 2, 4, 4, 4, 4, 4, 4, 4, 2, 1, 1, 1, 1, 2, 4, 4],
+ [4, 4, 4, 4, 4, 4, 4, 4, 4, 4, 4, 4, 4, 4, 4, 4, 4, 4, 2, 1, 1, 1, 1, 1, 1, 2, 4],
+ [4, 4, 4, 4, 4, 4, 4, 4, 4, 4, 4, 4, 4, 4, 4, 4, 4, 4, 2, 1, 1, 1, 1, 1, 1, 2, 4],
+ [4, 4, 4, 4, 4, 4, 4, 4, 4, 4, 4, 4, 4, 4, 4, 4, 4, 4, 2, 1, 1, 1, 1, 1, 1, 2, 4],
+ [4, 4, 4, 4, 4, 4, 4, 4, 4, 2, 1, 1, 1, 2, 4, 4, 4, 2, 1, 1, 1, 1, 1, 1, 1, 2, 4],
+ [4, 4, 4, 4, 4, 4, 4, 4, 4, 2, 1, 1, 1, 2, 4, 4, 4, 4, 4, 4, 4, 4, 4, 4, 4, 4, 4],
+ [4, 4, 4, 4, 4, 4, 4, 2, 1, 1, 1, 1, 1, 2, 4, 4, 4, 4, 4, 4, 4, 4, 4, 4, 4, 4, 4],
+ [4, 4, 4, 4, 4, 4, 4, 2, 1, 1, 1, 1, 1, 2, 4, 4, 4, 4, 4, 4, 4, 4, 4, 4, 4, 4, 4],
+ [4, 4, 4, 4, 4, 4, 4, 2, 1, 1, 1, 1, 1, 2, 4, 4, 4, 4, 4, 4, 4, 4, 4, 4, 4, 4, 4],
+ [4, 4, 4, 4, 4, 4, 4, 2, 1, 1, 1, 1, 1, 2, 4, 4, 4, 4, 4, 4, 4, 4, 4, 4, 4, 4, 4],
+ [4, 4, 4, 4, 4, 4, 4, 4, 4, 4, 4, 4, 4, 4, 4, 4, 4, 4, 4, 4, 2, 8, 6, 8, 2, 4, 4],
+ [4, 4, 4, 4, 4, 4, 4, 4, 4, 4, 4, 4, 4, 4, 4, 4, 4, 4, 4, 4, 2, 8, 8, 8, 2, 4, 4],
+ [4, 4, 4, 4, 4, 4, 4, 4, 4, 4, 4, 4, 4, 4, 4, 4, 4, 4, 4, 4, 2, 8, 8, 8, 2, 4, 4],
+ [4, 4, 4, 4, 4, 4, 4, 4, 4, 4, 4, 4, 4, 4, 4, 4, 4, 4, 4, 4, 4, 4, 4, 4, 4, 4, 4],
+ [4, 4, 4, 4, 4, 4, 4, 4, 4, 4, 4, 4, 4, 4, 4, 4, 4, 4, 4, 4, 4, 4, 4, 4, 4, 4, 4]]
+
+============================================================
+Phase: test_predict
+============================================================
+[[4, 4, 4, 4, 4, 4, 4, 4, 4, 4, 4, 4, 4, 4, 4, 4, 4, 4, 4, 4, 4, 4, 4, 4, 4, 4, 4],
+ [4, 4, 4, 4, 4, 4, 4, 4, 4, 4, 4, 4, 4, 4, 4, 4, 4, 4, 4, 4, 4, 4, 4, 4, 4, 4, 4],
+ [4, 4, 4, 4, 4, 4, 4, 2, 1, 1, 1, 1, 1, 1, 1, 1, 1, 2, 4, 4, 4, 4, 4, 4, 4, 4, 4],
+ [4, 4, 4, 4, 4, 4, 4, 2, 1, 1, 1, 1, 1, 4, 4, 2, 1, 2, 4, 4, 4, 4, 4, 4, 4, 4, 4],
+ [4, 4, 4, 4, 4, 4, 4, 2, 1, 1, 1, 1, 1, 4, 4, 2, 1, 2, 4, 4, 4, 4, 4, 4, 4, 4, 4],
+ [4, 4, 4, 4, 4, 2, 1, 1, 1, 1, 1, 1, 1, 2, 4, 2, 1, 2, 4, 4, 4, 4, 4, 4, 4, 4, 4],
+ [4, 4, 4, 2, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 2, 4, 4, 4, 4, 4, 4, 4, 4, 4],
+ [4, 4, 4, 2, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 2, 4, 4, 4, 4, 4, 4, 4, 4, 4],
+ [4, 4, 4, 2, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 2, 4, 4, 4, 4, 4, 4, 4, 4, 4],
+ [4, 4, 4, 2, 1, 1, 1, 1, 1, 1, 1, 1, 1, 2, 4, 4, 4, 4, 4, 4, 4, 4, 4, 4, 4, 4, 4],
+ [4, 4, 4, 2, 1, 1, 1, 1, 1, 1, 1, 1, 1, 2, 4, 4, 4, 4, 4, 2, 1, 1, 1, 1, 2, 4, 4],
+ [4, 4, 4, 2, 1, 1, 1, 1, 1, 1, 1, 2, 4, 4, 4, 4, 4, 4, 4, 2, 1, 1, 1, 1, 2, 4, 4],
+ [4, 4, 4, 4, 4, 4, 4, 4, 4, 4, 4, 4, 4, 4, 4, 4, 4, 4, 2, 1, 1, 1, 1, 1, 1, 2, 4],
+ [4, 4, 4, 4, 4, 4, 4, 4, 4, 4, 4, 4, 4, 4, 4, 4, 4, 4, 2, 1, 1, 1, 1, 1, 1, 2, 4],
+ [4, 4, 4, 4, 4, 4, 4, 4, 4, 4, 4, 4, 4, 4, 4, 4, 4, 4, 2, 1, 1, 1, 1, 1, 1, 2, 4],
+ [4, 4, 4, 4, 4, 4, 4, 4, 4, 2, 1, 1, 1, 2, 4, 4, 4, 2, 1, 1, 1, 1, 1, 1, 1, 2, 4],
+ [4, 4, 4, 4, 4, 4, 4, 4, 4, 2, 1, 1, 1, 2, 4, 4, 4, 4, 4, 4, 4, 4, 4, 4, 4, 4, 4],
+ [4, 4, 4, 4, 4, 4, 4, 2, 1, 1, 1, 1, 1, 2, 4, 4, 4, 4, 4, 4, 4, 4, 4, 4, 4, 4, 4],
+ [4, 4, 4, 4, 4, 4, 4, 2, 1, 1, 1, 1, 1, 2, 4, 4, 4, 4, 4, 4, 4, 4, 4, 4, 4, 4, 4],
+ [4, 4, 4, 4, 4, 4, 4, 2, 1, 1, 1, 1, 1, 2, 4, 4, 4, 4, 4, 4, 4, 4, 4, 4, 4, 4, 4],
+ [4, 4, 4, 4, 4, 4, 4, 2, 1, 1, 1, 1, 1, 2, 4, 4, 4, 4, 4, 4, 4, 4, 4, 4, 4, 4, 4],
+ [4, 4, 4, 4, 4, 4, 4, 4, 4, 4, 4, 4, 4, 4, 4, 4, 4, 4, 4, 4, 2, 8, 6, 8, 2, 4, 4],
+ [4, 4, 4, 4, 4, 4, 4, 4, 4, 4, 4, 4, 4, 4, 4, 4, 4, 4, 4, 4, 2, 8, 8, 8, 2, 4, 4],
+ [4, 4, 4, 4, 4, 4, 4, 4, 4, 4, 4, 4, 4, 4, 4, 4, 4, 4, 4, 4, 2, 8, 8, 8, 2, 4, 4],
+ [4, 4, 4, 4, 4, 4, 4, 4, 4, 4, 4, 4, 4, 4, 4, 4, 4, 4, 4, 4, 4, 4, 4, 4, 4, 4, 4],
+ [4, 4, 4, 4, 4, 4, 4, 4, 4, 4, 4, 4, 4, 4, 4, 4, 4, 4, 4, 4, 4, 4, 4, 4, 4, 4, 4]]

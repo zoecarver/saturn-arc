@@ -1,0 +1,90 @@
+[MESSAGE] program {
+  grid = Input()
+
+  # Identify semantic colors
+  bg_global = MostFrequentColor(grid)                                  # large background (yellow in example)
+  big_blocks = Find("connected components", where="area>=9 AND roughly_square AND color!=bg_global")
+  block_color = Mode(Colors(big_blocks))                               # large maroon squares
+  path_color = ArgMax(Colors(exclude=[bg_global, block_color]), by="adjacent_count_to(block_color)")  # lavender
+
+  # Detect the lattice (grid lines) that separate tiles: long straight bands made of non {block_color, path_color}
+  gridline_mask = Mask(grid, where="color not in {block_color, path_color}")
+  row_seps = Find("rows", where="Count(gridline_mask in row) >= 60% of width")
+  col_seps = Find("cols", where="Count(gridline_mask in col) >= 60% of height")
+
+  # Collapse the image onto the tile lattice defined by separators:
+  # Each band between successive separators becomes one coarse row/col.
+  row_bands = Split(grid, by=row_seps, axis="rows", keep="between_separators_only")
+  col_bands = Split(grid, by=col_seps, axis="cols", keep="between_separators_only")
+
+  # Build a coarse occupancy map where a cell is 1 if any path_color pixel appears in that tile-band block.
+  coarse = NewGrid(height=Count(row_bands), width=Count(col_bands), fill=0)
+  ForEach(ri in 0..Count(row_bands)-1){
+    ForEach(ci in 0..Count(col_bands)-1){
+      tile = Subgrid(grid, rows=row_bands[ri], cols=col_bands[ci])
+      if Any(tile == path_color){ Set(coarse, where=(ri,ci), to=1) }
+    }
+  }
+
+  # The coarse map encodes the path as a set of orthogonally adjacent 1s; reduce any thickness to a single-cell trace.
+  coarse_thin = Thin(coarse, connectivity=4, target_width=1)
+
+  # Trace the single orthogonal polyline through the 1s in reading order to get an ordered path
+  poly = Trace("single_path", on=coarse_thin, where="value==1", connectivity=4)
+
+  # Render on a new canvas: background is the block color; add a 1-cell margin on all sides.
+  out_h = Height(coarse_thin) + 2
+  out_w = Width(coarse_thin) + 2
+  out = NewGrid(height=out_h, width=out_w, fill=block_color)
+
+  Draw(poly, on=out, offset=(1,1), color=path_color, thickness=1)
+
+  Output(out)
+}
+
+============================================================
+Phase: train_0
+============================================================
+program {
+  grid = Input()
+
+  # Identify semantic colors
+  bg_global = MostFrequentColor(grid)                                  # large background (yellow in example)
+  big_blocks = Find("connected components", where="area>=9 AND roughly_square AND color!=bg_global")
+  block_color = Mode(Colors(big_blocks))                               # large maroon squares
+  path_color = ArgMax(Colors(exclude=[bg_global, block_color]), by="adjacent_count_to(block_color)")  # lavender
+
+  # Detect the lattice (grid lines) that separate tiles: long straight bands made of non {block_color, path_color}
+  gridline_mask = Mask(grid, where="color not in {block_color, path_color}")
+  row_seps = Find("rows", where="Count(gridline_mask in row) >= 60% of width")
+  col_seps = Find("cols", where="Count(gridline_mask in col) >= 60% of height")
+
+  # Collapse the image onto the tile lattice defined by separators:
+  # Each band between successive separators becomes one coarse row/col.
+  row_bands = Split(grid, by=row_seps, axis="rows", keep="between_separators_only")
+  col_bands = Split(grid, by=col_seps, axis="cols", keep="between_separators_only")
+
+  # Build a coarse occupancy map where a cell is 1 if any path_color pixel appears in that tile-band block.
+  coarse = NewGrid(height=Count(row_bands), width=Count(col_bands), fill=0)
+  ForEach(ri in 0..Count(row_bands)-1){
+    ForEach(ci in 0..Count(col_bands)-1){
+      tile = Subgrid(grid, rows=row_bands[ri], cols=col_bands[ci])
+      if Any(tile == path_color){ Set(coarse, where=(ri,ci), to=1) }
+    }
+  }
+
+  # The coarse map encodes the path as a set of orthogonally adjacent 1s; reduce any thickness to a single-cell trace.
+  coarse_thin = Thin(coarse, connectivity=4, target_width=1)
+
+  # Trace the single orthogonal polyline through the 1s in reading order to get an ordered path
+  poly = Trace("single_path", on=coarse_thin, where="value==1", connectivity=4)
+
+  # Render on a new canvas: background is the block color; add a 1-cell margin on all sides.
+  out_h = Height(coarse_thin) + 2
+  out_w = Width(coarse_thin) + 2
+  out = NewGrid(height=out_h, width=out_w, fill=block_color)
+
+  Draw(poly, on=out, offset=(1,1), color=path_color, thickness=1)
+
+  Output(out)
+}

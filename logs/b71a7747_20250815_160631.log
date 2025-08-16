@@ -1,0 +1,44 @@
+[MESSAGE] program {
+  grid = Input()
+
+  // Identify the 1-thick orthogonal polyline
+  path = Find("connected component", where="unique color forming a 1-cell-thick 4-connected polyline with bends; contains no 2x2 blocks")
+  path_color = GetColor(path)
+
+  // Choose output background as the modal 4-neighbor color around the path
+  bg_color = ModeColor(Find("cells", where="4-neighbor of path"), exclude=path_color)
+
+  // Crop tightly to the path, keep only the path, recolor everything else to background
+  bbox = BoundingBox(path)
+  cropped = Crop(grid, to=bbox)
+  Paint(cropped, where="cell != path_color", color=bg_color)
+
+  // Add a 1-cell margin of background around the cropped path
+  output = Pad(cropped, around=1, fill=bg_color)
+
+  Output(output)
+}
+
+============================================================
+Phase: train_0
+============================================================
+program {
+  grid = Input()
+
+  // Identify the 1-thick orthogonal polyline
+  path = Find("connected component", where="unique color forming a 1-cell-thick 4-connected polyline with bends; contains no 2x2 blocks")
+  path_color = GetColor(path)
+
+  // Choose output background as the modal 4-neighbor color around the path
+  bg_color = ModeColor(Find("cells", where="4-neighbor of path"), exclude=path_color)
+
+  // Crop tightly to the path, keep only the path, recolor everything else to background
+  bbox = BoundingBox(path)
+  cropped = Crop(grid, to=bbox)
+  Paint(cropped, where="cell != path_color", color=bg_color)
+
+  // Add a 1-cell margin of background around the cropped path
+  output = Pad(cropped, around=1, fill=bg_color)
+
+  Output(output)
+}

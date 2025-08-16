@@ -18,6 +18,27 @@ from datetime import datetime
 from pathlib import Path
 
 from arc_visualizer import grid_to_image, ARC_COLORS
+from dsl_executor import DSLExecutor, create_dsl_executor_tool
+
+# Tool definitions
+VISUALIZATION_TOOL = {
+    "type": "function",
+    "name": "visualize_grid",
+    "description": "Generate a visual image representation of a grid",
+    "parameters": {
+        "type": "object",
+        "properties": {
+            "grid": {
+                "type": "array",
+                "items": {"type": "array", "items": {"type": "integer"}},
+                "description": "2D array of integers (0-9) representing the grid"
+            }
+        },
+        "required": ["grid"]
+    }
+}
+
+DSL_EXECUTOR_TOOL = create_dsl_executor_tool()
 
 # Expected Flow:
 # 
@@ -141,7 +162,13 @@ Remember every transformation here is deterministic and reproducible. Do not fin
 
 Symbols may have semantic significance; properties of the symbols may convey this semantic significance. You need to find what properties carry semantic significance and what properties do not contribute to decision making.
 
-Compositional reasoning and turn-by-turn application of rules may be important. You may have to apply one transformation to allow the others to make sense. You can try using a tool to generate an image of the data and analyse that along the way. Try making incremental changes to the board and looking at the results by using the visualization tool.
+Compositional reasoning and turn-by-turn application of rules may be important. You may have to apply one transformation to allow the others to make sense.
+
+AVAILABLE TOOLS:
+- visualize_grid: Create visual representations of grids to better understand patterns
+- execute_dsl: Test your DSL program on input grids to verify transformations
+
+Use these tools actively! Visualize grids to see patterns more clearly. Test your DSL with execute_dsl to verify it works correctly on the training examples.
 
 Some rules have to be applied based on context. Do not fixate on superficial patterns; find what properties have semantic significance and use those as context. Some attributes or properties may not be related; if they aren't consistent across all inputs, don't focus on them.
 
@@ -171,11 +198,17 @@ Remember every transformation here is deterministic and reproducible. Do not fin
 
 Symbols may have semantic significance; properties of the symbols may convey this semantic significance. You need to find what properties carry semantic significance and what properties do not contribute to decision making.
 
-Compositional reasoning and turn-by-turn application of rules may be important. You may have to apply one transformation to allow the others to make sense. You can try using a tool to generate an image of the data and analyse that along the way. Try making incremental changes to the board and looking at the results by using the visualization tool.
+Compositional reasoning and turn-by-turn application of rules may be important. You may have to apply one transformation to allow the others to make sense.
+
+USE YOUR TOOLS TO ITERATE:
+- visualize_grid: Generate images to see patterns and verify your understanding
+- execute_dsl: Test your DSL program on ALL training inputs to ensure correctness
+
+Try different approaches! Use execute_dsl to test partial transformations. Visualize intermediate states to debug issues.
 
 Some rules have to be applied based on context. Do not fixate on superficial patterns; find what properties have semantic significance and use those as context. Some attributes or properties may not be related; if they aren't consistent across all inputs, don't focus on them.
 
-Continue iterating until the tool generates the correct outputs in all training examples.
+Continue iterating with the tools until your DSL generates the correct outputs for all training examples.
 
 Refine your DSL program by:
 1. Testing it mentally on ALL training inputs you've seen so far
@@ -210,6 +243,12 @@ Symbols may have semantic significance; properties of the symbols may convey thi
 
 Compositional reasoning and turn-by-turn application of rules may be important. You may have to apply one transformation to allow the others to make sense.
 
+TOOLS FOR THIS PHASE:
+- visualize_grid: Visualize the test input or any intermediate grids
+- execute_dsl: TEST YOUR DSL ON THIS INPUT before finalizing!
+
+Use execute_dsl with the test input to verify your DSL works correctly before outputting the final version.
+
 Some rules have to be applied based on context. Do not fixate on superficial patterns; find what properties have semantic significance and use those as context.
 
 Generate a DSL program that:
@@ -230,12 +269,14 @@ TEST_PROMPT = """
 Input:
 {input_grid}
 
-IMPORTANT: Do NOT output a DSL program. Instead, EXECUTE your learned transformation rules mentally and output the ACTUAL RESULT as a grid of numbers.
+IMPORTANT: Do NOT output a DSL program. Instead, use the execute_dsl tool with your refined DSL to generate the output grid.
 
-Apply your learned transformations step by step:
+Apply your transformations using the tools:
 1. Look at the test input grid
-2. Apply the transformation rules you discovered from the training examples
-3. Generate the actual output grid
+2. Use execute_dsl with your best DSL program and this input grid to generate the output
+3. Use visualize_grid if needed to verify the output makes sense
+
+REQUIRED: Use execute_dsl to apply your DSL to the input and get the transformed output grid.
 
 Output ONLY the resulting grid as an array of arrays with square brackets and comma-separated values.
 Each row should be on its own line for clarity.
@@ -327,22 +368,90 @@ def encode_image(image_path: str) -> str:
 class APIClient:
     """Handles API interactions with OpenAI (non-streaming)"""
     
-    def __init__(self, api_key: Optional[str] = None):
+    def __init__(self, api_key: Optional[str] = None, task_name: str = ""):
         self.api_key = api_key or os.getenv("OPENAI_API_KEY")
         if not self.api_key:
             raise ValueError("OpenAI API key required")
         self.client = OpenAI(api_key=self.api_key)
+        self.task_name = task_name
+        self.dsl_executor = DSLExecutor(api_key=self.api_key)
+    
+    def handle_visualization(self, grid: List[List[int]], call_id: str) -> Dict:
+        """Handle visualization tool call"""
+        img_path = create_grid_image(grid, self.task_name, f"tool_{call_id[:8]}")
+        base64_img = encode_image(img_path)
+        return {
+            "type": "function_call_output",
+            "call_id": call_id,
+            "output": json.dumps({
+                "image_url": f"data:image/png;base64,{base64_img}",
+                "status": "success"
+            })
+        }
+    
+    def handle_dsl_execution(self, input_grid: List[List[int]], dsl_program: str, call_id: str) -> Dict:
+        """Handle DSL execution tool call"""
+        print(f"\n📜 DSL Program being executed:")
+        print("-" * 60)
+        print(dsl_program)
+        print("-" * 60)
+        
+        result = self.dsl_executor.execute(input_grid, dsl_program)
+        return {
+            "type": "function_call_output",
+            "call_id": call_id,
+            "output": json.dumps({
+                "output_grid": result,
+                "status": "success" if result else "failed"
+            })
+        }
+    
+    def process_tool_calls(self, output_items: List) -> List[Dict]:
+        """Process any tool calls in the output"""
+        tool_results = []
+        for item in output_items:
+            if item.type == "function_call":
+                args = json.loads(item.arguments)
+                
+                if item.name == "visualize_grid":
+                    print(f"🔧 Creating visualization for {len(args['grid'])}x{len(args['grid'][0])} grid")
+                    tool_results.append(self.handle_visualization(args["grid"], item.call_id))
+                
+                elif item.name == "execute_dsl":
+                    print(f"⚙️ Executing DSL on {len(args['input_grid'])}x{len(args['input_grid'][0])} grid")
+                    tool_results.append(self.handle_dsl_execution(
+                        args["input_grid"], args["dsl_program"], item.call_id
+                    ))
+        
+        return tool_results
     
     def get_response(self, messages: List[Dict]) -> str:
-        """Get response from the API and log reasoning"""
-        response = self.client.responses.create(
-            model=MODEL_NAME,
-            reasoning={"effort": REASONING_EFFORT},
-            input=messages
-        )
+        """Get response from the API with tool support"""
+        call_input = messages.copy()
         
-        # Log response structure
-        print(f"\n📦 Response output contains {len(response.output)} items")
+        # Keep making API calls while there are tool calls
+        iteration = 0
+        while iteration < MAX_ITERATIONS:
+            response = self.client.responses.create(
+                model=MODEL_NAME,
+                reasoning={"effort": REASONING_EFFORT},
+                input=call_input,
+                tools=[VISUALIZATION_TOOL, DSL_EXECUTOR_TOOL],
+                tool_choice="auto"
+            )
+            
+            print(f"\n📦 Iteration {iteration + 1}: {len(response.output)} output items")
+            
+            # Process tool calls
+            tool_results = self.process_tool_calls(response.output)
+            
+            if tool_results:
+                # Add response and tool results to input for next iteration
+                call_input = call_input + response.output + tool_results
+                iteration += 1
+            else:
+                # No more tool calls, we're done
+                break
         
         reasoning_text = ""
         message_text = ""
@@ -607,7 +716,7 @@ class ARCSolver:
     """Main solver orchestrating the streaming DSL generation"""
     
     def __init__(self):
-        self.client = APIClient()
+        self.client = None
     
     def solve(self, task_file: str) -> Tuple[bool, Optional[List[List[int]]], int]:
         """
@@ -617,6 +726,7 @@ class ARCSolver:
         task_data = TaskData.from_file(task_file)
         logger = Logger(task_data.name)
         conversation_history = []
+        self.client = APIClient(task_name=task_data.name)
         
         print(f"\nSolving task: {task_data.name}")
         print(f"Training examples: {len(task_data.train)}, Test examples: {len(task_data.test)}")
